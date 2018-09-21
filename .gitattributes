@@ -1,4 +1,5 @@
 * text=auto !eol
+/README.md -text
 epos2trunk/LICENSE -text
 epos2trunk/app/concurrent_philosophers_dinner.cc -text
 epos2trunk/app/concurrent_philosophers_dinner_traits.h -text
