@@ -228,8 +228,6 @@ epos2trunk/src/component/dhcp.cc -text
 epos2trunk/src/component/icmp.cc -text
 epos2trunk/src/component/ip.cc -text
 epos2trunk/src/component/ip_init.cc -text
-epos2trunk/src/component/ip_test.cc -text
-epos2trunk/src/component/ip_test_traits.h -text
 epos2trunk/src/component/makefile -text
 epos2trunk/src/component/mutex.cc -text
 epos2trunk/src/component/mutex_test.cc -text
@@ -242,8 +240,6 @@ epos2trunk/src/component/periodic_thread_test.cc -text
 epos2trunk/src/component/periodic_thread_test_traits.h -text
 epos2trunk/src/component/scheduler_cedf_test.cc -text
 epos2trunk/src/component/scheduler_cedf_test_traits.h -text
-epos2trunk/src/component/scheduler_cpu_affinity_test.cc -text
-epos2trunk/src/component/scheduler_cpu_affinity_test_traits.h -text
 epos2trunk/src/component/scheduler_dm_test.cc -text
 epos2trunk/src/component/scheduler_dm_test_traits.h -text
 epos2trunk/src/component/scheduler_edf_test.cc -text
@@ -261,16 +257,10 @@ epos2trunk/src/component/segment.cc -text
 epos2trunk/src/component/segment_test.cc -text
 epos2trunk/src/component/segment_test_traits.h -text
 epos2trunk/src/component/semaphore.cc -text
-epos2trunk/src/component/semaphore_test.cc -text
-epos2trunk/src/component/semaphore_test_traits.h -text
 epos2trunk/src/component/smart_data_test.cc -text
 epos2trunk/src/component/smart_data_test_traits.h -text
-epos2trunk/src/component/synchronizer_test.cc -text
-epos2trunk/src/component/synchronizer_test_traits.h -text
 epos2trunk/src/component/system_init.cc -text
 epos2trunk/src/component/task.cc -text
-epos2trunk/src/component/task_test.cc -text
-epos2trunk/src/component/task_test_traits.h -text
 epos2trunk/src/component/tcp.cc -text
 epos2trunk/src/component/thread.cc -text
 epos2trunk/src/component/thread_init.cc -text
