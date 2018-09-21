@@ -1,0 +1,54 @@
+{
+    "folders":
+    [
+        {
+            "folder_exclude_patterns":
+            [
+            ],
+            "path": "."
+        }
+    ],
+    "build_systems":
+    [
+        {
+            "working_dir": "$project_path/TeachingEpos",
+            // "selector_old": "source.matlab, source.octave", // comment this to build from everywhere
+
+            "name": "Build Main File",
+            "cmd": ["sh", "choose_a_compiler.sh", "synchronizer_test.cc"],
+
+            "variants":
+            [
+                {
+                    "name": "XFCE4 Terminal",
+                    "cmd":
+                    [
+                        "/usr/bin/xfce4-terminal",
+                        "--maximize",
+                        "--hold",
+                        "--command",
+                        "sh compile_and_run.sh synchronizer_test.cc"
+                    ]
+                },
+
+                {
+                    "name": "Compile and Run",
+                    "cmd":
+                    [
+                        "sh",
+                        "compile_and_run.sh",
+                        "synchronizer_test.cc"
+                    ]
+                }
+            ],
+
+            "target": "ansi_color_build",
+            "syntax": "Packages/ANSIescape/ANSI.tmLanguage"
+        }
+    ],
+    "settings":
+    {
+        "ensure_newline_at_eof_on_save": false,
+        "trim_trailing_white_space_on_save": false,
+    },
+}
