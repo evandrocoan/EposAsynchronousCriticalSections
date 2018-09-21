@@ -1,1 +1,0 @@
-../src/component/task_test.cc

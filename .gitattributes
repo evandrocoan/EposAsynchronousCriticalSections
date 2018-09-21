@@ -1,17 +1,17 @@
 * text=auto !eol
 /README.md -text
 epos2trunk/LICENSE -text
-epos2trunk/app/concurrent_philosophers_dinner.cc -text
-epos2trunk/app/concurrent_philosophers_dinner_traits.h -text
-epos2trunk/app/fork.cc -text
-epos2trunk/app/fork_traits.h -text
+epos2trunk/app/ip_test.cc -text
+epos2trunk/app/ip_test_traits.h -text
 epos2trunk/app/makefile -text
-epos2trunk/app/parallel_philosophers_dinner.cc -text
-epos2trunk/app/parallel_philosophers_dinner_traits.h -text
-epos2trunk/app/ping.cc -text
-epos2trunk/app/ping_traits.h -text
-epos2trunk/app/producer_consumer.cc -text
-epos2trunk/app/producer_consumer_traits.h -text
+epos2trunk/app/scheduler_cpu_affinity_test.cc -text
+epos2trunk/app/scheduler_cpu_affinity_test_traits.h -text
+epos2trunk/app/semaphore_test.cc -text
+epos2trunk/app/semaphore_test_traits.h -text
+epos2trunk/app/synchronizer_test.cc -text
+epos2trunk/app/synchronizer_test_traits.h -text
+epos2trunk/app/task_test.cc -text
+epos2trunk/app/task_test_traits.h -text
 epos2trunk/app/tstp_gateway.cc -text
 epos2trunk/app/tstp_gateway_traits.h -text
 epos2trunk/app/tstp_pcap_sniffer.cc -text

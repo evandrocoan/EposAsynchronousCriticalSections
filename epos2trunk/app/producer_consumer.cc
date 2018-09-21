@@ -1,1 +1,0 @@
-../src/component/synchronizer_test.cc

@@ -205,6 +205,7 @@ EMULATOR	= $(MACH_EMULATOR)
 
 FLASHER 	= $(MACH_FLASHER)
 
+MKDIR		:= mkdir -p
 INSTALL		:= install
 
 LD              = $(COMP_PREFIX)ld

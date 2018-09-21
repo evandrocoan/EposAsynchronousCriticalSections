@@ -95,6 +95,12 @@ public:
         return old;
     }
 
+    static int fas(volatile int & value, volatile int & replacement) {
+        int old = value;
+        value = replacement;
+        return old;
+    }
+
     static int cas(volatile int & value, int compare, int replacement) {
         int old = value;
         if(value == compare) {

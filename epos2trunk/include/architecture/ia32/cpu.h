@@ -360,6 +360,15 @@ public:
         return old;
     }
 
+/*  FAS is not yet implemented, will have to lock into doing it
+    template<typename T>
+    static T fas(volatile T & value, volatile T & replacement) {
+        register T old = 1;
+        ASM("lock xchg %0, %2" : "=a"(old) : "a"(old), "m"(lock) : "memory");
+        return old;
+    }
+*/
+
     template<typename T>
     static T cas(volatile T & value, T compare, T replacement) {
         ASM("lock cmpxchgl %2, %3\n" : "=a"(compare) : "a"(compare), "r"(replacement), "m"(value) : "memory");
