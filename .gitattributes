@@ -3,6 +3,7 @@
 /OperatingSystems.sublime-project -text
 /README.md -text
 epos2trunk/LICENSE -text
+epos2trunk/app/compile_remotely.sh eol=lf
 epos2trunk/app/ip_test.cc -text
 epos2trunk/app/ip_test_traits.h -text
 epos2trunk/app/makefile -text
@@ -20,6 +21,8 @@ epos2trunk/app/tstp_pcap_sniffer.cc -text
 epos2trunk/app/tstp_pcap_sniffer_traits.h -text
 epos2trunk/app/tstp_sensor.cc -text
 epos2trunk/app/tstp_sensor_traits.h -text
+epos2trunk/choose_a_compiler.sh eol=lf
+epos2trunk/compile_and_run.sh eol=lf
 epos2trunk/etc/makefile -text
 epos2trunk/img/makefile -text
 epos2trunk/include/active.h -text
@@ -356,6 +359,7 @@ epos2trunk/src/utility/random.cc -text
 epos2trunk/src/utility/srec.cc -text
 epos2trunk/src/utility/string.cc -text
 epos2trunk/src/utility/vector_test.cc -text
+epos2trunk/timer_calculator.sh eol=lf
 epos2trunk/tools/eposcc/eposcc -text
 epos2trunk/tools/eposcc/makefile -text
 epos2trunk/tools/eposcfg/eposcfg.cc -text
