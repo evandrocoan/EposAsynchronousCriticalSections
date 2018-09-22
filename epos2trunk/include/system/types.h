@@ -59,6 +59,7 @@ class Handler;
 class Hashes;
 class Heaps;
 class Debug;
+class Guard;
 class Lists;
 class Observers;
 class Observeds;
