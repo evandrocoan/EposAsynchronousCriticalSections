@@ -23,7 +23,7 @@ epos2trunk/app/tstp_sensor.cc -text
 epos2trunk/app/tstp_sensor_traits.h -text
 epos2trunk/choose_a_compiler.sh eol=lf
 epos2trunk/compile_and_run.sh eol=lf
-epos2trunk/etc/makefile -text
+epos2trunk/etc/makefile eol=lf
 epos2trunk/img/makefile -text
 epos2trunk/include/active.h -text
 epos2trunk/include/adc.h -text
@@ -184,7 +184,7 @@ epos2trunk/include/utility/string.h -text
 epos2trunk/include/utility/vector.h -text
 epos2trunk/include/watchdog.h -text
 epos2trunk/makedefs -text
-epos2trunk/makefile -text
+epos2trunk/makefile eol=crlf
 epos2trunk/src/architecture/armv7/armv7_crt0.S -text
 epos2trunk/src/architecture/armv7/armv7_crtbegin.c -text
 epos2trunk/src/architecture/armv7/armv7_crtend.c -text
