@@ -1,0 +1,113 @@
+!::Predictable Synchronisation Algorithms for Asynchronous Critical Sections::
+::Evandro Sperfeld Coan <evandrocoan@hotmail.com>::
+::Eduardo Demeneck Onghero <do.demeneck@gmail.com>::
+
+
+!!::Cronograma::
+
+||
+Tarefa       | 01/10 | 08/10 | 22/10 | 05/11 | 19/11 | 26/11 | 21-28/11
+T0           | D0    |       |       |       |       | |
+T1           |       | D1    |       |       |       | |
+T2           |       |       | D2    |       |       | |
+T3           |       |       |       | D3    |       | |
+T4           |       |       |       |       | D4    | |
+T5           |       |       |       |       |       | D5    |
+Apresentação |       |       |       |       |       |       | Ap
+||
+
+
+!!:: Tarefas e Entregáveis::
+
+!!!T0 - Planejamento
+* Escrever o relatório explicando o que vai ser entregue, como os algoritmos funcionam
+* Escrever testes que demonstrem que todas as instruções de hardware que precisamos (CAS, FAS, TAS, etc) são suportadas pelo EPOS.
+
+!!!D0 - Plano de projeto
+# Lista de Entregáveis para cada entrega
+# Lista de Tarefas com o Cronograma
+
+
+!!::Prova de viabilidade::
+
+Podemos implementar a FAS utilizando CAS. Por exemplo, uma chamada seria FAS(entrada, saída) e a versão com CAS seria CAS(entrada, entrada, saída). Assim, a diferença seria que utilizar um CAS e menos eficiente ao invés de utilizar somente um FAS(). 
+
+ARM não suporta CAS, apenas LC/SC.
+
+Escrever programas que provem este jeito novo de programar, com futures, demonstrando que é possível converter programas bloqueantes síncronos para não-bloqueantes assíncronos. Então, isso reforça que a vantagem nosso trabalho é descartar todo o overhead necessário para cuidar/resolver os problemas como inversão de prioridade. Ao mesmo tempo, isso quer dizer que o programador nunca irá bloquear a execução de seu código, i.e., ele criará um future que cuidará de fazer as coisas que ele precisa, assim que a região crítica for executada pelo Sequencer ou Actor. Em termos simples, é um jeito completamente diferente de programar.
+
+
+!!::Descrição do Algoritmo::
+
+!!!Código do Sequencer
+{CODE(colors="c")}
+typedef struct
+{
+    chain_t* next;
+} chain_t;
+
+typedef struct
+{
+    chain_t* head;
+    chain_t* tail;
+} guard_t;
+
+typedef struct
+{
+    chain_t* head;
+    chain_t* tail;
+    sleep_t wait;
+} actor_t;
+
+void guard_setup(guard_t* self)
+{
+    self->head = self->tail = NULL;
+}
+
+chain_t* guard_vouch(guard_t* self)
+{
+    item->next = NULL;
+    chain_t* last = FAS(&self->tail, item); // V1
+    if (last)
+    {
+        if (CAS(&last->next, NULL, item)) // V2
+            return NULL;
+        // last->next == DONE
+    }
+    self->head = item; // V3
+    return item;
+}
+
+chain_t* guard_clear(guard_t* self)
+{
+    chain_t* item = self->head; // C1
+    // item != NULL
+    chain_t* next = FAS(&item->next, DONE); // C2
+    if (!next)
+        CAS(&self->tail, item, NULL); // C3
+    CAS(&self->head, item, next); // C4
+    return next;
+}
+{CODE}
+
+!!!Diagrama das Estruturas de Dados Originais
+{img fileId="908"}
+
+!!!Diagrama de Sequência - Versão original em C
+{img fileId="907"}
+
+
+!!::Implementação::
+
+Código disponível em git e svn:
+# https://epos.lisha.ufsc.br/svn/makers/predictable_synchronisation_algorithms_for_asynchronous_critical_sections
+
+
+!!::Referências::
+# Stefan Reif and Wolfgang Schröder-Preikschat, “Predictable Synchronisation Algorithms for Asynchronous Critical Sections,” Friedrich-Alexander-Universität Erlangen-Nürnberg, Dept. of Computer Science, Technical Reports, CS-2018-03, February 2018.
+# G. Drescher and W. Schröder-Preikschat, “Guarded sections: Structuring aid for wait-free synchronisation,” in Proceedings of the 18th International Symposium On Real-Time Computing (ISORC 2015). IEEE Computer Society Press, 2015, pp. 280–283.
+# D. Klaftenegger, K. Sagonas, and K. Winblad, “Brief announcement: Queue delegation locking,” in Proceedings of the 26th ACM Symposium on Parallelism in Algorithms and Architectures (SPAA 2014). ACM Press, 2014, pp. 70–72.
+# Numa And Uma And Shared Memory Multiprocessors Computer Science Essay <https://www.ukessays.com/essays/computer-science/numa-and-uma-and-shared-memory-multiprocessors-computer-science-essay.php>
+# https://www.youtube.com/watch?v=c1gO9aB9nbs&list=PLLx8RvOpJ0wlFCGxWAVBTo3CoR9PYkpz2 - Lock-free Programming Talk at Cppcon 2014 by Herb Sutter
+
+
