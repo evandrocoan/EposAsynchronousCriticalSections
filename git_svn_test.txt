@@ -1,3 +1,0 @@
-
-git_svn_test.txt
-
