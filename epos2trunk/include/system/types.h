@@ -59,7 +59,6 @@ class Handler;
 class Hashes;
 class Heaps;
 class Debug;
-class Guard;
 class Lists;
 class Observers;
 class Observeds;
@@ -156,6 +155,7 @@ class Synchronizer;
 class Mutex;
 class Semaphore;
 class Condition;
+class Guard;
 
 class Clock;
 class Chronometer;
