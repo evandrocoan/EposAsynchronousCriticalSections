@@ -66,6 +66,7 @@ epos2trunk/include/framework/proxy.h -text
 epos2trunk/include/framework/scenario.h -text
 epos2trunk/include/framework/stub.h -text
 epos2trunk/include/gpio.h -text
+epos2trunk/include/guard.h -text
 epos2trunk/include/i2c.h -text
 epos2trunk/include/ic.h -text
 epos2trunk/include/icmp.h -text
@@ -184,7 +185,7 @@ epos2trunk/include/utility/string.h -text
 epos2trunk/include/utility/vector.h -text
 epos2trunk/include/watchdog.h -text
 epos2trunk/makedefs -text
-epos2trunk/makefile eol=crlf
+epos2trunk/makefile -text svneol=CRLF#unset
 epos2trunk/src/architecture/armv7/armv7_crt0.S -text
 epos2trunk/src/architecture/armv7/armv7_crtbegin.c -text
 epos2trunk/src/architecture/armv7/armv7_crtend.c -text
@@ -230,6 +231,7 @@ epos2trunk/src/component/chronometer_test.cc -text
 epos2trunk/src/component/cipher_test.cc -text
 epos2trunk/src/component/condition.cc -text
 epos2trunk/src/component/dhcp.cc -text
+epos2trunk/src/component/guard.cc -text
 epos2trunk/src/component/icmp.cc -text
 epos2trunk/src/component/ip.cc -text
 epos2trunk/src/component/ip_init.cc -text
@@ -391,3 +393,4 @@ epos2trunk/tools/eposmkbi/makefile -text
 epos2trunk/tools/epossectst/eposbignumtst.py -text
 epos2trunk/tools/epossectst/makefile -text
 epos2trunk/tools/makefile -text
+/wikipage.tiki -text
