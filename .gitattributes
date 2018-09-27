@@ -3,6 +3,7 @@
 /OperatingSystems.sublime-project -text
 /README.md -text
 epos2trunk/LICENSE -text
+epos2trunk/app/cas_test.cc eol=lf
 epos2trunk/app/compile_remotely.sh eol=lf
 epos2trunk/app/ip_test.cc -text
 epos2trunk/app/ip_test_traits.h -text
