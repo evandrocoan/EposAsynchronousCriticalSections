@@ -243,17 +243,13 @@ epos2trunk/src/component/page_coloring_test.cc -text
 epos2trunk/src/component/page_coloring_test_traits.h -text
 epos2trunk/src/component/periodic_thread_test.cc -text
 epos2trunk/src/component/periodic_thread_test_traits.h -text
-epos2trunk/src/component/scheduler_cedf_test.cc -text
 epos2trunk/src/component/scheduler_cedf_test_traits.h -text
-epos2trunk/src/component/scheduler_dm_test.cc -text
 epos2trunk/src/component/scheduler_dm_test_traits.h -text
-epos2trunk/src/component/scheduler_edf_test.cc -text
 epos2trunk/src/component/scheduler_edf_test_traits.h -text
 epos2trunk/src/component/scheduler_gedf_test.cc -text
 epos2trunk/src/component/scheduler_gedf_test_traits.h -text
 epos2trunk/src/component/scheduler_llf_test.cc -text
 epos2trunk/src/component/scheduler_llf_test_traits.h -text
-epos2trunk/src/component/scheduler_pedf_test.cc -text
 epos2trunk/src/component/scheduler_pedf_test_traits.h -text
 epos2trunk/src/component/scheduler_rm_test.cc -text
 epos2trunk/src/component/scheduler_rm_test_traits.h -text
