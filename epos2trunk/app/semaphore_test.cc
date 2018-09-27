@@ -13,8 +13,7 @@ using namespace EPOS;
 const int iterations = 2;
 
 Mutex table;
-
-Guard g;
+Guard guard;
 
 Thread * phil[5];
 Semaphore * chopstick[5];
@@ -59,7 +58,7 @@ int philosopher(int n, int l, int c)
 
 int main()
 {
-    g.clear();
+    guard.clear();
 
     table.lock();
     Display::clear();
