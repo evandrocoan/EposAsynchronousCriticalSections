@@ -1,10 +1,23 @@
-!::Predictable Synchronisation Algorithms for Asynchronous Critical Sections::
+!::Predictable Synchronization Algorithms for Asynchronous Critical Sections::
 ::Evandro Sperfeld Coan <evandrocoan@hotmail.com>::
 ::Eduardo Demeneck Onghero <do.demeneck@gmail.com>::
 
+!!::Motivação::
+
+!!::Objetivos::
+O objetivo principal deste trabalho é a implementação de um algoritmo de sincronização com suporte à seções críticas assíncronas.
+
+!!!Objetos específicos
+*Implementação de um algoritmo de sincronização baseado em delegação para seções críticas assíncronas, utilizando o conceito seções guardadas.
+*Implementação de uma nova versão do algoritmo com suporte para seções críticas síncronas.
+*Realização de testes para avaliar a corretude dos algoritmos implementados.
+
+!!::Metodologia::
+Será realizada uma pesquisa na literatura com foco nos conceitos básicos que fundamentam algoritmos de sincronização para seções críticas assíncronas, de modo a compreender detalhes de funcionamento desse tipo de algoritmo e então decidir sobre a melhor maneira de implementá-los no EPOS.
+
+Após entendidos claramente os conceitos, o desenvolvimento seguirá com a metodologia programar e testar (Cowboy Coding), que consiste em escrever um pedaço de código e testar sua execução, verificando se o resultado consiste com o esperado. Os programas de teste serão programas simples, que permitam verificar se o sistema está respondendo corretamente às expectativas.
 
 !!::Cronograma::
-
 ||
 Tarefa       | 01/10 | 08/10 | 22/10 | 05/11 | 19/11 | 26/11 | 21-28/11
 T0           | D0    |       |       |       |       | |
@@ -16,30 +29,259 @@ T5           |       |       |       |       |       | D5    |
 Apresentação |       |       |       |       |       |       | Ap
 ||
 
-
 !!:: Tarefas e Entregáveis::
 
 !!!T0 - Planejamento
-* Escrever o relatório explicando o que vai ser entregue, como os algoritmos funcionam
-* Escrever testes que demonstrem que todas as instruções de hardware que precisamos (CAS, FAS, TAS, etc) são suportadas pelo EPOS.
+* Escrever o plano de projeto detalhado, contendo uma fundamentação teórica robusta, apresentando os conceitos chave relacionados à algoritmos de sincronização para seções críticas assíncronas, assim como exemplos de algoritmos desse tipo.  Além disso, o plano deve conter o detalhamento do projeto, explicando o que será feito durante o semestre e quais entregáveis serão produzidos.
+* Escrever programas de teste que provem a viabilidade do projeto, demonstrando que as operações CAS e FAS, necessárias para a implementação do algoritmo, são suportadas pelo EPOS.
+__Entregável: D0__
+# Plano de projeto
+## Descrição da metodologia adotada.
+## Lista de tarefas/entregáveis para cada entrega com seu cronograma.
+## Fundamentação teórica.
 
-!!!D0 - Plano de projeto
-# Lista de Entregáveis para cada entrega
-# Lista de Tarefas com o Cronograma
+!!!T1 - Revisão do Planejamento
+* Realizar as correções no plano de projeto com base no feedback obtido no D0.
+__Entregável: D1__
+# Plano de projeto revisado.
 
+!!!T2 - Implementação I
+* Implementação de um novo componente de sincronização no EPOS. Esse componente, que deve se chamar Guard, será responsável por prover mecanismos para a execução não bloqueante de seções críticas assíncronas. Uma limitação dessa primeira versão do componente está relacionada aos tipos de seções críticas suportadas, que no caso serão apenas seções críticas assíncronas. Isso porque, o suporte a seções críticas síncronas exige a utilização de mecanismos para a sincronização unilateral de threads, que serão o tema principal da tarefa T3. 
+* Definição de uma convenção de programação, que poderá ser utilizada por threads do EPOS para solicitar a execução assíncronas de seções críticas, e que juntamente com o componente Guard, compõe um sistema de execução que possibilita a execução de seções críticas assíncronas de maneira não bloqueante.
+__Entregável: D2__
+# Novo componente de sincronização do EPOS, o Guard.
+# Uma convenção de programação para a submissão de requisições de execução de seções críticas.
 
-!!::Prova de viabilidade::
+!!!T3 -  Implementação II
+* Estender o componente de sincronização apresentado em T2 para suportar também seções críticas síncronas. Para isso, serão utilizados <Aqui precisamos escolher qual será o mecanismo: Futures (?) - Existe uma implementação descrita em um dos artigos sobre guardas, Observables(?) - Já possuem uma implementação no EPOs, mas dando uma olhada me parece meio complicado de entender como funciona na prática>. 
+* Modificar a convenção de programação para integrar mecanismos de <Futures/Observables>, de modo a intermediar a comunicação entre threads e seções críticas.
+__Entregável: D3__
+# Componente Guarda com suporte a seções críticas síncronas.
+# Nova convenção de programação para submissão de requisições de execução de seções críticas com suporte à <Futures ? Observables ?>
+#<Novo componente de Future se formos implementar>
 
-Podemos implementar a FAS utilizando CAS. Por exemplo, uma chamada seria FAS(entrada, saída) e a versão com CAS seria CAS(entrada, entrada, saída). Assim, a diferença seria que utilizar um CAS e menos eficiente ao invés de utilizar somente um FAS(). 
+!!!T4 - Integração
+* Acho que não tem isso no nosso caso, precisamos substituir por outra coisa. Talvez inverter a ordem com o T5 e adicionar uma tarefa de revisão.
+* Substituir os mecanismos de sincronização das aplicações de teste pela nova implementação com uso de guarda.
+__Entregável: D4__
+# As aplicações "synchronizer_test.cc", "scheduler_cpu_affinity_test.cc" e "semaphore_test.cc" utilizando o algoritmo de guarda ao invés de mutexes e semáforos.
+
+!!!T5 - Validação
+* Realização de testes mais robustos, com o objetivo de garantir, na medida do possível, a corretude dos componentes implementados até aqui.
+* Desenvolvimento de um relatório final, onde será apresentado o que foi feito durante o projeto e quais foram seus resultados.
+__Entregável: D5__
+# Relatório final, que é uma versão do relatório inicial com as correções de planejamento adicionadas ao longo da execução do projeto.
+# O código dos novos testes realizados, junto com o resultado dos testes
+
+!!::Análise de viabilidade::
+No EPOS x86 não has uma implementação de FAS, mas podemos implementar a FAS utilizando CAS. Por exemplo, uma chamada seria FAS(entrada, saída) e a versão com CAS seria CAS(entrada, entrada, saída). Assim, a diferença seria que utilizar um CAS é que pode ser menos eficiente ao invés de utilizar somente um FAS(). 
 
 ARM não suporta CAS, apenas LC/SC.
 
-Escrever programas que provem este jeito novo de programar, com futures, demonstrando que é possível converter programas bloqueantes síncronos para não-bloqueantes assíncronos. Então, isso reforça que a vantagem nosso trabalho é descartar todo o overhead necessário para cuidar/resolver os problemas como inversão de prioridade. Ao mesmo tempo, isso quer dizer que o programador nunca irá bloquear a execução de seu código, i.e., ele criará um future que cuidará de fazer as coisas que ele precisa, assim que a região crítica for executada pelo Sequencer ou Actor. Em termos simples, é um jeito completamente diferente de programar.
+A seguir vemos uma implementação inicial do algoritmo do Guarda utilizando somente a operação de CAS, junto com o programa teste "synchronizer_test.cc", onde o semáforo principal foi substituído por um guarda. Esta implementação, requere que o componente elemento de lista utilizado do EPOS, tenha seu atributo privado "_next" colocado como público, por que a classe "Element" não possui uma interface que permita alterar diretamente o valor de "_next" como requerido no algoritmo do Guarda.
 
+__guard.h__
+{CODE(colors="c")}
+// EPOS Guard Component Declarations
+
+#ifndef __guard_h
+#define __guard_h
+
+#include <architecture/ia32/cpu.h>
+#include <utility/list.h>
+#include <utility/handler.h>
+
+__BEGIN_SYS
+
+class Guard
+{
+public:
+    // Article's chain_t
+    typedef List_Elements::Singly_Linked<Function_Handler> Element;
+
+public:
+    Guard();
+    ~Guard();
+
+    Element * vouch(Element * item);
+    Element * clear();
+
+private:
+    Element * _head;
+    Element * _tail;
+    Element * _null;
+    Element * _done;
+};
+
+__END_SYS
+
+#endif
+{CODE}
+
+__guard.cc__
+{CODE(colors="c")}
+// EPOS Guard Component Implementation
+
+#include <guard.h>
+
+__BEGIN_SYS
+
+Guard::Guard(): _head(0), _tail(0), _null(0), _done()
+{
+    db<Synchronizer>(TRC) << "Guard(head=" << _head << ", tail=" << _tail << ") => " << this << endl;
+}
+
+Guard::~Guard()
+{
+    db<Synchronizer>(TRC) << "~Guard(this=" << this << ")" << endl;
+}
+
+Guard::Element * Guard::vouch(Element * item)
+{
+    db<Synchronizer>(TRC) << "Guard::vouch(this=" << this << ", item=" << item <<", tail=" << _tail << ")" << endl;
+    item->next(_null);
+    Element * last = CPU::cas(_tail, _tail, item);
+    if (last){
+        if (CPU::cas(last->_next, _null, item))
+            return _null;
+    }
+    _head = item;        
+    return item;
+}
+
+Guard::Element * Guard::clear()
+{
+    db<Synchronizer>(TRC) << "Guard::clear(this=" << this << ",head=" << _head << ")" << endl;
+    Element * item = _head;
+    Element * next = CPU::cas(item->_next, item->_next, _done);
+    if (!next)
+        CPU::cas(_tail, item, _null);
+    CPU::cas(_head, item, next);
+    return next;    
+}
+
+__END_SYS
+{CODE}
+
+__semaphore_test.cc__
+{CODE(colors="c")}
+// EPOS Semaphore Component Test Program
+
+#include <utility/ostream.h>
+#include <thread.h>
+#include <mutex.h>
+#include <guard.h>
+#include <semaphore.h>
+#include <alarm.h>
+#include <display.h>
+
+using namespace EPOS;
+
+const int iterations = 2;
+
+Mutex table;
+
+Guard g;
+
+Thread * phil[5];
+Semaphore * chopstick[5];
+
+OStream cout;
+
+int philosopher(int n, int l, int c)
+{
+    int first = (n < 4)? n : 0;
+    int second = (n < 4)? n + 1 : 4;
+
+    for(int i = iterations; i > 0; i--) {
+
+        table.lock();
+        Display::position(l, c);
+        cout << "thinking";
+        table.unlock();
+
+        Delay thinking(2000000);
+
+        chopstick[first]->p();    // get first chopstick
+        chopstick[second]->p();   // get second chopstick
+
+        table.lock();
+        Display::position(l, c);
+        cout << " eating ";
+        table.unlock();
+
+        Delay eating(1000000);
+
+        chopstick[first]->v();    // release first chopstick
+        chopstick[second]->v();   // release second chopstick
+    }
+
+    table.lock();
+    Display::position(l, c);
+    cout << "  done  ";
+    table.unlock();
+
+    return iterations;
+}
+
+int main()
+{
+    g.clear();
+
+    table.lock();
+    Display::clear();
+    Display::position(0, 0);
+    cout << "The Philosopher's Dinner:" << endl;
+
+    for(int i = 0; i < 5; i++)
+        chopstick[i] = new Semaphore;
+
+    phil[0] = new Thread(&philosopher, 0,  5, 32);
+    phil[1] = new Thread(&philosopher, 1, 10, 44);
+    phil[2] = new Thread(&philosopher, 2, 16, 39);
+    phil[3] = new Thread(&philosopher, 3, 16, 24);
+    phil[4] = new Thread(&philosopher, 4, 10, 20);
+
+    cout << "Philosophers are alive and hungry!" << endl;
+
+    Display::position(7, 44);
+    cout << '/';
+    Display::position(13, 44);
+    cout << '\\';
+    Display::position(16, 35);
+    cout << '|';
+    Display::position(13, 27);
+    cout << '/';
+    Display::position(7, 27);
+    cout << '\\';
+    Display::position(19, 0);
+
+    cout << "The dinner is served ..." << endl;
+    table.unlock();
+
+    for(int i = 0; i < 5; i++) {
+        int ret = phil[i]->join();
+        table.lock();
+        Display::position(20 + i, 0);
+        cout << "Philosopher " << i << " ate " << ret << " times " << endl;
+        table.unlock();
+    }
+
+    for(int i = 0; i < 5; i++)
+        delete chopstick[i];
+    for(int i = 0; i < 5; i++)
+        delete phil[i];
+
+    cout << "The end!" << endl;
+
+    return 0;
+}
+{CODE}
 
 !!::Descrição do Algoritmo::
 
 !!!Código do Sequencer
+A seguir vemos a implementação do algoritmo do guarda, como apresentado no artigo, utilizando a linguagem "C".
 {CODE(colors="c")}
 typedef struct
 {
@@ -96,12 +338,14 @@ chain_t* guard_clear(guard_t* self)
 !!!Diagrama de Sequência - Versão original em C
 {img fileId="907"}
 
+!!!Problema de Bloqueio por dependência de dados
+Problema principal a resolver-se, como implementar o bloqueio no bloco 4 e como sinalizar para o bloco 4 que o bloco 2 já terminou?
+{img fileId="909"}
+Isso não é um problema para o nosso trabalho por que quando existe dependência de dados, o código que é dependente e executa depois fica encapsulado em uma closure, e que chamada quando o resultado da função fica pronto.
 
 !!::Implementação::
-
-Código disponível em git e svn:
+Código disponível em svn:
 # https://epos.lisha.ufsc.br/svn/makers/predictable_synchronisation_algorithms_for_asynchronous_critical_sections
-
 
 !!::Referências::
 # Stefan Reif and Wolfgang Schröder-Preikschat, “Predictable Synchronisation Algorithms for Asynchronous Critical Sections,” Friedrich-Alexander-Universität Erlangen-Nürnberg, Dept. of Computer Science, Technical Reports, CS-2018-03, February 2018.
@@ -109,5 +353,6 @@ Código disponível em git e svn:
 # D. Klaftenegger, K. Sagonas, and K. Winblad, “Brief announcement: Queue delegation locking,” in Proceedings of the 26th ACM Symposium on Parallelism in Algorithms and Architectures (SPAA 2014). ACM Press, 2014, pp. 70–72.
 # Numa And Uma And Shared Memory Multiprocessors Computer Science Essay <https://www.ukessays.com/essays/computer-science/numa-and-uma-and-shared-memory-multiprocessors-computer-science-essay.php>
 # https://www.youtube.com/watch?v=c1gO9aB9nbs&list=PLLx8RvOpJ0wlFCGxWAVBTo3CoR9PYkpz2 - Lock-free Programming Talk at Cppcon 2014 by Herb Sutter
+# http://preshing.com/20120612/an-introduction-to-lock-free-programming/
 
 
