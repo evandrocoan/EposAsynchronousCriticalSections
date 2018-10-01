@@ -155,6 +155,7 @@ class Synchronizer;
 class Mutex;
 class Semaphore;
 class Condition;
+class Guard;
 
 class Clock;
 class Chronometer;

@@ -26,10 +26,10 @@ template<> struct Traits<Build>
     enum {PC, ATmega, Cortex};
     static const unsigned int MACHINE = PC;
 
-    enum {Legacy_PC, eMote3, LM3S811, Zynq};
+    enum {Legacy_PC, eMote3, LM3S811};
     static const unsigned int MODEL = Legacy_PC;
 
-    static const unsigned int CPUS = 1;
+    static const unsigned int CPUS = 8;
     static const unsigned int NODES = 1; // > 1 => NETWORKING
 };
 
@@ -126,8 +126,8 @@ template<> struct Traits<Thread>: public Traits<void>
 {
     static const bool smp = Traits<System>::multicore;
 
-    typedef Scheduling_Criteria::RR Criterion;
-    static const unsigned int QUANTUM = 10000; // us
+    typedef Scheduling_Criteria::CPU_Affinity Criterion;
+    static const unsigned int QUANTUM = 100000; // us
 
     static const bool trace_idle = hysterically_debugged;
 };

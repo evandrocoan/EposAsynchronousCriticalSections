@@ -1,19 +1,22 @@
-// EPOS Mutex Component Test Program
+// EPOS Semaphore Component Test Program
 
 #include <utility/ostream.h>
 #include <thread.h>
 #include <mutex.h>
+#include <guard.h>
+#include <semaphore.h>
 #include <alarm.h>
 #include <display.h>
 
 using namespace EPOS;
 
-const int iterations = 10;
+const int iterations = 2;
 
-Mutex mutex_display;
+Mutex table;
+Guard guard;
 
 Thread * phil[5];
-Mutex chopstick[5];
+Semaphore * chopstick[5];
 
 OStream cout;
 
@@ -24,40 +27,46 @@ int philosopher(int n, int l, int c)
 
     for(int i = iterations; i > 0; i--) {
 
-        mutex_display.lock();
+        table.lock();
         Display::position(l, c);
         cout << "thinking";
-        mutex_display.unlock();
+        table.unlock();
 
         Delay thinking(2000000);
 
-        chopstick[first].lock();   // get first chopstick
-        chopstick[second].lock();   // get second chopstick
+        chopstick[first]->p();    // get first chopstick
+        chopstick[second]->p();   // get second chopstick
 
-        mutex_display.lock();
+        table.lock();
         Display::position(l, c);
         cout << " eating ";
-        mutex_display.unlock();
+        table.unlock();
 
         Delay eating(1000000);
 
-        chopstick[first].unlock();   // release first chopstick
-        chopstick[second].unlock();   // release second chopstick
+        chopstick[first]->v();    // release first chopstick
+        chopstick[second]->v();   // release second chopstick
     }
 
-    mutex_display.lock();
+    table.lock();
     Display::position(l, c);
     cout << "  done  ";
-    mutex_display.unlock();
+    table.unlock();
 
-    return(iterations);
+    return iterations;
 }
 
 int main()
 {
-    mutex_display.lock();
+    guard.clear();
+
+    table.lock();
     Display::clear();
+    Display::position(0, 0);
     cout << "The Philosopher's Dinner:" << endl;
+
+    for(int i = 0; i < 5; i++)
+        chopstick[i] = new Semaphore;
 
     phil[0] = new Thread(&philosopher, 0,  5, 32);
     phil[1] = new Thread(&philosopher, 1, 10, 44);
@@ -77,19 +86,21 @@ int main()
     cout << '/';
     Display::position(7, 27);
     cout << '\\';
-    Display::position(18, 0);
+    Display::position(19, 0);
 
     cout << "The dinner is served ..." << endl;
-    mutex_display.unlock();
+    table.unlock();
 
     for(int i = 0; i < 5; i++) {
         int ret = phil[i]->join();
-        mutex_display.lock();
+        table.lock();
         Display::position(20 + i, 0);
         cout << "Philosopher " << i << " ate " << ret << " times " << endl;
-        mutex_display.unlock();
+        table.unlock();
     }
 
+    for(int i = 0; i < 5; i++)
+        delete chopstick[i];
     for(int i = 0; i < 5; i++)
         delete phil[i];
 

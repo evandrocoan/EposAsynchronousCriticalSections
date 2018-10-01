@@ -62,12 +62,12 @@ template<> struct Traits<PCI>: public Traits<Machine_Common>
 
 template<> struct Traits<IC>: public Traits<Machine_Common>
 {
-    static const bool debugged = false;
+    static const bool debugged = hysterically_debugged;
 };
 
 template<> struct Traits<Timer>: public Traits<Machine_Common>
 {
-    static const bool debugged = false;
+    static const bool debugged = hysterically_debugged;
 
     // Meaningful values for the PC's timer frequency range from 100 to
     // 10000 Hz. The choice must respect the scheduler time-slice, i. e.,

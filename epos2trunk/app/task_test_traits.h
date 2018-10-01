@@ -12,13 +12,13 @@ struct Traits
     static const bool enabled = true;
     static const bool debugged = true;
     static const bool hysterically_debugged = false;
-    typedef TLIST<> ASPECTS;
+    typedef TLIST<Shared, Authenticated> ASPECTS;
 };
 
 template<> struct Traits<Build>
 {
     enum {LIBRARY, BUILTIN, KERNEL};
-    static const unsigned int MODE = LIBRARY;
+    static const unsigned int MODE = KERNEL;
 
     enum {IA32, AVR8, ARMv7};
     static const unsigned int ARCHITECTURE = IA32;
@@ -26,10 +26,10 @@ template<> struct Traits<Build>
     enum {PC, ATmega, Cortex};
     static const unsigned int MACHINE = PC;
 
-    enum {Legacy_PC, eMote3, LM3S811, Zynq};
+    enum {Legacy_PC, eMote1, eMote2, eMote3, Arduino, LM3S811, Zynq};
     static const unsigned int MODEL = Legacy_PC;
 
-    static const unsigned int CPUS = 1;
+    static const unsigned int CPUS = 2;
     static const unsigned int NODES = 1; // > 1 => NETWORKING
 };
 
@@ -72,6 +72,14 @@ template<> struct Traits<Init>: public Traits<void>
 {
 };
 
+template<> struct Traits<Framework>: public Traits<void>
+{
+};
+
+template<> struct Traits<Aspect>: public Traits<void>
+{
+    static const bool debugged = hysterically_debugged;
+};
 
 // Mediators
 template<> struct Traits<Serial_Display>: public Traits<void>
@@ -126,7 +134,7 @@ template<> struct Traits<Thread>: public Traits<void>
 {
     static const bool smp = Traits<System>::multicore;
 
-    typedef Scheduling_Criteria::RR Criterion;
+    typedef Scheduling_Criteria::CPU_Affinity Criterion;
     static const unsigned int QUANTUM = 10000; // us
 
     static const bool trace_idle = hysterically_debugged;

@@ -35,7 +35,7 @@ void Thread::constructor_prologue(const Color & color, unsigned int stack_size)
 
 void Thread::constructor_epilogue(const Log_Addr & entry, unsigned int stack_size)
 {
-    db<Thread>(INF) << "Thread(task=" << _task
+    db<Thread>(TRC) << "Thread(task=" << _task
                     << ",entry=" << entry
                     << ",state=" << _state
                     << ",priority=" << _link.rank()
@@ -61,7 +61,7 @@ Thread::~Thread()
 {
     lock();
 
-    db<Thread>(INF) << "~Thread(this=" << this
+    db<Thread>(TRC) << "~Thread(this=" << this
                     << ",state=" << _state
                     << ",priority=" << _link.rank()
                     << ",stack={b=" << reinterpret_cast<void *>(_stack)
@@ -112,7 +112,7 @@ void Thread::priority(const Priority & c)
 {
     lock();
 
-    db<Thread>(INF) << "Thread::priority(this=" << this << ",prio=" << c << ")" << endl;
+    db<Thread>(TRC) << "Thread::priority(this=" << this << ",prio=" << c << ")" << endl;
 
     unsigned int old_cpu = _link.rank().queue();
 
@@ -137,7 +137,7 @@ int Thread::join()
 {
     lock();
 
-    db<Thread>(INF) << "Thread::join(this=" << this << ",state=" << _state << ")" << endl;
+    db<Thread>(TRC) << "Thread::join(this=" << this << ",state=" << _state << ")" << endl;
 
     // Precondition: no Thread::self()->join()
     assert(running() != this);
@@ -159,7 +159,7 @@ void Thread::pass()
 {
     lock();
 
-    db<Thread>(INF) << "Thread::pass(this=" << this << ")" << endl;
+    db<Thread>(TRC) << "Thread::pass(this=" << this << ")" << endl;
 
     Thread * prev = running();
     Thread * next = _scheduler.choose(this);
@@ -178,7 +178,7 @@ void Thread::suspend(bool locked)
     if(!locked)
         lock();
 
-    db<Thread>(INF) << "Thread::suspend(this=" << this << ")" << endl;
+    db<Thread>(TRC) << "Thread::suspend(this=" << this << ")" << endl;
 
     Thread * prev = running();
 
@@ -195,7 +195,7 @@ void Thread::resume()
 {
     lock();
 
-    db<Thread>(INF) << "Thread::resume(this=" << this << ")" << endl;
+    db<Thread>(TRC) << "Thread::resume(this=" << this << ")" << endl;
 
     if(_state == SUSPENDED) {
         _state = READY;
@@ -216,7 +216,7 @@ void Thread::yield()
 {
     lock();
 
-    db<Thread>(INF) << "Thread::yield(running=" << running() << ")" << endl;
+    db<Thread>(TRC) << "Thread::yield(running=" << running() << ")" << endl;
 
     Thread * prev = running();
     Thread * next = _scheduler.choose_another();
@@ -229,7 +229,7 @@ void Thread::exit(int status)
 {
     lock();
 
-    db<Thread>(INF) << "Thread::exit(status=" << status << ") [running=" << running() << "]" << endl;
+    db<Thread>(TRC) << "Thread::exit(status=" << status << ") [running=" << running() << "]" << endl;
 
     Thread * prev = running();
     _scheduler.remove(prev);
@@ -250,7 +250,7 @@ void Thread::exit(int status)
 
 void Thread::sleep(Queue * q)
 {
-    db<Thread>(INF) << "Thread::sleep(running=" << running() << ",q=" << q << ")" << endl;
+    db<Thread>(TRC) << "Thread::sleep(running=" << running() << ",q=" << q << ")" << endl;
 
     // lock() must be called before entering this method
     assert(locked());
@@ -267,7 +267,7 @@ void Thread::sleep(Queue * q)
 
 void Thread::wakeup(Queue * q)
 {
-    db<Thread>(INF) << "Thread::wakeup(running=" << running() << ",q=" << q << ")" << endl;
+    db<Thread>(TRC) << "Thread::wakeup(running=" << running() << ",q=" << q << ")" << endl;
 
     // lock() must be called before entering this method
     assert(locked());
@@ -287,7 +287,7 @@ void Thread::wakeup(Queue * q)
 
 void Thread::wakeup_all(Queue * q)
 {
-    db<Thread>(INF) << "Thread::wakeup_all(running=" << running() << ",q=" << q << ")" << endl;
+    db<Thread>(TRC) << "Thread::wakeup_all(running=" << running() << ",q=" << q << ")" << endl;
 
     // lock() must be called before entering this method
     assert(locked());
@@ -363,7 +363,7 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
             prev->_state = READY;
         next->_state = RUNNING;
 
-        db<Thread>(INF) << "Thread::dispatch(prev=" << prev << ",next=" << next << ")" << endl;
+        db<Thread>(TRC) << "Thread::dispatch(prev=" << prev << ",next=" << next << ")" << endl;
         db<Thread>(INF) << "prev={" << prev << ",ctx=" << *prev->_context << "}" << endl;
         db<Thread>(INF) << "next={" << next << ",ctx=" << *next->_context << "}" << endl;
 
@@ -387,7 +387,7 @@ int Thread::idle()
 {
     while(_thread_count > Machine::n_cpus()) { // someone else besides idles
         if(Traits<Thread>::trace_idle)
-            db<Thread>(INF) << "Thread::idle(CPU=" << Machine::cpu_id() << ",this=" << running() << ")" << endl;
+            db<Thread>(TRC) << "Thread::idle(CPU=" << Machine::cpu_id() << ",this=" << running() << ")" << endl;
 
         CPU::int_enable();
         CPU::halt();
