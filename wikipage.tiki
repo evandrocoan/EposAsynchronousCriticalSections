@@ -57,25 +57,29 @@ __Entregável: D2__
 # Novo componente de sincronização do EPOS, o Guard.
 # Uma convenção de programação para a submissão de requisições de execução de seções críticas.
 
-!!!T3 -  Implementação II
+!!!T3 - Implementação II
 * Estender o componente de sincronização apresentado em T2 para suportar também seções críticas síncronas. Para isso, serão utilizados ''futures'', cuja implementação será baseada em uma descrição apresentada em "Guarded sections: Structuring aid for wait-free synchronisation". G. Drescher and W. Schröder-Preikschat (2015) {DIV(type="span")}[{DIV}[#Refer_ncias|2]].
 * Modificar a convenção de programação para integrar os mecanismos de ''futures'', de modo a intermediar a comunicação entre threads e seções críticas bloqueantes.
 __Entregável: D3__
 # Componente Guarda com suporte a seções críticas síncronas.
 # Novo mecanismo de ''futures''.
 
-!!!T4 - Integração
+!!!T4 - Implementação III
 * Aprimorar o modo como as seções críticas são definidas e permitir que sejam definidas seções críticas a partir de funções com um número arbitrário de parâmetros, assim como ocorre com threads.
 * Substituir os mecanismos de sincronização das aplicações de teste pela nova implementação com uso de guarda.
 __Entregável: D4__
 # As aplicações "synchronizer_test.cc", "scheduler_cpu_affinity_test.cc" e "semaphore_test.cc" utilizando o algoritmo de guarda em vez de mutexes e semáforos.
 
 !!!T5 - Validação
-* Realização de testes, com o objetivo de garantir, na medida do possível, a corretude dos componentes implementados até aqui.
+* Realização de testes em nível acadêmico, com o objetivo de garantir, na medida do possível, a corretude dos componentes implementados até aqui.
 * Desenvolvimento de um relatório final, onde será apresentado o que foi feito durante o projeto e quais foram seus resultados.
 __Entregável: D5__
-# Relatório final.
+# Relatório final, que é uma versão do relatório inicial com as correções de planejamento adicionadas ao longo da execução do projeto.
 # O código dos novos testes realizados, junto com o resultado dos testes
+
+!!!Tarefas Opcionais
+# Uma segunda versão da implementação de Futures, com suporte completo requisições bloqueantes e não bloqueantes junto com um serviço de execução que trata de criar novas threads na medida que o sistema necessita executar códigos com dependência de dados. Ver a seção [#Futures|Futures]. Tal serviço será reconfigurável, limitando o número máximo de threads que podem existir simultaneamente. Por exemplo, um sistema embarcado pode não possuir memória suficiente para que muitas thread sejam criadas, então esse serviço de threads limitaria o número máximo de threads que podem ser criadas ao mesmo tempo, e caso esse limite seja ultrapassado, novas requisições aguardam em uma fila, i.e., bloqueiam até que recursos estejam disponíveis. %%% Tal serviço também, pode ser configurado para iniciar com um número definido de threads que ficam aguardando um bloco de dependência ser requerido, e na medida que surge o diminui a demanda, vai criando e destruindo threads para economizar memória. Por preferência de performance e de não remover recursos do sistema, somente fazer tal balanceamento de carga quando uma idle thread entrar em execução. Assim, não se tira recursos de nenhuma outra thread em execução.
+# A implementação da variação do algoritmo do __Guarda__ para arquiteturas NUMA, o algoritmo do __Ator__. Ver a seção [#Atores|Atores].
 
 !!Fundamentação Teórica
 Antigamente quando não existia poder computacional, não existia o conceito atual de threads por que não havia memória suficiente. Assim toda a programação de múltiplas tarefas deveria ser feita pelo programador manualmente, para poder-se extrair o máximo da máquina. Agora, hoje em dia com processadores com milhares de núcleos, volta a ter que se programar a máquina mais diretamente para poder garantir 100% (cem por cento) de throughput de todos os núcleos dos processadores.
