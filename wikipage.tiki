@@ -4,25 +4,25 @@
 
 {maketoc}
 
-!!Motivação
+!!Motivação  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 A abordagem tradicional para a coordenação do acesso à recursos compartilhados em ambientes multi thread envolve a utilização de algoritmos bloqueantes de sincronização. Esses algoritmos forçam threads a bloquearem nos casos de disputas no acesso à recursos compartilhados.
 
 Uma outra abordagem possível envolve o uso de algoritmos baseados em delegação e sincronização não bloqueante para a coordenação de threads. Com esse tipo de algoritmo, threads delegam a execução de operações envolvendo acessos a recursos compartilhados à outras threads. A sincronização não bloqueante é utilizada para garantir certas propriedades às operações dos algoritmos baseados em delegação, de modo a evitar problemas decorrentes do bloqueio de threads, como variações de latência e inversões de prioridade, altamente relevantes no contexto de sistemas embarcados multi core, que, por interagirem diretamente com objetos físicos, possuem necessidades diferenciadas de latência e throughput.
 
-!!Objetivos
+!!Objetivos  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 O objetivo principal deste trabalho é a implementação de um algoritmo de sincronização com suporte à seções críticas assíncronas.
 
-!!!Objetos específicos
+!!!Objetos específicos  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 *Implementação de um algoritmo de sincronização baseado em delegação para seções críticas assíncronas, utilizando o conceito seções guardadas.
 *Implementação de uma nova versão do algoritmo com suporte para seções críticas síncronas.
 *Realização de testes para avaliar a corretude dos algoritmos implementados.
 
-!!Metodologia
+!!Metodologia  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Será realizada uma pesquisa na literatura com foco nos conceitos básicos que fundamentam algoritmos de sincronização para seções críticas assíncronas, de modo a compreender detalhes de funcionamento desse tipo de algoritmo e então decidir sobre a melhor maneira de implementá-los no EPOS.
 
 Após entendidos claramente os conceitos, o desenvolvimento seguirá com a metodologia programar e testar (Cowboy Coding), que consiste em escrever um pedaço de código e testar sua execução, verificando se o resultado consiste com o esperado. Os programas de teste serão programas simples, que permitam verificar se o sistema está respondendo corretamente às expectativas.
 
-!!Cronograma
+!!Cronograma  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 ||
 Tarefa       | 01/10 | 08/10 | 22/10 | 05/11 | 19/11 | 26/11 | 21-28/11
 T0           | D0    |       |       |       |       |       |
@@ -34,9 +34,9 @@ T5           |       |       |       |       |       | D5    |
 Apresentação |       |       |       |       |       |       | Ap
 ||
 
-!!Tarefas e Entregáveis
+!!Tarefas e Entregáveis  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 
-!!!T0 - Planejamento
+!!!T0 - Planejamento  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 * Escrever o plano de projeto detalhado, contendo uma fundamentação teórica robusta, apresentando os conceitos chave relacionados à algoritmos de sincronização para seções críticas assíncronas, assim como exemplos de algoritmos desse tipo.  Além disso, o plano deve conter o detalhamento do projeto, explicando o que será feito durante o semestre e quais entregáveis serão produzidos.
 * Escrever programas de teste que provem a viabilidade do projeto, demonstrando que as operações CAS e FAS, necessárias para a implementação do algoritmo, são suportadas pelo EPOS.
 __Entregável: D0__
@@ -45,50 +45,50 @@ __Entregável: D0__
 ## Lista de tarefas/entregáveis para cada entrega com seu cronograma.
 ## Fundamentação teórica.
 
-!!!T1 - Revisão do Planejamento
+!!!T1 - Revisão do Planejamento  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 * Realizar as correções no plano de projeto com base no feedback obtido no D0.
 __Entregável: D1__
 # Plano de projeto revisado.
 
-!!!T2 - Implementação I
+!!!T2 - Implementação I  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 * Implementação de um novo componente de sincronização no EPOS. Esse componente será responsável por prover mecanismos para a execução não bloqueante de seções críticas assíncronas. Uma limitação dessa primeira versão do componente está relacionada aos tipos de seções críticas suportadas, que no caso serão apenas seções críticas assíncronas. Isso porque, o suporte a seções críticas síncronas exige a utilização de mecanismos para a sincronização unilateral de threads, que serão o tema principal da tarefa T3.
 * Definição de uma convenção de programação, que poderá ser utilizada por threads do EPOS para solicitar a execução assíncronas de seções críticas, e que juntamente com o componente Guard, compõe um sistema de execução que possibilita a execução de seções críticas assíncronas de maneira não bloqueante.
 __Entregável: D2__
 # Novo componente de sincronização do EPOS, o Guard.
 # Uma convenção de programação para a submissão de requisições de execução de seções críticas.
 
-!!!T3 - Implementação II
+!!!T3 - Implementação II  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 * Estender o componente de sincronização apresentado em T2 para suportar também seções críticas síncronas. Para isso, serão utilizados ''futures'', cuja implementação será baseada em uma descrição apresentada em "Guarded sections: Structuring aid for wait-free synchronisation". G. Drescher and W. Schröder-Preikschat (2015) {DIV(type="span")}[{DIV}[#Refer_ncias|2]].
 * Modificar a convenção de programação para integrar os mecanismos de ''futures'', de modo a intermediar a comunicação entre threads e seções críticas bloqueantes.
 __Entregável: D3__
 # Componente Guarda com suporte a seções críticas síncronas.
 # Novo mecanismo de ''futures''.
 
-!!!T4 - Implementação III
+!!!T4 - Implementação III  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 * Aprimorar o modo como as seções críticas são definidas e permitir que sejam definidas seções críticas a partir de funções com um número arbitrário de parâmetros, assim como ocorre com threads.
 * Substituir os mecanismos de sincronização das aplicações de teste pela nova implementação com uso de guarda.
 __Entregável: D4__
 # As aplicações "synchronizer_test.cc", "scheduler_cpu_affinity_test.cc" e "semaphore_test.cc" utilizando o algoritmo de guarda em vez de mutexes e semáforos.
 
-!!!T5 - Validação
+!!!T5 - Validação  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 * Realização de testes em nível acadêmico, com o objetivo de garantir, na medida do possível, a corretude dos componentes implementados até aqui.
 * Desenvolvimento de um relatório final, onde será apresentado o que foi feito durante o projeto e quais foram seus resultados.
 __Entregável: D5__
 # Relatório final, que é uma versão do relatório inicial com as correções de planejamento adicionadas ao longo da execução do projeto.
 # O código dos novos testes realizados, junto com o resultado dos testes
 
-!!!Tarefas Opcionais
+!!!Tarefas Opcionais  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 # Uma segunda versão da implementação de Futures, com suporte completo requisições bloqueantes e não bloqueantes junto com um serviço de execução que trata de criar novas threads na medida que o sistema necessita executar códigos com dependência de dados. Ver a seção [#Futures|Futures]. Tal serviço será reconfigurável, limitando o número máximo de threads que podem existir simultaneamente. Por exemplo, um sistema embarcado pode não possuir memória suficiente para que muitas thread sejam criadas, então esse serviço de threads limitaria o número máximo de threads que podem ser criadas ao mesmo tempo, e caso esse limite seja ultrapassado, novas requisições aguardam em uma fila, i.e., bloqueiam até que recursos estejam disponíveis. %%% Tal serviço também, pode ser configurado para iniciar com um número definido de threads que ficam aguardando um bloco de dependência ser requerido, e na medida que surge o diminui a demanda, vai criando e destruindo threads para economizar memória. Por preferência de performance e de não remover recursos do sistema, somente fazer tal balanceamento de carga quando uma idle thread entrar em execução. Assim, não se tira recursos de nenhuma outra thread em execução.
 # A implementação da variação do algoritmo do __Guarda__ para arquiteturas NUMA, o algoritmo do __Ator__. Ver a seção [#Atores|Atores].
 
-!!Fundamentação Teórica
+!!Fundamentação Teórica  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Antigamente quando não existia poder computacional, não existia o conceito atual de threads por que não havia memória suficiente. Assim toda a programação de múltiplas tarefas deveria ser feita pelo programador manualmente, para poder-se extrair o máximo da máquina. Agora, hoje em dia com processadores com milhares de núcleos, volta a ter que se programar a máquina mais diretamente para poder garantir 100% (cem por cento) de throughput de todos os núcleos dos processadores.
 
 O trabalho de referência {DIV(type="span")}[{DIV}[#Refer_ncias|1]] propõe dois algoritmos de baixo nível, um para arquiteturas UMA {[https://en.wikipedia.org/wiki/Uniform_memory_access|1]}, outro para arquiteturas NUMA {[https://en.wikipedia.org/wiki/Non-uniform_memory_access|2]}, que permitem que o programador programe a iteração com a máquina, de forma que ele diga o que a máquina deve fazer, enquanto aguarda que suas seções críticas sejam executadas assincronamente. Regiões críticas assíncronas significam que threads podem requisitar a execução de arbitrárias regiões críticas, sem ter que bloquear a sua execução. Somente a região crítica terá sua execução adiada, devido a necessidade da exclusão mútua. Enquanto a região crítica aguarda sua execução em uma fila, a thread principal pode continuar sua execução. Em contraste, as tradicionais regiões críticas síncronas, exigem que a thread bloqueie a sua execução até que a região crítica seja executada.
 
 Entretanto, note que o programador da aplicação deve tratar de isolar explicitamente em seu código quais são as suas regiões críticas com normalmente faz, e chamar/enviar essas regiões críticas para a fila da exclusão mútua dos algoritmo utilizado. A diferença é que elas não serão mais bloqueantes, assim o programador deve prever o irá acontecer quando ele chegar em um ponto de execução de seu código, que é dependente dos resultados da execução da região crítica. Assim, no pior dos casos, a execução da thread terá que bloquear a execução, enquanto aguarda a chegada das novas informações provenientes da região crítica.
 
-!!!Sincronização não bloqueante
+!!!Sincronização não bloqueante  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Em ambientes multi thread, técnicas de sincronização precisam ser empregadas para coordenar o acesso à recursos compartilhados e evitar a ocorrência de problemas, como por exemplo, condições de corrida, que podem levar o sistema a se comportar de maneira indefinida ou errônea. No contexto da sincronização de threads, as partes do programa onde recursos compartilhados são acessados por diferentes threads são chamadas de seções críticas.
 
 Técnicas tradicionais de sincronização utilizam mecanismos bloqueantes para coordenar a execução de seções críticas, impedindo que diferentes seções críticas executem simultaneamente e garantindo a propriedade de exclusão mútua. Nesses casos, quando uma thread tenta executar uma seção crítica, e os recursos compartilhados relacionados à essa seção crítica estão ocupados, a thread é bloqueada até que esses recursos sejam liberados. Esse comportamento simplifica a implementação de sistema concorrentes, mas pode levar a problemas de inversão de prioridade, tempos de espera indefinidos, convoying e até deadlocks.
@@ -97,7 +97,7 @@ Uma estratégia diferente para lidar com a sincronização de threads envolve a 
 
 Um nicho onde a sincronização não bloqueante se apresenta como uma alternativa viável é no mundo das aplicações para sistemas embarcados multicore. Como essas aplicações geralmente lidam diretamente com entidades físicas, elas se beneficiam de algumas das vantagens desse tipo de algoritmo, como suas garantias de progresso e a preditibilidade de latência de suas operações.
 
-!!!Garantias de Progresso
+!!!Garantias de Progresso  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Algoritmos de sincronização não bloqueantes podem ser classificados de acordo com as garantias de progresso de suas operações. Quando todas as operações de um determinado algoritmo oferecem garantias de progresso de um determinado nível, ou de níveis superiores, pode-se dizer esse é o nível de garantias de progresso oferecido pelo algoritmo como um todo. As garantias de progresso de operações de sincronização não bloqueantes são classificadas em três níveis:
 
 *Obstruction-free: É a garantia de progresso de nível mais baixo. Uma operação é considerada obstruction-free se uma thread, executando de maneira isolada, sem sofrer interferências, i.e. competir com outras threads por recursos {[https://www.cs.rochester.edu/~scott/papers/2006_PPoPP_synch_queues.pdf|1 section 2.1]}, consegue completar sua execução em um número finito de passos.
@@ -106,7 +106,7 @@ Algoritmos de sincronização não bloqueantes podem ser classificados de acordo
 
 * Wait-free: Uma operação é dita wait-free, se, quando invocada por múltiplas threads, garante que todas irão terminar em um número finito de passos. Essa propriedade é especialmente importante para sistemas com grande escala de concorrência, pois independentemente do número de threads executando operações wait-free concorrentemente, nenhuma jamais precisará esperar ou bloquear {DIV(type="span")}[{DIV}[#Refer_ncias|13]], e como o progresso é garantido para todas as threads, nenhuma sofrerá com problemas de ''starvation''.
 
-!!!Primitivas de Sincronização
+!!!Primitivas de Sincronização  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 A criação de algoritmos de sincronização não bloqueantes pode envolver a utilização de primitivas de sincronização atômicas do tipo ''read-write-modify''. Essas primitivas geralmente leem uma posição de memória e, simultaneamente, escrevem um novo valor em seu lugar. Exemplos de operações atômicas desse tipo são: compare-and-swap (CAS), fetch-and-operation (FAθ), load-link/store-conditional (LL/SC) e test-and-set (TAS). A seguir serão detalhadas duas dessas operações, CAS e FAS (fetch-and-store), uma especialização da operação FAθ. Ambas são utilizadas na implementação de um algoritmo de sincronização não bloqueante que será apresentado mais adiante.
 
 A operação FAS realiza, de maneira atômica, uma leitura e uma escrita em um endereço de memória específico, e pode ser entendida como uma versão atômica do pseudocódigo, apresentado a seguir:
@@ -130,7 +130,7 @@ int cas(address location, int compare, int replacement) {
 {CODE}
 Um detalhe importante sobre essas operações é o fato de processadores geralmente não suportarem todos os tipos de primitivas ''read-write-modify'' em hardware. A arquitetura RISC-V, por exemplo, implementa apenas as operações FAθ e LL/SC, enquanto a arquitetura x86 não implementa a operação LL/SC, mas implementa a operação CAS.
 
-!!!Sincronização Baseada em Delegação
+!!!Sincronização Baseada em Delegação  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Com algoritmos de sincronização baseados em delegação, threads podem delegar a execução de suas seções críticas à outras threads. Com isso, as seções críticas são desacopladas das threads que requisitam sua execução, que agora podem decidir se continuam trabalhando, sem bloquear, após delegar a execução de uma seção crítica, ou se preferem bloquear e continuar apenas após a execução da seção crítica terminar. Além disso, deve haver algum protocolo ou sistema de execução cujos mecanismos garantam que as seções críticas eventualmente serão executadas e que a propriedade da exclusão mútua será mantida.
 
 Técnicas de sincronização baseadas em delegação podem definir uma única thread, geralmente presa a um core específico, como responsável pela execução das seções críticas do programa. Um dos benefícios dessa abordagem é o melhor aproveitamento da localidade de dados das caches do sistema, já que agora, todos os acessos aos dados das seções críticas são feitos pela mesma thread. Uma outra possível abordagem, permite que a responsabilidade de execução de seções críticas seja transferida entre threads de acordo com as necessidades do sistema. Nesse caso, diminui-se o aproveitamento da localidade das caches, mas remove-se a necessidade de se manter uma thread, ou até mesmo um core do processador, restrita a execução de seções críticas.
@@ -139,7 +139,7 @@ Em situações ideais, onde threads não precisam do resultado de suas seções 
 
 No entanto, isso nem sempre é possível e, em alguns casos, a sincronização baseada em delegação traz novos desafios. Caso existam dependências de dados entre uma seção crítica e a thread que requisitou sua execução, essa seção crítica é caracterizada como uma seção crítica síncrona. Com esse tipo de seção crítica, surge a necessidade de bloqueio da thread requerente, o que pode ocorrer no momento em que é feita a requisição de execução, ou apenas quando os dados que podem ainda não ter sido calculados, são acessados. No primeiro caso, podem ser utilizados mecanismos de bloqueio simples, como semáforos ou mutexes, enquanto no segundo, exige-se a utilização de mecanismos mais complexos, como ''futures'' e ''observables''.
 
-!!Guardas
+!!Guardas  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Todos os conceitos apresentados até aqui convergem em um algoritmo de sincronização, baseado em delegação, para seções críticas assíncronas, que dá origem a uma nova entidade de sincronização: a Guarda. Guardas possuem duas operações básicas, uma para a entrada e uma para a saída de seções críticas, vouch e clear, respectivamente, além de uma convenção de programação, apresentada na Listagem 1, que deve ser utilizada pelas threads do programa para requisitar a execução assíncrona de seções críticas.
 
 ::__Listagem 1:__ Protocolo para a requisição de execução de seções críticas.::
@@ -199,14 +199,14 @@ Até agora, o algoritmo tratou apenas de seções críticas assíncronas, onde o
 
 Além dos problemas já citados, várias considerações podem ser feitas em relação à threads de prioridades diferentes compartilhando uma mesma guarda. Nesses casos, inversões de prioridade podem acontecer nos casos onde threads de alta prioridade se tornam ''sequencer'' e são forçadas a executar seções críticas de threads de baixa prioridade, ou em casos onde seções críticas relacionadas à threads de alta prioridade são executadas por threads de baixa prioridade. Para solucionar esses problemas, podem ser desenvolvidas variações do algoritmo, onde o papel de ''sequencer'' pode ser renegociado para que as definições de prioridade do sistema sejam respeitadas.
 
-!!!Atores
+!!!Atores  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Existe uma variação do algoritmo da guarda, chamado de algoritmo dos atores, onde a execução das seções críticas é realizada por uma thread servidora dedicada. Em aspectos funcionais, os dois algoritmos são muito parecidos. Ambos possuem duas operações principais, uma para a inserção e uma para a remoção de seções críticas de filas, e uma convenção de programação que deve ser utilizada pelas threads do programa para delegar a execução de suas seções críticas.
 
 Algoritmos de sincronização baseados em delegação onde uma única thread dedicada é responsável pela execução de seções críticas aproveitam ao máximo a localidade no acesso à dados compartilhados, mas pagam um preço por restringirem uma thread, ou até mesmo um core do processador, apenas à execução de seções críticas. Devido a essas característica, o algoritmo dos atores tende a se comportar melhor em sistemas com muitos núcleos de processamento (many-core).
 
 Outro detalhe a ser considerado com esse tipo de abordagem é o overhead decorrente da necessidade da thread dedicada ser posta para dormir quando não existem seções críticas à serem executadas.
 
-!!!Comparação entre o uso do guarda e semáforo
+!!!Comparação entre o uso do guarda e semáforo  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Uma versão equivalente ao uso de guardas, pode ser implementada utilizando várias threads e um semáforo inicializado em 1 para controle da entrada da seção crítica, i.e., exclusão mútua. Na implementação apresentada para o algoritmo de guardas, utiliza-se um ponteiro de função para passar para o ''sequencer'', qual será a seção crítica a ser executada. Enquanto, na versão com threads, teria-se que criar uma nova thread, além da thread atual, passando um ponteiro de função para a seção crítica. E então essa nova thread irá testar o valor do semáforo antes de executar a seção crítica.
 
 A seguir, vê-se resumidamente o fluxo de execução do algoritmo do guarda, já explicado anteriormente. Nele, a ''Thread A'' primeiro empilha um ponteiro de função __job__ na fila de tarefas da variável global __my_guard__ e então verifica se a Thread A, deve ou não se tornar o ''sequencer''. Como a ''Thread A'' é a primeira thread a empilhar uma região crítica, __guard_vouch()__ retorna um valor não nulo, indicando a próxima tarefa a ser executada. Assim, a ''Thread A'' torna-se o ''sequencer''. E logo em seguida, chama o método __do_things()__ que executa a função que contém a região crítica representado por __next_job__. No final da execução, a ''Thread A'' chamará __guard_clear()__, que neste ambiente de exemplo retornará ''NULL'', pois não há outras threads/seções críticas.
@@ -225,7 +225,7 @@ Este foi um exemplo de problema tanto do algoritmo do guarda quando com semáfor
 
 Outro problema muito similar do algoritmo do guarda, é que quando a seção crítica é explicitamente  bloqueada por algum motivo, seja uma operação de IO ou seja por que ela possuía um semáforo que bloqueou. Bloqueios dentro da seção crítica no algoritmo do guarda, causarão diretamente a degradação/atraso da execução de todas as seções críticas do sistema, pois é somente a thread do ''sequencer'' que é habilitado a executar as seções críticas. Note também que na versão assíncrona implementada com semáforo, terá-se a possibilidade de travar todo o sistema caso aconteça o mesmo problema, pois mesmo que cada thread execute isoladamente, atrasos na execução de uma seção crítica, atrasam a liberação do semáforo, o que causa o atraso no sistema como um todo.
 
-!!!Futures
+!!!Futures  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Seguindo as referências bibliográficas, encontrou-se que ''futures'' foram descritas pela primeira vez em 1977 no artigo "The incremental garbage collection of processes”. ''Futures'' facilitam a resolução do problema de bloqueio por dependência de dados. No diagrama de sequência a seguir, como implementar o bloqueio no ''bloco 4'' e sinalizar para o ''bloco 4'' que o ''bloco 2'' já terminou, enquanto o ''bloco 3'' executa?
 ::{img fileId="951"}::
 ::__Fonte:__ Própria::
@@ -252,7 +252,7 @@ Claramente esta implementação mostrada é simples, e trata-se de uma leve modi
 
 Um serviço/implementação mais avançado pode automaticamente informar a ''Thread A'' que, existe um bloco de código dependente da seção crítica ainda não executado, e assim, antes que a ''Thread A'' termine sua execução, ela verifica se tal condição é verdadeira, e caso, sim, ela aguarda por este bloco está disponível para execução antes de chamar método ''exit()'' da ''Thread A''. Uma desvantagem é que a ''Thread A'' pode ainda não ter terminado de executar o ''bloco 3'' quando o bloco dependente da seção crítica estiver terminado. Assim, teria-se o atraso da execução do ''bloco 4''. Outra  desvantagem desta alternativa é que o bloco de código dependente pode demorar muito tempo antes que ele possa ser executado, e assim, o sistema desperdiçaria a memória ocupada pela ''Thread A'' que ficou esperando. Assim, a alternativa original de manter um serviço especializado de threads em executar os blocos de código dependentes trás uma melhor vantagem de economia de memória, entretanto ele conta com o overhead de sua manutenção, que conta com criações de novas thread quando a demanda for alta e destruição de threads quando a demanda por blocos dependentes de código for baixa. Mas talvez em uma implementação mais esperta pode-se utilizar a idle thread {DIV(type="span")}[{DIV}[#Refer_ncias|21]] do sistema para realizar a manutenção de tal serviço, assim reaproveitando recursos do sistema inutilizados.
 %%%
-!!!!Futures versus Promises
+!!!!Futures versus Promises  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 A linguagem JavaScript recentemente em 2015, incorporou nativamente a classe ''Promise'' {[https://www.ecma-international.org/ecma-262/6.0/#sec-promise-objects|4]}. Conceitualmente elas são muito similares a ''futures'' {DIV(type="span")}[{DIV}[#Refer_ncias|14]], mas a implementação de JavaScript é bastante peculiar ao modelo de processamento de JavaScript, que é baseado na existência de uma única thread no sistema {DIV(type="span")}[{DIV}[#Refer_ncias|16], [#Refer_ncias|18]]. A seguir vê-se uma breve ilustração da única thread que existe no mundo JavaScript. Essa thread chama-se ''Event loop'', e tudo o que é feito, passa por ela. No caso da implementação das ''promises'', quando uma ''promise'' é resolvida e obtém o seu valor, elas furam {DIV(type="span")}[{DIV}[#Refer_ncias|16]] a fila de ''callbacks'', para assim serem executadas o mais brevemente possível, preferencialmente mais cedo, ao contrário do modelo usual utilizado para timers, de executar algum tempo depois que o timer expirou, preferencialmente mais tarde pois são adicionados no final da fila.
 ::{img fileId="945"}::
 ::__Fonte:__ Referência {DIV(type="span")}[{DIV}[#Refer_ncias|16]]::
@@ -303,12 +303,12 @@ int main()
 {CODE}
 ::__Fonte:__ Referência {DIV(type="span")}[{DIV}[#Refer_ncias|17]]::
 
-!!!!Futures versus Observables
+!!!!Futures versus Observables  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Não há muito o que dizer sobre a diferença entre ''futures'' {DIV(type="span")}[{DIV}[#Refer_ncias|14]] e ''observables'' {DIV(type="span")}[{DIV}[#Refer_ncias|20]]. Cada um deles servem a propósitos bem específicos, entretanto o domínio de soluções de problemas entre ''futures'' e ''observables'' possuí uma intersecção válida quando não utiliza-se ''futures'' que realizam o bloqueio da thread, mas sim ''futures'' que registram uma lista de blocos de execução dependentes para serem chamados assim que o resultado da future estiver completo. Neste contexto, a versão equivalente para ''observables'' seria registrar a lista de blocos dependentes do resultado como observadores.
 
 A desvantagem de utilizar ''observables'' no lugar de uma ''futures'' seria o encadeamento manual de ''observables'' necessário para cada um dos blocos de dados da cadeia. A desvantagem de utilizar ''futures'' no lugar de ''observables'' seria a impossibilidade de registrar vários blocos como dependentes do mesmo resultado, pois ''observables'' permitem que vários ouvintes sejam registrados e que estes ouvinte seja chamados várias vezes, i.e., a cada vez que um novo resultado é produzido. Enquanto ''futures'' chamam seu ouvinte uma única vez para um único resultado gerado.
 
-!!!Diagrama das Estruturas de Dados Originais
+!!!Diagrama das Estruturas de Dados Originais  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Para o funcionamento do algoritmo {DIV(type="span")}[{DIV}[#Refer_ncias|1]], utiliza-se algumas estruturas de dados em "C”. A seguir vê-se as relações entre elas:
 {img fileId="908"}
 
@@ -332,7 +332,7 @@ typedef struct
 } actor_t;
 {CODE}
 
-!!!Diagrama de Sequência - Versão original em C
+!!!Diagrama de Sequência - Versão original em C  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Exemplo do fluxo de execução de uma única Thread que se torna o ''sequencer'', e executa sua seção crítica:
 {img fileId="949"}
 
@@ -369,7 +369,7 @@ chain_t* guard_clear(guard_t* self)
 }
 {CODE}
 
-!!Análise de viabilidade
+!!Análise de viabilidade  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 No EPOS x86 não hà uma implementação para a operação FAS, uma das duas primitivas atômicas utilizadas no algoritmo das guards. Uma possível implementação para essa operação é apresentada a seguir:
 
 {CODE(colors="c")}
@@ -432,11 +432,11 @@ The last thread has exited!
 Rebooting the machine ...
 {CODE}
 
-!!Implementação
+!!Implementação  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Código disponível em svn:
 # https://epos.lisha.ufsc.br/svn/makers/predictable_synchronisation_algorithms_for_asynchronous_critical_sections
 
-!!Referências
+!!Referências  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 #Stefan Reif and Wolfgang Schröder-Preikschat, "Predictable Synchronisation Algorithms for Asynchronous Critical Sections,” Friedrich-Alexander-Universität Erlangen-Nürnberg, Dept. of Computer Science, Technical Reports, CS-2018-03, February 2018.
 #G. Drescher and W. Schröder-Preikschat, "Guarded sections: Structuring aid for wait-free synchronisation,” in Proceedings of the 18th International Symposium On Real-Time Computing (ISORC 2015). IEEE Computer Society Press, 2015, pp. 280–283.
 #S. Reif, T. Hönig, and W. Schröder-Preikschat. 2017. In the Heat of Conflict: On the Synchronisation of Critical Sections. In IEEE ISORC ’17. 42–51.
