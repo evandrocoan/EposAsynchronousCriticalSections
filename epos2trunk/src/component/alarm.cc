@@ -18,7 +18,7 @@ Alarm::Alarm(const Microsecond & time, Handler * handler, int times)
 {
     lock();
 
-    db<Alarm>(TRC) << "Alarm(t=" << time << ",tk=" << _ticks << ",h=" << reinterpret_cast<void *>(handler) << ",x=" << times << ") => " << this << endl;
+//    db<Alarm>(TRC) << "Alarm(t=" << time << ",tk=" << _ticks << ",h=" << reinterpret_cast<void *>(handler) << ",x=" << times << ") => " << this << endl;
 
     if(_ticks) {
         _request.insert(&_link);
@@ -34,7 +34,7 @@ Alarm::~Alarm()
 {
     lock();
 
-    db<Alarm>(TRC) << "~Alarm(this=" << this << ")" << endl;
+//    db<Alarm>(TRC) << "~Alarm(this=" << this << ")" << endl;
 
     _request.remove(this);
 
@@ -59,7 +59,7 @@ void Alarm::period(const Microsecond & p)
 // Class methods
 void Alarm::delay(const Microsecond & time)
 {
-    db<Alarm>(TRC) << "Alarm::delay(time=" << time << ")" << endl;
+  //  db<Alarm>(TRC) << "Alarm::delay(time=" << time << ")" << endl;
 
     Semaphore semaphore(0);
     Semaphore_Handler handler(&semaphore);
@@ -103,7 +103,7 @@ void Alarm::handler(const IC::Interrupt_Id & i)
     unlock();
 
     if(alarm) {
-        db<Alarm>(TRC) << "Alarm::handler(this=" << alarm << ",e=" << _elapsed << ",h=" << reinterpret_cast<void*>(alarm->handler) << ")" << endl;
+        //db<Alarm>(TRC) << "Alarm::handler(this=" << alarm << ",e=" << _elapsed << ",h=" << reinterpret_cast<void*>(alarm->handler) << ")" << endl;
         (*alarm->_handler)();
     }
 }

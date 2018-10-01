@@ -11,7 +11,7 @@ struct Traits
 {
     static const bool enabled = true;
     static const bool debugged = true;
-    static const bool hysterically_debugged = false;
+    static const bool hysterically_debugged = true;
     typedef TLIST<> ASPECTS;
 };
 
@@ -29,7 +29,7 @@ template<> struct Traits<Build>
     enum {Legacy_PC, eMote3, LM3S811, Zynq};
     static const unsigned int MODEL = Legacy_PC;
 
-    static const unsigned int CPUS = 1;
+    static const unsigned int CPUS = 2;
     static const unsigned int NODES = 1; // > 1 => NETWORKING
 };
 
@@ -39,8 +39,8 @@ template<> struct Traits<Debug>
 {
     static const bool error   = true;
     static const bool warning = true;
-    static const bool info    = false;
-    static const bool trace   = false;
+    static const bool info    = true;
+    static const bool trace   = true;
 };
 
 template<> struct Traits<Lists>: public Traits<void>

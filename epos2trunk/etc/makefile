@@ -14,11 +14,7 @@ all: $(APP)/$(APPLICATION)_traits.h eposcc.conf eposmkbi.conf $(INCLUDE)/system/
 		sed -e 's/^#define __mmod_.*__$$/#define __mmod_$(MMOD)__/' -i $(INCLUDE)/system/config.h
 
 $(APP)/$(APPLICATION)_traits.h:
-		# https://stackoverflow.com/questions/5553352/how-do-i-check-if-file-exists-in-makefile
-		if ! [ -f "$@" ] ; \
-		then \
-			$(INSTALL) $(INCLUDE)/system/traits.h "$@" ; \
-		fi;
+		$(INSTALL) $(INCLUDE)/system/traits.h $@
 
 eposcc.conf: FORCE
 		@echo "MODE=$(MODE)" > $@

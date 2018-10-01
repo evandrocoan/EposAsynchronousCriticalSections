@@ -105,5 +105,3 @@ dist: veryclean
 		$(CLEAN) LICENSE.as
 
 FORCE:
-	$(MKDIR) $(BIN)
-	$(MKDIR) $(LIB)

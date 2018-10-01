@@ -72,8 +72,6 @@ namespace List_Elements
     class Singly_Linked
     {
     public:
-        friend class Guard;
-
         typedef T Object_Type;
         typedef Singly_Linked Element;
 
@@ -87,7 +85,6 @@ namespace List_Elements
 
     private:
         const T * _object;
-    public:
         Element * _next;
     };
 

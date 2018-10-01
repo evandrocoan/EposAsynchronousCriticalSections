@@ -8,9 +8,9 @@
 
 using namespace EPOS;
 
-const int iterations = 10;
+const int iterations = 4;
 
-Mutex mutex_display;
+Guard display_guard;
 
 Thread * phil[5];
 Mutex chopstick[5];
