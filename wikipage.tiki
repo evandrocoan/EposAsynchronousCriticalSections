@@ -78,6 +78,12 @@ __Entregável: D5__
 # O código dos novos testes realizados, junto com o resultado dos testes
 
 !!Fundamentação Teórica
+Antigamente quando não existia poder computacional, não existia o conceito atual de threads por que não havia memória suficiente. Assim toda a programação de múltiplas tarefas deveria ser feita pelo programador manualmente, para poder-se extrair o máximo da máquina. Agora, hoje em dia com processadores com milhares de núcleos, volta a ter que se programar a máquina mais diretamente para poder garantir 100% (cem por cento) de throughput de todos os núcleos dos processadores.
+
+O trabalho de referência {DIV(type="span")}[{DIV}[#Refer_ncias|1]] propõe dois algoritmos de baixo nível, um para arquiteturas UMA {[https://en.wikipedia.org/wiki/Uniform_memory_access|1]}, outro para arquiteturas NUMA {[https://en.wikipedia.org/wiki/Non-uniform_memory_access|2]}, que permitem que o programador programe a iteração com a máquina, de forma que ele diga o que a máquina deve fazer, enquanto aguarda que suas seções críticas sejam executadas assincronamente. Regiões críticas assíncronas significam que threads podem requisitar a execução de arbitrárias regiões críticas, sem ter que bloquear a sua execução. Somente a região crítica terá sua execução adiada, devido a necessidade da exclusão mútua. Enquanto a região crítica aguarda sua execução em uma fila, a thread principal pode continuar sua execução. Em contraste, as tradicionais regiões críticas síncronas, exigem que a thread bloqueie a sua execução até que a região crítica seja executada.
+
+Entretanto, note que o programador da aplicação deve tratar de isolar explicitamente em seu código quais são as suas regiões críticas com normalmente faz, e chamar/enviar essas regiões críticas para a fila da exclusão mútua dos algoritmo utilizado. A diferença é que elas não serão mais bloqueantes, assim o programador deve prever o irá acontecer quando ele chegar em um ponto de execução de seu código, que é dependente dos resultados da execução da região crítica. Assim, no pior dos casos, a execução da thread terá que bloquear a execução, enquanto aguarda a chegada das novas informações provenientes da região crítica.
+
 !!!Sincronização não bloqueante
 Em ambientes multi thread, técnicas de sincronização precisam ser empregadas para coordenar o acesso à recursos compartilhados e evitar a ocorrência de problemas, como por exemplo, condições de corrida, que podem levar o sistema a se comportar de maneira indefinida ou errônea. No contexto da sincronização de threads, as partes do programa onde recursos compartilhados são acessados por diferentes threads são chamadas de seções críticas.
 
@@ -449,4 +455,3 @@ Código disponível em svn:
 #Promises vs Observables https://medium.com/@mpodlasin/promises-vs-observables-4c123c51fe13
 #When does a thread become idle? https://stackoverflow.com/questions/19784293/when-does-a-thread-become-idle
 #An Introduction to Lock-Free Programming http://preshing.com/20120612/an-introduction-to-lock-free-programming/
-
