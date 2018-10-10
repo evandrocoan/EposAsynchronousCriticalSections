@@ -4,52 +4,47 @@
 #include <thread.h>
 #include <semaphore.h>
 #include <alarm.h>
+#include <cpu.h>
 
 using namespace EPOS;
 
-const int iterations = 100;
+int iterations = 10000000;
+int const_iter = iterations;
+int count = 0;
 
 OStream cout;
 
-const int BUF_SIZE = 16;
-char buffer[BUF_SIZE];
-Semaphore empty(BUF_SIZE);
-Semaphore full(0);
-
-int consumer()
-{
-    int out = 0;
-    for(int i = 0; i < iterations; i++) {
-        full.p();
-        cout << "C<-" << buffer[out] << "\t";
-        out = (out + 1) % BUF_SIZE;
-        Alarm::delay(5000);
-        empty.v();
+int add(){
+    while(iterations > 0){
+        count++;
+        iterations--;
     }
-
     return 0;
 }
 
 int main()
 {
-    Thread * cons = new Thread(&consumer);
+    cout << "Program Started" << endl;
 
-    // producer
-    int in = 0;
-    for(int i = 0; i < iterations; i++) {
-        empty.p();
-        Alarm::delay(5000);
-        buffer[in] = 'a' + in;
-        cout << "P->" << buffer[in] << "\t";
-        in = (in + 1) % BUF_SIZE;
-        full.v();
+    Thread * adders[5];
+
+    for(int i = 0; i < 5; i++)
+        adders[i] = new Thread(&add);
+
+    cout << "Main Thread is now waiting" << endl;
+    for(int i = 0; i < 5; i++) {
+        int ret = adders[i]->join();
+        cout << "Thread " << i << " finished and returned " << ret  << endl;
     }
 
-    cons->join();
+    cout << "All Threads Have Finished" << endl;
+    cout << "The counter is        : " << count << endl;
+    cout << "The counter should be : " << const_iter << endl;
+
+    for(int i = 0; i < 5; i++)
+        delete adders[i];
 
     cout << "The end!" << endl;
-
-    delete cons;
 
     return 0;
 }
