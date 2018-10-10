@@ -15,7 +15,10 @@ int count = 0;
 OStream cout;
 
 int add(){
-    count++;
+    while(iterations > 0){
+        count++;
+        iterations--;
+    }
     return 0;
 }
 
@@ -30,13 +33,14 @@ int main()
 
     cout << "Main Thread is now waiting" << endl;
     for(int i = 0; i < 5; i++) {
+        cout << "Joining thread " << i << endl;
         int ret = adders[i]->join();
         cout << "Thread " << i << " finished and returned " << ret  << endl;
     }
 
     cout << "All Threads Have Finished" << endl;
     cout << "The counter is        : " << count << endl;
-    cout << "The counter should be : " << 5 << endl;
+    cout << "The counter should be : " << const_iter << endl;
 
     for(int i = 0; i < 5; i++)
         delete adders[i];
