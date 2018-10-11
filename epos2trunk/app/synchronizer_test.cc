@@ -1,51 +1,56 @@
 // EPOS Synchronizer Component Test Program
 
 #include <utility/ostream.h>
-#include <thread.h>
 #include <semaphore.h>
-#include <alarm.h>
-#include <cpu.h>
+#include <thread.h>
 
 using namespace EPOS;
 
-int iterations = 10000000;
-int const_iter = iterations;
-int count = 0;
+static volatile int counter = 0;
+
+Semaphore mutex;
 
 OStream cout;
 
-int add(){
-    while(iterations > 0){
-        count++;
-        iterations--;
+// mythread()
+// Simply adds 1 to counter repeatedly, in a loop
+// No, this is not how you would add 10,000,000 to
+// a counter, but it shows the problem nicely.
+//
+int mythread(char arg) {
+    mutex.p();
+    cout << arg << ": begin" << endl;
+    mutex.v();
+    int i;
+    for (i = 0; i < 1e7; i++) {
+        counter = counter + 1;
     }
+
+    mutex.p();
+    cout << arg << ": done" << endl;
+    mutex.v();
     return 0;
 }
 
+// main()
+// Just launches two threads (pthread_create)
+// and then waits for them (pthread_join)
 int main()
 {
-    cout << "Program Started" << endl;
+    Thread p1(&mythread, 'A');
+    Thread p2(&mythread, 'B');
 
-    Thread * adders[5];
+    mutex.p();
+    cout << "main: begin (counter = " << counter << ")" << endl;
+    mutex.v();
 
-    for(int i = 0; i < 5; i++)
-        adders[i] = new Thread(&add);
+    // join waits for the threads to finish
+    p1.join();
+    p2.join();
 
-    cout << "Main Thread is now waiting" << endl;
-    for(int i = 0; i < 5; i++) {
-        cout << "Joining thread " << i << endl;
-        int ret = adders[i]->join();
-        cout << "Thread " << i << " finished and returned " << ret  << endl;
-    }
-
-    cout << "All Threads Have Finished" << endl;
-    cout << "The counter is        : " << count << endl;
-    cout << "The counter should be : " << const_iter << endl;
-
-    for(int i = 0; i < 5; i++)
-        delete adders[i];
-
-    cout << "The end!" << endl;
+    mutex.p();
+    cout << "main: done with both (counter = " << counter << ")"<< endl;
+    mutex.v();
 
     return 0;
 }
