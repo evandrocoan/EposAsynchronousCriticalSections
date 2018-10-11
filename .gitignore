@@ -260,3 +260,4 @@ epos2trunk/tools/epossectst/*.o
 epos2trunk/tools/epossectst/*.sublime-workspace
 epos2trunk/tools/epossectst/.epos_flag_file.txt
 epos2trunk/tools/epossectst/.svn
+*.exe
