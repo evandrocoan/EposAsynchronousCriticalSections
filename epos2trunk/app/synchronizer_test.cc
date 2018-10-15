@@ -3,12 +3,14 @@
 #include <utility/ostream.h>
 #include <semaphore.h>
 #include <thread.h>
+#include <machine.h>
 
 using namespace EPOS;
 
 static volatile int counter = 0;
 
-Semaphore mutex;
+Semaphore display_lock;
+Semaphore counter_lock; 
 
 OStream cout;
 
@@ -18,17 +20,16 @@ OStream cout;
 // a counter, but it shows the problem nicely.
 //
 int mythread(char arg) {
-    mutex.p();
+    display_lock.p();
     cout << arg << ": begin" << endl;
-    mutex.v();
-    int i;
-    for (i = 0; i < 1e7; i++) {
+    display_lock.v();
+    for (int i = 0; i < 1e7; i++) {
         counter = counter + 1;
     }
 
-    mutex.p();
+    display_lock.p();
     cout << arg << ": done" << endl;
-    mutex.v();
+    display_lock.v();
     return 0;
 }
 
@@ -40,17 +41,15 @@ int main()
     Thread p1(&mythread, 'A');
     Thread p2(&mythread, 'B');
 
-    mutex.p();
+    display_lock.p();
     cout << "main: begin (counter = " << counter << ")" << endl;
-    mutex.v();
+    display_lock.v();
 
     // join waits for the threads to finish
     p1.join();
     p2.join();
 
-    mutex.p();
     cout << "main: done with both (counter = " << counter << ")"<< endl;
-    mutex.v();
 
     return 0;
 }
