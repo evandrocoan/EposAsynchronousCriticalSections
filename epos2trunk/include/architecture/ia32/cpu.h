@@ -352,7 +352,7 @@ public:
         ASM("lock xadd %0, %2" : "=a"(old) : "a"(old), "m"(value) : "memory");
         return old;
     }
-
+                            
     template<typename T>
     static T fdec(volatile T & value) {
         register T old = -1;
@@ -360,20 +360,17 @@ public:
         return old;
     }
 
-/*  FAS is not yet implemented, will have to lock into doing it
     template<typename T>
-    static T fas(volatile T & value, volatile T & replacement) {
-        register T old = 1;
-        ASM("lock xchg %0, %2" : "=a"(old) : "a"(old), "m"(lock) : "memory");
-        return old;
+    static T fas(volatile T & value, volatile T replacement) {
+        ASM("lock xchg %0, %2" : "=a"(replacement) : "a"(replacement), "m"(value) : "memory");
+        return replacement;
     }
-*/
 
     template<typename T>
     static T cas(volatile T & value, T compare, T replacement) {
         ASM("lock cmpxchgl %2, %3\n" : "=a"(compare) : "a"(compare), "r"(replacement), "m"(value) : "memory");
         return compare;
-   }
+    }
 
     static Reg64 htole64(Reg64 v) { return v; }
     static Reg32 htole32(Reg32 v) { return v; }
