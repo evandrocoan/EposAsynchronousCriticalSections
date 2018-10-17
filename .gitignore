@@ -11,7 +11,6 @@ epos2trunk/.epos_flag_file.txt
 epos2trunk/.project
 epos2trunk/.settings
 epos2trunk/.svn
-epos2trunk/app/**
 epos2trunk/app/*.a
 epos2trunk/app/*.img
 epos2trunk/app/*.o

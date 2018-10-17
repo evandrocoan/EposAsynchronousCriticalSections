@@ -22,10 +22,8 @@ int mythread(char arg) {
     display_lock.p();
     cout << arg << ": begin" << endl;
     display_lock.v();
-    for (int i = 0; i < 1e4; i++) {
-        counter_lock.p();
+    for (int i = 0; i < 1e7; i++) {
         counter = counter + 1;
-        counter_lock.v();
     }
 
     display_lock.p();

@@ -47,7 +47,7 @@ void Guard::submit(Critical_Section * cs)
 {
     Element * cur = vouch(&(cs->_link));
     if (0 != cur) do {
-        cur->object()->run();
+        cur->object->run();
     } while (0 != (cur = clear()));    
 }
 
