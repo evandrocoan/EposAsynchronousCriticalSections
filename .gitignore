@@ -1,4 +1,7 @@
-/**.sublime-workspace
+*
+!/**/
+!*.*
+/*.sublime-workspace
 /*.a
 /*.img
 /*.o
@@ -105,6 +108,7 @@ epos2trunk/include/utility/*.o
 epos2trunk/include/utility/*.sublime-workspace
 epos2trunk/include/utility/.epos_flag_file.txt
 epos2trunk/include/utility/.svn
+epos2trunk/lib/**
 epos2trunk/src/*.a
 epos2trunk/src/*.img
 epos2trunk/src/*.o
@@ -136,6 +140,7 @@ epos2trunk/src/boot/*.sublime-workspace
 epos2trunk/src/boot/.epos_flag_file.txt
 epos2trunk/src/boot/.svn
 epos2trunk/src/boot/pc_boot
+epos2trunk/src/boot/pc_boot.s
 epos2trunk/src/component/*.a
 epos2trunk/src/component/*.img
 epos2trunk/src/component/*.o
