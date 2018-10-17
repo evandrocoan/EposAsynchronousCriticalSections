@@ -12,11 +12,11 @@ popd > /dev/null
 # Use this on your '~/.bashrc' file:
 # export EPOS_COMPILER_MACHINE_PASS=123
 # export EPOS_COMPILER_MACHINE_ADDRESS=user.name@so.user.name.vms.ufsc.br
-#
-EPOS_COMPILER_MACHINE_PASS=admin123
-EPOS_COMPILER_MACHINE_ADDRESS=linux@127.0.0.1
+# 
 
 
+# EPOS_COMPILER_MACHINE_PASS=admin123
+# EPOS_COMPILER_MACHINE_ADDRESS=linux@127.0.0.1
 TARGET_DIRECTORY='~/OperatingSystems/Epos2x86'
 
 # Just ensures the directory is created
