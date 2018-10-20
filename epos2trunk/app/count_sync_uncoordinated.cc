@@ -4,6 +4,7 @@
 #include <semaphore.h>
 #include <thread.h>
 #include <machine.h>
+#include <alarm.h>
 
 using namespace EPOS;
 
@@ -17,8 +18,11 @@ OStream cout;
 // No, this is not how you would add 10,000,000 to
 // a counter, but it shows the problem nicely.
 int mythread() {
-    for (int i = 0; i < 1e1; i++) {
+    for (int i = 0; i < 1e3; i++) {
         counter = counter + 1;
+        cout << "Counting " << counter;
+        cout << ", cpu_id= " << Machine::cpu_id();
+        cout << endl;
     }
     return 0;
 }
