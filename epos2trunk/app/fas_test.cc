@@ -11,52 +11,48 @@ using namespace EPOS;
 static volatile int shared_var = 0;
 
 Semaphore display_lock;
-Semaphore counter_lock; 
-
 OStream cout;
+#define log(a) display_lock.p(); cout << a; display_lock.v();
 
-int mythread0() {
-    display_lock.p();
-    cout << Thread0 << ": begin" << endl;
-    display_lock.v();
+int value = 10;
+int replace = 11;
+
+int myThread0() {
+    log( Thread::self() << ": begin" << endl )
+    int ret;
+
     for (int i = 0; i < 1e7; i++) {
-        int ret = CPU::fas(value, replace);
+        ret = CPU::fas(value, replace);
     }
 
-    display_lock.p();
-    cout << arg << ": done" << endl;
-    display_lock.v();
+    log( ret << ": done" << endl )
     return 0;
 }
 
-int mythread1() {
-    display_lock.p();
-    cout << Thread1 << ": begin" << endl;
-    display_lock.v();
+int myThread1() {
+    log( Thread::self() << ": begin" << endl )
+    int ret;
+
     for (int i = 0; i < 1e7; i++) {
-        int ret = CPU::fas(value, replace);
+        ret = CPU::fas(value, replace);
     }
 
-    display_lock.p();
-    cout << arg << ": done" << endl;
-    display_lock.v();
+    log( ret << ": done" << endl )
     return 0;
 }
 
 int main()
 {
-    Thread p1(&mythread, 'A');
-    Thread p2(&mythread, 'B');
+    Thread p1(&myThread0);
+    Thread p2(&myThread1);
 
-    display_lock.p();
-    cout << "main: begin (counter = " << counter << ")" << endl;
-    display_lock.v();
+    log( "main: begin (value = " << value << ", replace = " << replace << ")" << endl )
 
     // join waits for the threads to finish
     p1.join();
     p2.join();
 
-    cout << "main: done with both (counter = " << counter << ")"<< endl;
+    log( "main: done with both (value = " << value << ", replace = " << replace << ")" << endl )
 
     return 0;
 }
