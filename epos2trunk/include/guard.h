@@ -23,6 +23,8 @@ public:
 
     T * object() const { return const_cast<T *>(_object); }
 
+    void destroy(){ delete _object; }
+
     Element * next() const { return _next; }
     void next(Element * e) { _next = e; }
 
@@ -69,7 +71,7 @@ private:
     Element * _head;
     Element * _tail;
     // _null and _done look very weird here, however, it was
-    // only way to represent a null and a done pointer to a guard element
+    // the only way to represent a null and a done pointer to a guard element
     // that we managed to get to work with CAS and FAS
     Element * _null;
     Element * _done;
