@@ -11,7 +11,7 @@ using namespace EPOS;
 OStream cout;
 
 static volatile int counter = 0;
-static const int iterations = 10;
+static const int iterations = 10000000;
 
 Guard counter_guard;
 Guard display_guard;
@@ -45,24 +45,22 @@ void increment_counter(){
 int mythread(int arg) {
     switch(arg) {
         case 1:
-            display_guard(new Critical_Section(&a_begin()));
+            display_guard.submit(new Critical_Section(&a_begin));
             break;
         case 2:
-            display_guard(new Critical_Section(&b_begin()));
+            display_guard.submit(new Critical_Section(&b_begin));
             break;
         case 3:
-            display_guard(new Critical_Section(&c_begin()));
+            display_guard.submit(new Critical_Section(&c_begin));
             break;        
         case 4:
-            display_guard(new Critical_Section(&d_begin()));
+            display_guard.submit(new Critical_Section(&d_begin));
             break;
         case 5:
-            display_guard(new Critical_Section(&e_begin()));
+            display_guard.submit(new Critical_Section(&e_begin));
             break;
     }
 
-    display_guard.submit()
-    
     for (int i = iterations; i > 0 ; i--) {
         counter_guard.submit(new Critical_Section(&increment_counter));
     }
@@ -74,15 +72,15 @@ int main()
 {
     cout << "main: begin (counter = " << counter << ")" << endl;
 
-    pool[0] = new p1(&mythread, 1);
-    pool[1] = new p2(&mythread, 2);
-    pool[2] = new p2(&mythread, 3);
-    pool[3] = new p2(&mythread, 4);
-    pool[4] = new p2(&mythread, 5);
+    pool[0] = new Thread(&mythread, 1);
+    pool[1] = new Thread(&mythread, 2);
+    pool[2] = new Thread(&mythread, 3);
+    pool[3] = new Thread(&mythread, 4);
+    pool[4] = new Thread(&mythread, 5);
 
     // join waits for the threads to finish
     for(int i = 0; i < 5; i++) {
-        phil[i]->join();
+        pool[i]->join();
     }
 
     cout << "main: done with both (counter = " << counter << ")"<< endl;
