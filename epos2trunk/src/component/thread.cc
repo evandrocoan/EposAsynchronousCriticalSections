@@ -346,6 +346,7 @@ void Thread::rescheduler(const IC::Interrupt_Id & interrupt)
 void Thread::time_slicer(const IC::Interrupt_Id & i)
 {
     lock();
+    db<Synchronizer>(TRC) << "Thread::time_slicer(i=" << i << ")" << endl;
 
     reschedule();
 }
