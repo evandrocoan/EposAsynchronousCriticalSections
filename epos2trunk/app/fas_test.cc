@@ -4,28 +4,23 @@
 #include <semaphore.h>
 #include <thread.h>
 #include <machine.h>
+#include <cpu.h>
 
 using namespace EPOS;
 
-static volatile int counter = 0;
+static volatile int shared_var = 0;
 
 Semaphore display_lock;
 Semaphore counter_lock; 
 
 OStream cout;
 
-// mythread()
-// Simply adds 1 to counter repeatedly, in a loop
-// No, this is not how you would add 10,000,000 to
-// a counter, but it shows the problem nicely.
-int mythread(char arg) {
+int mythread0() {
     display_lock.p();
-    cout << arg << ": begin" << endl;
+    cout << Thread0 << ": begin" << endl;
     display_lock.v();
-    for (int i = 0; i < 1e4; i++) {
-        counter_lock.p();
-        counter = counter + 1;
-        counter_lock.v();
+    for (int i = 0; i < 1e7; i++) {
+        int ret = CPU::fas(value, replace);
     }
 
     display_lock.p();
@@ -34,9 +29,20 @@ int mythread(char arg) {
     return 0;
 }
 
-// main()
-// Just launches two threads (pthread_create)
-// and then waits for them (pthread_join)
+int mythread1() {
+    display_lock.p();
+    cout << Thread1 << ": begin" << endl;
+    display_lock.v();
+    for (int i = 0; i < 1e7; i++) {
+        int ret = CPU::fas(value, replace);
+    }
+
+    display_lock.p();
+    cout << arg << ": done" << endl;
+    display_lock.v();
+    return 0;
+}
+
 int main()
 {
     Thread p1(&mythread, 'A');

@@ -105,7 +105,7 @@ int philosopher(int n, int l, int c)
 
         table.p();
         Display::position(l, c);
-        cout << "    sate[" << Machine::cpu_id() << "]";
+        cout << "    ate[" << Machine::cpu_id() << "]";
         table.v();
 
         chopstick[first]->v();   // release first chopstick

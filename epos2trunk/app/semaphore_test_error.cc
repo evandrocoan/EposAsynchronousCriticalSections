@@ -4,12 +4,11 @@
 #include <thread.h>
 #include <mutex.h>
 #include <semaphore.h>
-#include <alarm.h>
 #include <display.h>
 
 using namespace EPOS;
 
-const int iterations = 2;
+const int iterations = 1000;
 
 Mutex table;
 
@@ -30,7 +29,6 @@ int philosopher(int n, int l, int c)
         cout << "thinking";
         table.unlock();
 
-        Delay thinking(2000000);
 
         chopstick[first]->p();    // get first chopstick
         chopstick[second]->p();   // get second chopstick
@@ -40,7 +38,6 @@ int philosopher(int n, int l, int c)
         cout << " eating ";
         table.unlock();
 
-        Delay eating(1000000);
 
         chopstick[first]->v();    // release first chopstick
         chopstick[second]->v();   // release second chopstick
