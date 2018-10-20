@@ -7,10 +7,8 @@
 
 using namespace EPOS;
 
-static volatile int counter = 0;
-
-Semaphore display_lock;
-Semaphore counter_lock; 
+int counter = 0;
+Thread * phil[2];
 
 OStream cout;
 
@@ -18,17 +16,10 @@ OStream cout;
 // Simply adds 1 to counter repeatedly, in a loop
 // No, this is not how you would add 10,000,000 to
 // a counter, but it shows the problem nicely.
-int mythread(char arg) {
-    display_lock.p();
-    cout << arg << ": begin" << endl;
-    display_lock.v();
-    for (int i = 0; i < 1e7; i++) {
+int mythread() {
+    for (int i = 0; i < 1e1; i++) {
         counter = counter + 1;
     }
-
-    display_lock.p();
-    cout << arg << ": done" << endl;
-    display_lock.v();
     return 0;
 }
 
@@ -37,18 +28,21 @@ int mythread(char arg) {
 // and then waits for them (pthread_join)
 int main()
 {
-    Thread p1(&mythread, 'A');
-    Thread p2(&mythread, 'B');
-
-    display_lock.p();
     cout << "main: begin (counter = " << counter << ")" << endl;
-    display_lock.v();
+
+    phil[0] = new Thread(&mythread);
+    phil[1] = new Thread(&mythread);
 
     // join waits for the threads to finish
-    p1.join();
-    p2.join();
+    int ret1 = phil[0]->join();
+    int ret2 = phil[1]->join();
 
     cout << "main: done with both (counter = " << counter << ")"<< endl;
+
+    delete phil[0];
+    delete phil[1];
+
+    cout << "The end!" << endl;
 
     return 0;
 }
