@@ -1,6 +1,5 @@
 // EPOS Synchronizer Component Test Program
 
-#include <guard.h>
 #include <thread.h>
 #include <machine.h>
 #include <utility/guard.h>
@@ -9,7 +8,7 @@
 using namespace EPOS;
 
 static volatile int counter = 0;
-static const int iterations = 1e5;
+static const int iterations = 1e2;
 
 Guard counter_guard;
 Guard display_guard;
