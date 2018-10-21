@@ -7,7 +7,7 @@
 
 using namespace EPOS;
 
-int counter = 0;
+static const int counter = 0;
 
 Semaphore display_lock;
 Semaphore counter_lock; 
@@ -23,7 +23,7 @@ int mythread(char arg) {
     cout << arg << ": begin" << endl;
     display_lock.v();
 
-    for (int i = 0; i < 1e8; i++) {
+    for (int i = 0; i < 1e7; i++) {
         counter_lock.p();
         counter = counter + 1;
         counter_lock.v();
@@ -40,17 +40,16 @@ int mythread(char arg) {
 // and then waits for them (pthread_join)
 int main()
 {
-    Thread * p1 = new Thread(&mythread, 'A');
-    Thread * p2 = new Thread(&mythread, 'B');
-
     display_lock.p();
     cout << "main: begin (counter = " << counter << ")" << endl;
     display_lock.v();
 
-    // join waits for the threads to finish
-    p1->join();
-    p2->join();
+    Thread * p1 = new Thread(&mythread, 'A');
+    Thread * p2 = new Thread(&mythread, 'B');
 
+    // join waits for the threads to finish
+    p2->join();
+    p1->join();
     cout << "main: done with both (counter = " << counter << ")"<< endl;
 
     delete p1;

@@ -7,8 +7,10 @@
 
 using namespace EPOS;
 
-int counter = 0;
-Thread * phil[2];
+static volatile int counter = 0;
+
+Semaphore display_lock;
+Semaphore counter_lock; 
 
 OStream cout;
 
@@ -16,10 +18,23 @@ OStream cout;
 // Simply adds 1 to counter repeatedly, in a loop
 // No, this is not how you would add 10,000,000 to
 // a counter, but it shows the problem nicely.
-int mythread() {
-    for (int i = 0; i < 1e1; i++) {
+int mythread(char arg) {
+    display_lock.p();
+    cout << arg << ": begin : " << endl;
+    display_lock.v();
+
+for (int i = 0; i < 1e7; i++) {
+        if (counter%100000 == 0){
+           // display_lock.p();
+            cout << arg << " : " << counter << endl;
+           // display_lock.v();
+        }
         counter = counter + 1;
     }
+
+    display_lock.p();
+    cout << arg << ": done" << endl;
+    display_lock.v();
     return 0;
 }
 
@@ -28,21 +43,25 @@ int mythread() {
 // and then waits for them (pthread_join)
 int main()
 {
+    display_lock.p();
     cout << "main: begin (counter = " << counter << ")" << endl;
+    display_lock.v();
 
-    phil[0] = new Thread(&mythread);
-    phil[1] = new Thread(&mythread);
+    Thread * p1 = new Thread(&mythread, 'A');
+    Thread * p2 = new Thread(&mythread, 'B');
+    Thread * p3 = new Thread(&mythread, 'C');
+    Thread * p4 = new Thread(&mythread, 'D');
+    Thread * p5 = new Thread(&mythread, 'E');
+    Thread * p6 = new Thread(&mythread, 'F');
 
     // join waits for the threads to finish
-    int ret1 = phil[0]->join();
-    int ret2 = phil[1]->join();
-
+    p1->join();
+    p2->join();
+    p3->join();
+    p4->join();
+    p5->join();
+    p6->join();
     cout << "main: done with both (counter = " << counter << ")"<< endl;
-
-    delete phil[0];
-    delete phil[1];
-
-    cout << "The end!" << endl;
 
     return 0;
 }

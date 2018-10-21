@@ -3,7 +3,7 @@
 #include <utility/ostream.h>
 #include <thread.h>
 #include <machine.h>
-#include <guard.h>
+#include <utility/guard.h>
 #include <alarm.h>
 
 using namespace EPOS;
@@ -11,7 +11,7 @@ using namespace EPOS;
 OStream cout;
 
 static volatile int counter = 0;
-static const int iterations = 10000000;
+static const int iterations = 10000;
 
 Guard counter_guard;
 Guard display_guard;
