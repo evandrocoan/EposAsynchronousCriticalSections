@@ -11,8 +11,6 @@ using namespace EPOS;
 int counter = 0;
 Thread * phil[2];
 
-OStream cout;
-
 // mythread()
 // Simply adds 1 to counter repeatedly, in a loop
 // No, this is not how you would add 10,000,000 to
@@ -20,9 +18,8 @@ OStream cout;
 int mythread() {
     for (int i = 0; i < 1e3; i++) {
         counter = counter + 1;
-        cout << "Counting " << counter;
-        cout << ", cpu_id= " << Machine::cpu_id();
-        cout << endl;
+        db<Synchronizer>(WRN)   << "Counting " << counter
+                                << endl;
     }
     return 0;
 }
@@ -32,7 +29,8 @@ int mythread() {
 // and then waits for them (pthread_join)
 int main()
 {
-    cout << "main: begin (counter = " << counter << ")" << endl;
+    db<Synchronizer>(WRN)   << "main: begin (counter = " << counter
+                            << ")" << endl;
 
     phil[0] = new Thread(&mythread);
     phil[1] = new Thread(&mythread);
@@ -41,12 +39,12 @@ int main()
     int ret1 = phil[0]->join();
     int ret2 = phil[1]->join();
 
-    cout << "main: done with both (counter = " << counter << ")"<< endl;
-
+    db<Synchronizer>(WRN)   << "main: done with both (counter = " << counter
+                            << ")" << endl;
     delete phil[0];
     delete phil[1];
 
-    cout << "The end!" << endl;
-
+    db<Synchronizer>(WRN)   << "The end!" 
+                            << endl;
     return 0;
 }
