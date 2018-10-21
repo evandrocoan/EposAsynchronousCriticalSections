@@ -1,9 +1,9 @@
 // EPOS Synchronizer Component Test Program
 
-#include <utility/ostream.h>
 #include <semaphore.h>
 #include <thread.h>
 #include <machine.h>
+#include <alarm.h>
 
 using namespace EPOS;
 
@@ -11,8 +11,6 @@ static volatile int counter = 0;
 
 Semaphore display_lock;
 Semaphore counter_lock; 
-
-OStream cout;
 
 // mythread()
 // Simply adds 1 to counter repeatedly, in a loop
@@ -30,6 +28,8 @@ for (int i = 0; i < 1e7; i++) {
            // display_lock.v();
         }
         counter = counter + 1;
+        db<Synchronizer>(WRN)   << "Counting " << counter
+                                << endl;
     }
 
     display_lock.p();

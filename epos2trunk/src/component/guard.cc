@@ -16,12 +16,20 @@ Guard::Guard(): _head(0), _tail(0), _null(0), _done(reinterpret_cast<Element *>(
 
 Guard::~Guard()
 {
-    db<Synchronizer>(TRC) << "~Guard(this=" << this << ")" << endl;
+    db<Synchronizer>(TRC)   << "~Guard(this=" << this 
+                            << ", size=" << _size
+                            << ")" << endl;
 }
 
 Guard::Element * Guard::vouch(Element * item)
 {
-    db<Synchronizer>(TRC) << "Guard::vouch(this=" << this << " head= " << _head << " tail= " << _tail <<  ")" << endl;
+    CPU::finc(_size);
+    db<Synchronizer>(TRC)   << "Guard::vouch(this=" << this 
+                            << " head= " << _head 
+                            << " tail= " << _tail 
+                            << " size= " << _size 
+                            << " cs= " << item->object() 
+                            << ")" << endl;
     item->next(0);
     Element * last = CPU::fas(_tail, item);
     if (last){ 
@@ -35,7 +43,13 @@ Guard::Element * Guard::vouch(Element * item)
 
 Guard::Element * Guard::clear()
 {
-    db<Synchronizer>(TRC) << "Guard::clear(this=" << this << " head= " << _head << " tail= " << _tail <<  ")" << endl;
+    CPU::fdec(_size);
+    db<Synchronizer>(TRC)   << "Guard::clear(this=" << this 
+                            << " head= " << _head 
+                            << " tail= " << _tail 
+                            << " size= " << _size 
+                            << ")" << endl;
+
     Element * item = _head;
     Element * next = CPU::fas(item->_next, _done);
     bool mine = true;
@@ -54,7 +68,14 @@ void Guard::submit(Critical_Section * cs)
     if (cur != 0) do {
         cur->object()->run();
         cur = clear();
-    } while (cur != 0);    
+    } while (cur != 0);
+
+    db<Synchronizer>(TRC)   << "Guard::submt(this=" << this
+                            << " head= " << _head
+                            << " tail= " << _tail
+                            << " size= " << _size
+                            << " cs= " << cs
+                            << ")" << endl;
 }
 
 __END_SYS

@@ -29,18 +29,18 @@ template<> struct Traits<Build>
     enum {Legacy_PC, eMote3, LM3S811, Zynq};
     static const unsigned int MODEL = Legacy_PC;
 
-    static const unsigned int CPUS = 1;
+    static const unsigned int CPUS = 2;
     static const unsigned int NODES = 1; // > 1 => NETWORKING
 };
 
 
 // Utilities
-template<> struct Traits<Debug>
+template<> struct Traits<Debug>: public Traits<void>
 {
     static const bool error   = true;
     static const bool warning = true;
-    static const bool info    = false;
-    static const bool trace   = false;
+    static const bool info    = hysterically_debugged;
+    static const bool trace   = hysterically_debugged;
 };
 
 template<> struct Traits<Lists>: public Traits<void>
