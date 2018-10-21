@@ -20,11 +20,11 @@ Guard::~Guard()
 Guard::Element * Guard::vouch(Element * item)
 {
     db<Synchronizer>(TRC) << "Guard::vouch(this=" << this << " head= " << _head << " tail= " << _tail <<  ")" << endl;
-    item->next(0);
+    item->next(NULL);
     Element * last = CPU::fas(_tail, item);
     if (last){ 
         if (CPU::cas(last->_next, reinterpret_cast<Element *>(NULL), item) == 0)
-            return 0;
+            return NULL;
         delete item->object();
     }
     _head = item;        
@@ -49,10 +49,10 @@ Guard::Element * Guard::clear()
 void Guard::submit(Critical_Section * cs)
 {
     Element * cur = vouch(&(cs->_link));
-    if (cur != 0) do {
+    if (cur != NULL) do {
         cur->object()->run();
         cur = clear();
-    } while (cur != 0);    
+    } while (cur != NULL);    
 }
 
 __END_UTIL
