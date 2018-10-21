@@ -68,6 +68,7 @@ public:
     void submit(Critical_Section * cs);
 
 private:
+    int _size;
     Element * _head;
     Element * _tail;
     // _null and _done look very weird here, however, it was
