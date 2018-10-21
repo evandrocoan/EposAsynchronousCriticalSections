@@ -15,33 +15,35 @@ Guard display_guard;
 Thread * pool[5];
 
 void a_begin() {
-    db<Synchronizer>(WRN)   << "A: begin (counter = " <<  counter 
+    db<Synchronizer>(WRN)   << "A: begin (counter = " << counter 
                             << ")" << endl;
 }
 
 void b_begin() {
-    db<Synchronizer>(WRN)   << "B: begin (counter = " <<  counter 
+    db<Synchronizer>(WRN)   << "B: begin (counter = " << counter 
                             << ")" << endl;
 
 }
 
 void c_begin() {
-    db<Synchronizer>(WRN)   << "C: begin (counter = " <<  counter 
+    db<Synchronizer>(WRN)   << "C: begin (counter = " << counter 
                             << ")" << endl;
 }
 
 void d_begin() {
-    db<Synchronizer>(WRN)   << "D: begin (counter = " <<  counter 
+    db<Synchronizer>(WRN)   << "D: begin (counter = " << counter 
                             << ")" << endl;
 }
 
 void e_begin() {
-    db<Synchronizer>(WRN)   << "E: begin (counter = " <<  counter 
+    db<Synchronizer>(WRN)   << "E: begin (counter = " << counter 
                             << ")" << endl;
 }
 
 void increment_counter(){
     counter = counter + 1;
+    // db<Synchronizer>(WRN)   << "increment_counter (counter = " << counter 
+    //                         << ")" << endl;
 }
 
 int mythread(int arg) {
@@ -72,7 +74,7 @@ int mythread(int arg) {
 
 int main()
 {
-    db<Synchronizer>(WRN)   << "main: begin (counter = " <<  counter 
+    db<Synchronizer>(WRN)   << "main: begin (counter = " << counter 
                             << ")" << endl;
 
     pool[0] = new Thread(&mythread, 1);
@@ -81,7 +83,7 @@ int main()
     pool[3] = new Thread(&mythread, 4);
     pool[4] = new Thread(&mythread, 5);
 
-    db<Synchronizer>(WRN)   << "main: start joining the threads (" << counter 
+    db<Synchronizer>(WRN)   << "main: start joining the threads (counter = " << counter 
                             << ")" << endl;
 
     // join waits for the threads to finish
@@ -95,7 +97,7 @@ int main()
     for(int i = 0; i < 5; i++)
         delete pool[i];
 
-    db<Synchronizer>(WRN)   << "main: exiting (" << counter 
+    db<Synchronizer>(WRN)   << "main: exiting (counter = " << counter 
                             << ")" << endl;
 
     return 0;
