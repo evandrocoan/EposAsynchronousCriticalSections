@@ -103,14 +103,8 @@ UUID            = $(shell cat /proc/sys/kernel/random/uuid | sed 's/-//g')
 pc_CC_FLAGS             := -Wa,--32
 pc_AS_FLAGS             := --32
 pc_LD_FLAGS             :=
-<<<<<<< HEAD
-#pc_EMULATOR             = qemu-system-i386 -smp $(CPUS) -enable-kvm -machine q35,accel=kvm -device intel-iommu -m $(MEM_SIZE)k -nographic -no-reboot -drive format=raw,index=0,if=floppy,file=
-pc_EMULATOR             = qemu-system-i386 -smp $(CPUS) -m $(MEM_SIZE)k -nographic -no-reboot -drive format=raw,index=0,if=floppy,file=
-=======
 pc_EMULATOR             = qemu-system-i386 -smp $(CPUS) -m $(MEM_SIZE)k -nographic -no-reboot -drive format=raw,index=0,if=floppy,file=
 # pc_EMULATOR             = qemu-system-i386 -smp $(CPUS) -enable-kvm -machine q35,accel=kvm -device intel-iommu -m $(MEM_SIZE)k -nographic -no-reboot -drive format=raw,index=0,if=floppy,file=
-#pc_EMULATOR             = qemu-system-i386 -smp $(CPUS) -m $(MEM_SIZE)k -nographic -no-reboot -drive format=raw,index=0,if=floppy,file=
->>>>>>> a08a6a5e70602f1686deb164a681d138fb996317
 pc_DEBUGGER             := gdb
 pc_FLASHER              :=
 
