@@ -23,7 +23,7 @@ Guard::Element * Guard::vouch(Element * item)
     item->next(NULL);
     Element * last = CPU::fas(_tail, item);
     if (last){ 
-        if (CPU::cas(last->_next, reinterpret_cast<Element *>(NULL), item) == 0)
+        if (CPU::cas(last->_next, reinterpret_cast<Element *>(NULL), item) == NULL)
             return NULL;
         delete item->object();
     }
