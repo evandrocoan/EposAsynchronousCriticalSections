@@ -11,7 +11,7 @@ using namespace EPOS;
 OStream cout;
 
 static volatile int counter = 0;
-static const int iterations = 10000000;
+static const int iterations = 1e2;
 
 Guard counter_guard;
 Guard display_guard;

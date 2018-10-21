@@ -28,6 +28,7 @@ Guard::Element * Guard::vouch(Element * item)
                             << " head= " << _head 
                             << " tail= " << _tail 
                             << " size= " << _size 
+                            << " cs= " << item->object() 
                             << ")" << endl;
     item->next(0);
     Element * last = CPU::fas(_tail, item);
@@ -63,25 +64,18 @@ Guard::Element * Guard::clear()
 // Class Methods
 void Guard::submit(Critical_Section * cs)
 {
-    db<Synchronizer>(TRC)   << "Guard::submit(this=" << this
-                            << " head= " << _head
-                            << " tail= " << _tail
-                            << " cs= " << cs
-                            << " size= " << _size
-                            << ")" << endl;
-
     Element * cur = vouch(&(cs->_link));
     if (cur != 0) do {
         cur->object()->run();
         cur = clear();
     } while (cur != 0);
 
-    db<Synchronizer>(TRC)   << "Guard::submit(this=" << this
+    db<Synchronizer>(TRC)   << "Guard::submt(this=" << this
                             << " head= " << _head
                             << " tail= " << _tail
-                            << " cs= " << cs
                             << " size= " << _size
-                            << ") OUT" << endl;
+                            << " cs= " << cs
+                            << ")" << endl;
 }
 
 __END_SYS
