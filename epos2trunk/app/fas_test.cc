@@ -8,51 +8,62 @@
 
 using namespace EPOS;
 
-static volatile int shared_var = 0;
-
 Semaphore display_lock;
-OStream cout;
-#define log(a) display_lock.p(); cout << a; display_lock.v();
+// #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
+#define log(argument) db<Synchronizer>(WRN) << argument;
 
-int value = 10;
-int replace = 11;
+static const int iterations = 1e5;
 
-int myThread0() {
-    log( Thread::self() << ": begin" << endl )
-    int ret;
+int old = 0;
+int current = 10;
+int next = 11;
 
-    for (int i = 0; i < 1e7; i++) {
-        ret = CPU::fas(value, replace);
+#define check(thread, name) \
+    log( thread << name \
+            << ", old=" << old \
+            << ", current=" << current \
+            << ", next=" << next \
+            << endl )
+
+int myThread1() {
+    check("Thread 1", ", begin")
+    
+    for (int i = 0; i < iterations; i++) 
+    {
+        old = CPU::cas(current, current, next);
+        current = CPU::cas(next, next, old);
+        next = CPU::cas(old, old, current);
+        // check("Thread 1", ", now")
     }
 
-    log( ret << ": done" << endl )
+    check("Thread 1", ", result")
     return 0;
 }
 
-int myThread1() {
-    log( Thread::self() << ": begin" << endl )
-    int ret;
+int myThread2() {
+    check("Thread 2", ", begin")
 
-    for (int i = 0; i < 1e7; i++) {
-        ret = CPU::fas(value, replace);
+    for (int i = 0; i < iterations; i++) {
+        old = CPU::cas(current, current, next);
+        current = CPU::cas(next, next, old);
+        next = CPU::cas(old, old, current);
+        // check("Thread 2", ", now")
     }
 
-    log( ret << ": done" << endl )
+    check("Thread 2", ", result")
     return 0;
 }
 
 int main()
 {
-    Thread p1(&myThread0);
-    Thread p2(&myThread1);
+    log( "iterations=" << iterations << endl )
+    Thread p1(&myThread1);
+    Thread p2(&myThread2);
 
-    log( "main: begin (value = " << value << ", replace = " << replace << ")" << endl )
-
-    // join waits for the threads to finish
+    check("Thread 0", ", main")
     p1.join();
     p2.join();
 
-    log( "main: done with both (value = " << value << ", replace = " << replace << ")" << endl )
-
+    check("Thread 0", ", end")
     return 0;
 }
