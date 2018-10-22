@@ -7,34 +7,28 @@
 
 using namespace EPOS;
 
-static volatile int counter = 0;
+int counter = 0;
 
 Semaphore display_lock;
 Semaphore counter_lock; 
+#define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
 
 // mythread()
 // Simply adds 1 to counter repeatedly, in a loop
 // No, this is not how you would add 10,000,000 to
 // a counter, but it shows the problem nicely.
 int mythread(char arg) {
-    display_lock.p();
-    cout << arg << ": begin : " << endl;
-    display_lock.v();
+    log( arg << ": begin : " << endl)
 
-for (int i = 0; i < 1e7; i++) {
+    for (int i = 0; i < 1e6; i++) {
         if (counter%100000 == 0){
-           // display_lock.p();
-            cout << arg << " : " << counter << endl;
-           // display_lock.v();
+            log( arg << " : " << counter << endl )
         }
         counter = counter + 1;
-        db<Synchronizer>(WRN)   << "Counting " << counter
-                                << endl;
+        // log( "Counting " << counter << endl )
     }
 
-    display_lock.p();
-    cout << arg << ": done" << endl;
-    display_lock.v();
+    log( arg << ": done" << endl )
     return 0;
 }
 
@@ -43,9 +37,7 @@ for (int i = 0; i < 1e7; i++) {
 // and then waits for them (pthread_join)
 int main()
 {
-    display_lock.p();
-    cout << "main: begin (counter = " << counter << ")" << endl;
-    display_lock.v();
+    log( "main: begin (counter = " << counter << ")" << endl )
 
     Thread * p1 = new Thread(&mythread, 'A');
     Thread * p2 = new Thread(&mythread, 'B');
@@ -61,7 +53,7 @@ int main()
     p4->join();
     p5->join();
     p6->join();
-    cout << "main: done with both (counter = " << counter << ")"<< endl;
 
+    log( "main: done with both (counter = " << counter << ")"<< endl )
     return 0;
 }

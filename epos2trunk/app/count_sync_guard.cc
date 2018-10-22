@@ -8,7 +8,7 @@
 using namespace EPOS;
 
 static volatile int counter = 0;
-static const int iterations = 1e2;
+static const int iterations = 1e4;
 
 Guard counter_guard;
 Guard display_guard;
