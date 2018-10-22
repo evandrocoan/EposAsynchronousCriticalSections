@@ -48,7 +48,7 @@ svn log -v --stop-on-copy
 
 To create a directory:
 ```sh
-svn mkdir https://epos.lisha.ufsc.br/svn/makers/predictable_synchronisation_algorithms_for_asynchronous_critical_sections/my-cool-directory -m "Making my-cool-directory"
+svn mkdir https://epos.lisha.ufsc.br/svn/makers/predictable_synchronisation_algorithms_for_asynchronous_Closures/my-cool-directory -m "Making my-cool-directory"
 ```
 1. https://stackoverflow.com/questions/345683/svn-creating-trunk-directory-on-existing-repository
 1. https://serverfault.com/questions/115112/how-when-to-create-trunk-branches-and-tags-directories-in-a-new-subversion-repo/115164

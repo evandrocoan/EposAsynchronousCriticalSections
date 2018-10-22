@@ -280,7 +280,7 @@ public:
 
         Header * header() { return this; }
 
-        Reg8 length() const { return MTU; } // Fixme: placeholder
+        CPU_Common::Reg8 length() const { return MTU; } // Fixme: placeholder
 
         template<typename T>
         T * data() { return reinterpret_cast<T *>(&_data); }

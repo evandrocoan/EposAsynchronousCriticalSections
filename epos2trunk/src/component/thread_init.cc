@@ -15,8 +15,10 @@ void Thread::init()
     // MAIN is created first and dispatch won't replace it nor by itself
     // neither by IDLE (which has a lower priority)
     if(Criterion::timed && (Machine::cpu_id() == 0))
+    {
         _timer = new (SYSTEM) Scheduler_Timer(QUANTUM, time_slicer);
-
+        db<Thread>(INF) << "Thread::init() Criando time_slicer" << endl;
+    }
     // Install an interrupt handler to receive forced reschedules
     if(smp) {
         if(Machine::cpu_id() == 0)

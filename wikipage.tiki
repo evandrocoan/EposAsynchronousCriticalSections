@@ -385,7 +385,7 @@ Como ARM não suporta CAS, apenas LC/SC, pretende-se limitar a implementação d
 
 A seguir vê-se um simples programa que utiliza a operação ''CAS()'' atualmente implementada no EPOS.
 
-__cas_test.cc__
+::__Listagem 4:__ cas_test.cc::
 {CODE(colors="c")}
 // EPOS CAS Component Test Program
 
@@ -435,6 +435,742 @@ Rebooting the machine ...
 !!Implementação  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Código disponível em svn:
 # https://epos.lisha.ufsc.br/svn/makers/predictable_synchronisation_algorithms_for_asynchronous_critical_sections
+Para a implementação do algoritmo das guardas no EPOS foram definidas três novas classes, que representam as principais abstrações envolvidas na versão básica do algoritmo, seções críticas, elementos de guarda e a guarda em si. Essas classes encapsulam toda a lógica do algoritmo e fornecem interfaces para a delegação da execução de seções críticas por threads arbitrárias. 
+
+Neste capítulo será descrito como ocorreu o processo de implementação das novas classes que implementam o algoritmo das guardas, assim como os testes realizados para validação da implementação.
+
+!!!Closure [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+Assim como ocorre com os algoritmos de sincronização tradicionais, uma das bases dos algoritmos de sincronização baseados em delegação é o conceito de seções críticas. Dessa forma, foi definida uma nova classe para representar essas entidades. 
+
+A classe que representa seções críticas  foi criada com base na classe Function_Handler e recebeu o nome de Closure. Essa classe possui apenas dois atributos, _handler e _link. O atributo _handler representa a função relacionada à seção crítica e o atributo _link representa um elemento de lista simples. Além desses dois atributos, a classe Closure também implementa o método público run(), que é utilizado pelo sequencer para executar uma seção crítica, que na verdade é o mesmo trabalho realizado pelo operator “()”, que deixava o código pouco intuitivo. A Listagem 5 exibe o código da classe Closure.
+
+O construtor da classe Closure recebe um objeto representando uma função, que deve ser compatível com o tipo Function, definido no arquivo handler.h, como parâmetro. Além disso, o construtor cria o _link relativo à seção crítica sendo construída, que será utilizado para adição e remoção de seções críticas de estruturas de dados, da mesma forma como acontece com objetos da classe Thread. 
+
+::__Listagem 5:__ Seção crítica::
+{CODE(colors="c")}
+class Closure
+{
+public:
+   friend class Guard;
+   typedef Handler::Function Function;
+   typedef List_Elements::Singly_Linked<Closure> Element;
+
+public:
+   Closure(Function * h): _handler(h), _link(this) {}
+   ~Closure() {}
+
+   void operator()() { _handler(); }
+   void run()        { _handler(); } // Alias for ()
+
+private:
+   Function * _handler;
+   Element _link; // Inspired by the thread code
+};
+{CODE}
+Exemplos da utilização da classe Closure durante a submissão de seções críticas à guarda serão na seção sobre os testes realizados.
+
+!!!Element [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+Como elementos da guarda são elementos de lista simples, com apenas um nível de encadeamento, optou-se por utilizar a classe List_Elements::Singly_Linked, Listagem 6, definida no arquivo list.h, para representá-los. 
+
+No entanto, foi necessário adicionar uma relação de amizade entre a classe Singly_Linked e a classe Guard, para que as operações CAS e FAS dos métodos vouch e clear da classe guardam possam acessar diretamente o atributo _next do elemento de lista. Isso porque, não é possível efetuar as operações CAS e FAS utilizando getters.     
+
+::__Listagem 6:__ Link contendo a seção crítica::
+{CODE(colors="c")}
+   // Simple List Element
+   template<typename T>
+   class Singly_Linked
+   {
+   public:
+       friend class _UTIL::Guard;
+       typedef T Object_Type;
+       typedef Singly_Linked Element;
+
+   public:
+       Singly_Linked(const T * o): _object(o), _next(0) {}
+
+       T * object() const { return const_cast<T *>(_object); }
+
+       Element * next() const { return _next; }
+       void next(Element * e) { _next = e; }
+
+   private:
+       const T * _object;
+       Element * _next;
+   };
+{CODE}
+
+!!!Guard [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+O código onde da classe Guard, definida no arquivo utility/guard.h, é mostrado na Listagem 7. Essa classe implementa a estrutura da guarda descrita no capítulo de fundamentação teórica. 
+
+::__Listagem 7:__ Definição da interface do Guarda::
+{CODE(colors="c")}
+class Guard
+{
+public:
+   typedef Closure::Element Element;
+
+private:
+   static const int NULL = 0;
+   static const int DONE = 1;
+
+public:
+   Guard();
+   ~Guard();
+
+   void submit(Closure * cs);
+   Element * vouch(Element * item);
+   Element * clear();
+
+private:
+   Element * _head;
+   Element * _tail;
+};
+{CODE}
+Além das operações vouch, clear e a operação de criação da guarda (setup), já apresentadas no capítulo de fundamentação teórica, a classe guarda implementa uma nova operação, chamada de submit. Essa operação encapsula o protocolo de submissão de seções críticas à guarda e pode ser utilizada por threads para a delegação da execução de seções críticas. A Listagem 8 apresenta o construtor e destrutor da guarda, assim como a implementação do método submit().
+
+::__Listagem 8:__ Nova convenção para a submissão de requisições de execução de seções críticas::
+{CODE(colors="c")}
+// Object Methods
+Guard::Guard(): _head(0), _tail(0)
+{
+   db<Synchronizer>(TRC)   << "Guard(head=" << _head
+                           << ", tail=" << _tail
+                           << ") => " << this << endl;
+}
+
+Guard::~Guard()
+{
+   db<Synchronizer>(TRC) << "~Guard(this=" << this << ")" << endl;
+}
+
+void Guard::submit(Closure * cs)
+{
+   Element * cur = vouch(&(cs->_link));
+   if (cur != NULL) do {
+       cur->object()->run();
+       cur = clear();
+   } while (cur != NULL);   
+}
+{CODE}
+A implementação dos métodos vouch(...) e clear são apresentadas na Listagem 8. Essas implementações não diferem muito dos códigos apresentados no capítulo de fundamentação teórica, lembrando que a operação vouch é responsável por adicionar novos elementos à guarda e sinalizar threads quando essas precisarem assumir o papel de sequencer, e a operação clear é responsável pela remoção de elementos da guarda e por sinalizar ao sequencer quando a guarda estiver vazia. 
+
+Uma adição importante foi a deleção de seções críticas que já foram executadas. Essa deleção deve geralmente ocorrer durante a execução do método clear. No entanto, existe uma situação excepcional, que pode ocorrer quando a guarda possui apenas um elementos e operações vouch e clear executam simultaneamente. Nesse caso, a passagem do papel de sequencer da thread executando clear para a thread executando vouch. Quando isso acontecer, o sequencer executando vouch precisará também deletar o elemento da guarda previamente removido da lista pela operação clear.
+
+::__Listagem 9:__ Implementações de vouch() e clear()::
+{CODE(colors="c")}
+Guard::Element * Guard::vouch(Element * item)
+{
+   db<Synchronizer>(TRC) << "Guard::vouch(this=" << this << " head= " << _head << " tail= " << _tail <<  ")" << endl;
+   item->next(NULL);
+   Element * last = CPU::fas(_tail, item);
+   if (last){
+       if (CPU::cas(last->_next, reinterpret_cast<Element *>(NULL), item) == NULL)
+           return NULL;
+       delete item->object();
+   }
+   _head = item;       
+   return item;
+}
+
+Guard::Element * Guard::clear()
+{
+   db<Synchronizer>(TRC) << "Guard::clear(this=" << this << " head= " << _head << " tail= " << _tail <<  ")" << endl;
+   Element * item = _head;
+   Element * next = CPU::fas(item->_next, reinterpret_cast<Element *>(DONE));
+   bool mine = true;
+   if (!next)
+       mine = CPU::cas(_tail, item, reinterpret_cast<Element *> (NULL)) == item;
+   CPU::cas(_head, item, next);
+   if (mine)
+       delete item->object();
+   return next;   
+}
+{CODE}
+
+!!!FAS [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+A operação FAS, uma das duas primitivas atômicas utilizados no algoritmo das guardas, ainda não havia sido implementada no EPOS, Dessa forma, foi adicionada ao arquivo /include/archtecture/ia_32/cpu.h, onde estão implementadas as primitivas atômicas de sincronização no EPOS, uma nova implementação para FAS.
+
+O código de FAS foi inspirado no código das outras operações atômicas e nas descrições das instruções atômicas nos manuais da Intel.
+
+Além disso, assim como ocorre com as outras operações atômicas, foi adicionada uma implementação em software, independente de arquitetura, no arquivo /include/cpu.h. No entanto, como essa operação não possui suporte de hardware, ela não deve provê garantias de atomicidade.
+
+::__Listagem 10:__ Implementação do FAS::
+{CODE(colors="c")}
+// /include/archtecture/ia_32/cpu.h
+template<typename T>
+static T fas(volatile T & value, volatile T replacement) 
+{
+    ASM("lock xchg %0, %2" : "=a"(replacement) : "a"(replacement), "m"(value) : "memory");
+    return replacement;
+}
+
+// /include/cpu.h
+static int fas(volatile int & value, volatile int & replacement) {
+     int old = value;
+     value = replacement;
+     return old;
+ }
+{CODE}
+
+!!!Futures [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+Das 2 implementações distintas de futures apresentadas, realizamos a implementação do modelo de future bloqueante, apresentado no artigo referência {DIV(type="span")}[{DIV}[#Refer_ncias_|2]]. Como a implementação atual do algoritmo do guarda não suporta passagens de parâmetros variádicos, manualmente fez-se a modificação dos métodos para que aceitem uma future como parâmetro.
+
+!!Testes [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+Criamos um arquivo de testes baseado no exemplo de http://pages.cs.wisc.edu/~remzi/OSTEP/threads-intro.pdf.
+# Os exemplos com o EPOS multicore, com duas CPUS, variavelmente gerava exceções, que não ocorrem na versão single core. Não pode-se identificar exatamente qual a causa dessas exceções, que são do tipo GPF e PF. Uma constatação importante é que essas exceções ocorrem mesmo em versões minimamente modificadas das aplicações de testes padrões do EPOS.
+# Por duas vezes conseguimos fazer a contagem falhar, ambas vezes utilizando o critério de escalonamento RR. No entanto, nas últimas muitas execuções a contagem voltou a ocorrer corretamente, o que é indesejado, mesmo com a utilização do escalonamento RR. Com duas CPUS.
+# Foram definidos três programas de teste para a aplicação contadora simples: uma sem sincronização, uma utilizando semáforos e outra com guardas.
+Todos os testes a seguir foram realizados utilizando ''static const unsigned int CPUS = 4''.
+
+!!!fas_test.cc [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+Aqui testa-se a implementação nova de FAS feita, repetidamente fazendo a troca de variáveis em duas thread executando em CPUs diferentes.
+
+::__Listagem 11:__ Arquivo de Teste ''/app/fas_test.cc''::
+{CODE(colors="c")}
+// EPOS Synchronizer Component Test Program
+
+#include <utility/ostream.h>
+#include <semaphore.h>
+#include <thread.h>
+#include <machine.h>
+#include <cpu.h>
+
+using namespace EPOS;
+
+Semaphore display_lock;
+// #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
+#define log(argument) db<Synchronizer>(WRN) << argument;
+
+static const int iterations = 1e5;
+
+int old = 0;
+int current = 10;
+int next = 11;
+
+#define check(thread, name) \
+    log( thread << name \
+            << ", old=" << old \
+            << ", current=" << current \
+            << ", next=" << next \
+            << endl )
+
+int myThread1() {
+    check("Thread 1", ", begin")
+    
+    for (int i = 0; i < iterations; i++) 
+    {
+        old = CPU::fas(current, next);
+        current = CPU::fas(next, old);
+        next = CPU::fas(old, current);
+        // check("Thread 1", ", now")
+    }
+
+    check("Thread 1", ", result")
+    return 0;
+}
+
+int myThread2() {
+    check("Thread 2", ", begin")
+
+    for (int i = 0; i < iterations; i++) {
+        old = CPU::fas(current, next);
+        current = CPU::fas(next, old);
+        next = CPU::fas(old, current);
+        // check("Thread 2", ", now")
+    }
+
+    check("Thread 2", ", result")
+    return 0;
+}
+
+int main()
+{
+    log( "iterations=" << iterations << endl )
+    Thread p1(&myThread1);
+    Thread p2(&myThread2);
+
+    check("Thread 0", ", main")
+    p1.join();
+    p2.join();
+
+    check("Thread 0", ", end")
+    return 0;
+}
+{CODE}
+
+::__Listagem 12:__ Resultado da execução de ''/app/fas_test.cc''::
+{CODE(colors="c")}
+<1>: MMU is disabled! :<1>
+<2>: MMU is disabled! :<2>
+<3>: MMU is disabled! :<3>
+<0>: iterations=100000 :<0>
+<0>: Thread 0, main, old=0, current=10, next=11 :<0>
+<2>: Thread 1, begin, old=0, current=10, next=11 :<2>
+<1>: Thread 2, begin, old=10, current=10, next=11 :<1>
+<2>: Thread 1, result, old=10, current=10, next=11 :<2>
+<1>: Thread 2, result, old=10, current=10, next=11 :<1>
+<1>: Thread 0, end, old=10, current=10, next=11 :<1>
+<0>: The last thread has exited! :<0>
+<0>: Rebooting the machine ... :<0>
+{CODE}
+
+!!!count_sync_guard.cc [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+Neste teste, utiliza-se a implementação do guarda para controlar o acesso a seção crítica ''increment_counter()'', que simplesmente soma um contador. No final da execução, espera-se que resultado da conta seja precisamente o número de iterações feita.
+
+::__Listagem 13:__ Arquivo de teste ''/app/count_sync_guard.cc''::
+{CODE(colors="c")}
+// EPOS Synchronizer Component Test Program
+
+#include <thread.h>
+#include <machine.h>
+#include <utility/guard.h>
+#include <alarm.h>
+
+using namespace EPOS;
+
+static volatile int counter = 0;
+static const int iterations = 1e4;
+
+Guard counter_guard;
+Guard display_guard;
+Thread * pool[5];
+
+void a_begin() {
+    db<Synchronizer>(WRN)   << "A: begin (counter = " << counter 
+                            << ")" << endl;
+}
+
+void b_begin() {
+    db<Synchronizer>(WRN)   << "B: begin (counter = " << counter 
+                            << ")" << endl;
+}
+
+void c_begin() {
+    db<Synchronizer>(WRN)   << "C: begin (counter = " << counter 
+                            << ")" << endl;
+}
+
+void d_begin() {
+    db<Synchronizer>(WRN)   << "D: begin (counter = " << counter 
+                            << ")" << endl;
+}
+
+void e_begin() {
+    db<Synchronizer>(WRN)   << "E: begin (counter = " << counter 
+                            << ")" << endl;
+}
+
+void increment_counter(){
+    counter = counter + 1;
+    // db<Synchronizer>(WRN)   << "increment_counter (counter = " << counter 
+    //                         << ")" << endl;
+}
+
+int mythread(int arg) {
+    switch(arg) {
+        case 1:
+            display_guard.submit(new Closure(&a_begin));
+            break;
+        case 2:
+            display_guard.submit(new Closure(&b_begin));
+            break;
+        case 3:
+            display_guard.submit(new Closure(&c_begin));
+            break;        
+        case 4:
+            display_guard.submit(new Closure(&d_begin));
+            break;
+        case 5:
+            display_guard.submit(new Closure(&e_begin));
+            break;
+    }
+
+    for (int i = iterations; i > 0 ; i--) {
+        counter_guard.submit(new Closure(&increment_counter));
+    }
+
+    return 0;
+}
+
+int main()
+{
+    db<Synchronizer>(WRN)   << "main: begin (counter = " << counter 
+                            << ")" << endl;
+
+    pool[0] = new Thread(&mythread, 1);
+    pool[1] = new Thread(&mythread, 2);
+    pool[2] = new Thread(&mythread, 3);
+    pool[3] = new Thread(&mythread, 4);
+    pool[4] = new Thread(&mythread, 5);
+
+    db<Synchronizer>(WRN)   << "main: start joining the threads (counter = " << counter 
+                            << ")" << endl;
+
+    // join waits for the threads to finish
+    for(int i = 0; i < 5; i++) {
+        pool[i]->join();
+    }
+
+    db<Synchronizer>(WRN)   << "main: done with both (counter = " << counter 
+                            << ")" << endl;
+
+    for(int i = 0; i < 5; i++)
+        delete pool[i];
+
+    db<Synchronizer>(WRN)   << "main: exiting (counter = " << counter 
+                            << ")" << endl;
+
+    return 0;
+}
+{CODE}
+
+::__Listagem 14:__ Resultado do teste ''/app/fas_test.cc''::
+{CODE(colors="c")}
+<1>: MMU is disabled! :<1>
+<2>: MMU is disabled! :<2>
+<3>: MMU is disabled! :<3>
+<0>: main: begin (counter = 0) :<0>
+<1>: A: begin (counter = 0) :<1>
+<3>: B: begin (counter = 296) :<3>
+<2>: C: begin (counter = 1246) :<2>
+<0>: D: begin (counter = 6173) :<0>
+<1>: main: start joining the threads (counter = 7532) :<1>
+<2>: E: begin (counter = 8798) :<2>
+<1>: main: done with both (counter = 50000) :<1>
+<1>: main: exiting (counter = 50000) :<1>
+<0>: The last thread has exited! :<0>
+<0>: Rebooting the machine ... :<0>
+{CODE}
+
+!!!count_sync_uncoordinated.cc [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+O que se espera deste teste, ao contrário do teste anterior, é que a contagem final de errada, pois nenhuma primitiva de sincronização é utilizada, assim teremos que a operação de incremento, que não é atômica, seja interrompida pelo metade, e no fim o resultado fique errado.
+
+::__Listagem 15:__ Arquivo de teste ''/app/count_sync_uncoordinated.cc''::
+{CODE(colors="c")}
+// EPOS Synchronizer Component Test Program
+
+#include <semaphore.h>
+#include <thread.h>
+#include <machine.h>
+#include <alarm.h>
+
+using namespace EPOS;
+
+int counter = 0;
+
+Semaphore display_lock;
+Semaphore counter_lock; 
+#define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
+
+// mythread()
+// Simply adds 1 to counter repeatedly, in a loop
+// No, this is not how you would add 10,000,000 to
+// a counter, but it shows the problem nicely.
+int mythread(char arg) {
+    log( arg << ": begin : " << endl)
+
+    for (int i = 0; i < 1e6; i++) {
+        if (counter%100000 == 0){
+            log( arg << " : " << counter << endl )
+        }
+        counter = counter + 1;
+        // log( "Counting " << counter << endl )
+    }
+
+    log( arg << ": done" << endl )
+    return 0;
+}
+
+// main()
+// Just launches two threads (pthread_create)
+// and then waits for them (pthread_join)
+int main()
+{
+    log( "main: begin (counter = " << counter << ")" << endl )
+
+    Thread * p1 = new Thread(&mythread, 'A');
+    Thread * p2 = new Thread(&mythread, 'B');
+    Thread * p3 = new Thread(&mythread, 'C');
+    Thread * p4 = new Thread(&mythread, 'D');
+    Thread * p5 = new Thread(&mythread, 'E');
+    Thread * p6 = new Thread(&mythread, 'F');
+
+    // join waits for the threads to finish
+    p1->join();
+    p2->join();
+    p3->join();
+    p4->join();
+    p5->join();
+    p6->join();
+
+    log( "main: done with both (counter = " << counter << ")"<< endl )
+    return 0;
+}
+{CODE}
+
+::__Listagem 16:__ Resultado do teste ''/app/count_sync_uncoordinated.cc''::
+{CODE(colors="c")}
+<1>: MMU is disabled! :<1>
+<2>: MMU is disabled! :<2>
+<3>: MMU is disabled! :<3>
+<0>: main: begin (counter = 0) :<0>
+<2>: A: begin :  :<2>
+<2>: A : 0 :<2>
+<1>: B: begin :  :<1>
+<3>: C: begin :  :<3>
+<0>: D: begin :  :<0>
+<2>: E: begin :  :<2>
+<1>: F: begin :  :<1>
+<1>: F : 100000 :<1>
+<2>: E : 100000 :<2>
+<3>: A : 100000 :<3>
+<0>: B : 100000 :<0>
+<2>: C : 100000 :<2>
+<1>: D : 100000 :<1>
+<0>: F : 200000 :<0>
+<3>: C : 200000 :<3>
+<2>: E : 200000 :<2>
+<3>: A : 200000 :<3>
+<0>: B : 200000 :<0>
+<1>: D : 200000 :<1>
+<3>: E : 300000 :<3>
+<0>: F : 300000 :<0>
+<2>: A : 300000 :<2>
+<2>: A : 300000 :<2>
+<3>: C : 300000 :<3>
+<2>: E : 400000 :<2>
+<1>: F : 400000 :<1>
+<1>: D : 345974 :<1>
+<1>: B : 400000 :<1>
+<3>: D : 346916 :<3>
+<0>: F : 385967 :<0>
+<0>: E : 393666 :<0>
+<2>: A : 400000 :<2>
+<1>: C : 477901 :<1>
+<0>: F : 498945 :<0>
+<3>: D : 446608 :<3>
+<1>: E : 476901 :<1>
+<0>: B : 484604 :<0>
+<3>: C : 500000 :<3>
+<1>: E : 528187 :<1>
+<0>: D : 525792 :<0>
+<2>: A : 571028 :<2>
+<2>: F : 600000 :<2>
+<1>: E : 567826 :<1>
+<3>: A : 654100 :<3>
+<1>: B : 588204 :<1>
+<1>: E : 600000 :<1>
+<3>: D : 689233 :<3>
+<0>: B : 700000 :<0>
+<0>: A : 600000 :<0>
+<0>: D : 646539 :<0>
+<3>: F : 658486 :<3>
+<1>: C : 691064 :<1>
+<0>: D : 700000 :<0>
+<0>: D : 700000 :<0>
+<1>: C : 700000 :<1>
+<3>: F : 700000 :<3>
+<2>: A : 700000 :<2>
+<3>: B : 700000 :<3>
+<0>: E : 700000 :<0>
+<0>: C : 800000 :<0>
+<3>: A : 800000 :<3>
+<0>: D : 800000 :<0>
+<1>: F : 817259 :<1>
+<2>: B : 800000 :<2>
+<2>: D : 900000 :<2>
+<2>: D : 800000 :<2>
+<3>: E : 800000 :<3>
+<0>: C : 900000 :<0>
+<2>: A : 900000 :<2>
+<3>: F : 900000 :<3>
+<2>: B : 900000 :<2>
+<0>: D : 900000 :<0>
+<3>: C : 1000000 :<3>
+<2>: F : 1000000 :<2>
+<3>: E : 900000 :<3>
+<1>: A : 1000000 :<1>
+<1>: A : 1000000 :<1>
+<0>: B : 1000000 :<0>
+<3>: F : 1100000 :<3>
+<3>: C : 1100000 :<3>
+<0>: D : 1000000 :<0>
+<1>: E : 1000000 :<1>
+<2>: B : 1100000 :<2>
+<3>: C : 1100000 :<3>
+<0>: A: done :<0>
+<1>: F: done :<1>
+<3>: B: done :<3>
+<0>: C: done :<0>
+<1>: E: done :<1>
+<2>: D : 1100000 :<2>
+<2>: D: done :<2>
+<2>: main: done with both (counter = 1106138) :<2>
+<0>: The last thread has exited! :<0>
+<0>: Rebooting the machine ... :<0>
+{CODE}
+
+!!!count_sync_semaphore.cc [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+Neste teste, utilizamos os mecanismo de sincronização do semáforo, e ao contrário do teste anterior ''count_sync_uncoordinated.cc'', deste teste espera-se que a contagem seja correta, pois utilizamos o mecanismo de sincronização do semáforo para garantir a atomicidade da operação de adição.
+
+::__Listagem 17:__ Arquivo de teste ''/app/count_sync_semaphore.cc''::
+{CODE(colors="c")}
+// EPOS Synchronizer Component Test Program
+
+#include <utility/ostream.h>
+#include <semaphore.h>
+#include <thread.h>
+#include <machine.h>
+
+using namespace EPOS;
+
+int counter = 0;
+
+Semaphore display_lock;
+Semaphore counter_lock; 
+#define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
+
+// mythread()
+// Simply adds 1 to counter repeatedly, in a loop
+// No, this is not how you would add 10,000,000 to
+// a counter, but it shows the problem nicely.
+int mythread(char arg) {
+    log( arg << ": begin" << endl )
+
+    for (int i = 0; i < 1e4; i++) {
+        counter_lock.p();
+        counter = counter + 1;
+        counter_lock.v();
+    }
+
+    log( arg << ": done" << endl )
+    return 0;
+}
+
+// main()
+// Just launches two threads (pthread_create)
+// and then waits for them (pthread_join)
+int main()
+{
+    log( "main: begin (counter = " << counter << ")" << endl )
+    Thread * p1 = new Thread(&mythread, 'A');
+    Thread * p2 = new Thread(&mythread, 'B');
+
+    // join waits for the threads to finish
+    p1->join();
+    p2->join();
+    log( "main: done with both (counter = " << counter << ")"<< endl )
+
+    delete p1;
+    delete p2;
+    return 0;
+}
+{CODE}
+
+::__Listagem 18:__ Resultado do teste ''/app/count_sync_semaphore.cc''::
+{CODE(colors="c")}
+<1>: MMU is disabled! :<1>
+<2>: MMU is disabled! :<2>
+<3>: MMU is disabled! :<3>
+<0>: main: begin (counter = 0) :<0>
+<0>: A: begin :<0>
+<0>: B: begin :<0>
+<3>: B: done :<3>
+<3>: A: done :<3>
+<3>: main: done with both (counter = 20000) :<3>
+<0>: The last thread has exited! :<0>
+<0>: Rebooting the machine ... :<0>
+{CODE}
+
+!!!O que aprendemos com os testes [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+# Executar aplicações com mais de 1 CPU ativa variavelmente gera exceções (GPF). Isso acontece mesmo com a aplicação do jantar dos filósofos, se os delays forem removidos.
+# Quando requisições são enviadas ao sequencer em uma taxa maior do que ele consegue executar, a memória enche e exceções (PF) ocorrem.
+# Com o KVM não funciona o relógio e o escalonador não era chamado.
+# Sem o RR fica difícil gerar erros de sincronização.
+# Após a primeira execução, o qemu fica muito comportado e para de gerar erros de contagem durante a execução do arquivo corrente mais simples: count_sync_uncoordinated.cc
+# Compilando o EPOS utilizado/entregado no trabalho anterior de 2017.2 com GCC 7.2.0, não executa a aplicação principal. Baixamos o código deles, e compilamos. A seguir tem um log completo no modo histérico da execução, mostrando o problema: https://gist.github.com/evandrocoan/3159d9bf1c53620e2e01169d7a4b8d92
+
+!!Referências de Implementação  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+#https://stackoverflow.com/questions/18847424/c-create-custom-function-dispatcher-from-variadic-template
+#https://stackoverflow.com/questions/42047795/order-of-parameter-pack-expansion
+#https://stackoverflow.com/questions/29194858/order-of-function-calls-in-variadic-template-expansion
+#https://stackoverflow.com/questions/43553585/how-to-transform-a-variadic-template-argument-to-another-types-for-calling-anoth
+#https://stackoverflow.com/questions/12030538/calling-a-function-for-each-variadic-template-argument-and-an-array
+#https://stackoverflow.com/questions/687490/how-do-i-expand-a-tuple-into-variadic-template-functions-arguments/12650100#12650100
+#https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer
+#https://en.cppreference.com/w/cpp/language/list_initialization#Notes
+#https://stackoverflow.com/questions/47207621/build-function-parameters-with-variadic-templates
+#https://stackoverflow.com/questions/16868129/how-to-store-variadic-template-arguments
+#https://stackoverflow.com/questions/43026550/how-to-define-a-class-that-can-save-variadic-template-arguments
+#https://stackoverflow.com/questions/17996003/how-to-save-variable-number-of-arguments-using-variadic-template-arguments
+#https://stackoverflow.com/questions/29220248/is-it-possible-to-store-variadic-arguments-into-a-member-variable
+#https://stackoverflow.com/questions/4691657/is-it-possible-to-store-a-template-parameter-pack-without-expanding-it
+#https://arne-mertz.de/2016/11/modern-c-features-variadic-templates/
+#https://gitlab.com/evandro-crr/epos2/tree/master
+#https://stackoverflow.com/questions/13108663/storing-functions-call-and-list-of-parameters-to-invoke-later
+#https://stackoverflow.com/questions/4926433/saving-function-pointerarguments-for-later-use
+#https://appuals.com/fix-cannot-execute-binary-file-exec-format-error-ubuntu/
+#https://stackoverflow.com/questions/30926764/extracting-function-argument-types-as-a-parameter-pack
+#https://stackoverflow.com/questions/24948277/unpacking-arguments-of-a-functional-parameter-to-a-c-template-class
+#https://stackoverflow.com/questions/14783876/c-is-it-possible-to-extract-class-and-argument-types-from-a-member-function
+#https://stackoverflow.com/questions/34836104/how-to-extract-a-selected-set-of-arguments-of-a-variadic-function-and-use-them-t
+#https://stackoverflow.com/questions/28033251/can-you-extract-types-from-template-parameter-function-signature
+#https://stackoverflow.com/questions/11056714/c-type-traits-to-extract-template-parameter-class
+#https://stackoverflow.com/questions/32674839/variadic-member-function-of-template-class
+#https://stackoverflow.com/questions/49217891/class-member-function-in-variadic-template
+#https://stackoverflow.com/questions/50316284/how-to-achieve-variadic-virtual-member-function
+#https://stackoverflow.com/questions/15599679/class-member-function-pointer
+#https://stackoverflow.com/questions/40855835/how-do-you-typedef-a-function-pointer-type-with-parameter-pack-arguments
+#https://stackoverflow.com/questions/8915797/calling-a-function-through-its-address-in-memory-in-c-c
+#https://stackoverflow.com/questions/47005664/call-function-by-known-address-c
+#https://en.cppreference.com/w/cpp/language/parameter_pack
+#https://stackoverflow.com/questions/47037395/forward-types-in-variadic-template-as-values-references-according-to-function-si
+#https://eli.thegreenplace.net/2014/perfect-forwarding-and-universal-references-in-c
+#https://stackoverflow.com/questions/3836648/structure-or-class-with-variable-number-of-members
+#https://stackoverflow.com/questions/43069213/c-class-template-for-automatic-getter-setter-methods-good-bad-practice
+#https://stackoverflow.com/questions/13980157/c-class-with-template-member-variable
+#https://stackoverflow.com/questions/6261375/how-to-declare-data-members-that-are-objects-of-any-type-in-a-class
+#https://stackoverflow.com/questions/1872220/is-it-possible-to-iterate-over-arguments-in-variadic-macros
+#https://stackoverflow.com/questions/11761703/overloading-macro-on-number-of-arguments
+#https://groups.google.com/forum/#!topic/comp.std.c/d-6Mj5Lko_s
+#https://stackoverflow.com/questions/27941661/generating-one-class-member-per-variadic-template-argument
+#https://stackoverflow.com/questions/14919990/c-how-to-template-a-class-attribute-and-not-the-functions-of-the-class
+#https://stackoverflow.com/questions/40204338/template-parameter-pack-attribute
+#https://stackoverflow.com/questions/5723619/is-it-possible-to-create-function-local-closures-pre-c11
+#https://blog.feabhas.com/2014/03/demystifying-c-lambdas/
+#https://stackoverflow.com/questions/1447199/c-closures-and-templates
+#http://matt.might.net/articles/c++-template-meta-programming-with-lambda-calculus/
+#https://www.gnu.org/software/gcc/gcc-4.4/cxx0x_status.html
+#https://stackoverflow.com/questions/25091436/expand-a-parameter-pack-with-a-counter
+#https://stackoverflow.com/questions/41623422/c-expand-variadic-template-arguments-into-a-statement
+#https://stackoverflow.com/questions/8526598/how-does-stdforward-work
+#https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer/7858971
+#https://stackoverflow.com/questions/31204084/is-it-possible-to-call-static-method-form-variadic-template-type-parameter
+#https://stackoverflow.com/questions/25680461/variadic-template-pack-expansion
+#https://stackoverflow.com/questions/21180346/variadic-template-unpacking-arguments-to-typename
+#https://stackoverflow.com/questions/2934904/order-of-evaluation-in-c-function-parameters
+#https://stackoverflow.com/questions/9566187/function-parameter-evaluation-order
+#https://stackoverflow.com/questions/7728478/c-template-class-function-with-arbitrary-container-type-how-to-define-it
+#https://stackoverflow.com/questions/12048221/c11-variadic-template-function-parameter-pack-expansion-execution-order
+#https://stackoverflow.com/questions/34957810/variadic-templates-parameter-pack-and-its-discussed-ambiguity-in-a-parameter-li
+#https://stackoverflow.com/questions/20588191/error-with-variadiac-template-parameter-pack-must-be-expanded
+#https://stackoverflow.com/questions/37200391/multiple-variadic-parameter-pack-for-template-class
+#https://stackoverflow.com/questions/34940875/parameter-pack-must-be-at-the-end-of-the-parameter-list-when-and-why
+#https://stackoverflow.com/questions/15904288/how-to-reverse-the-order-of-arguments-of-a-variadic-template-function
+#https://stackoverflow.com/questions/12906523/how-can-i-interpret-a-stackdump-file
+#https://stackoverflow.com/questions/320001/using-a-stackdump-from-cygwin-executable
+#https://stackoverflow.com/questions/37628530/how-to-debug-using-stackdump-file-in-cygwin
+#https://stackoverflow.com/questions/8305866/how-to-analyze-a-programs-core-dump-file-with-gdb
+#https://stackoverflow.com/questions/5115613/core-dump-file-analysis
+#https://www.linuxquestions.org/questions/programming-9/cygwin-gcc-compiled-code-generates-a-stackdump-how-to-analyze-with-gdb-874630
+#http://cygwin.1069669.n5.nabble.com/exe-stackdump-and-core-dump-files-questions-td17219.html
+#https://stackoverflow.com/questions/10208233/what-comes-first-template-instantiation-vs-macro-expansion/10208278#10208278
+#https://stackoverflow.com/questions/44050323/class-member-variables-based-on-variadic-template
+#https://stackoverflow.com/questions/40356688/c-define-a-class-member-type-according-to-its-template
+#https://stackoverflow.com/questions/11394832/how-to-define-a-template-member-function-of-a-template-class
+#https://stackoverflow.com/questions/29668447/c-independent-static-variable-for-each-object-inside-a-method
+#http://www.cplusplus.com/forum/general/142258/
+#https://stackoverflow.com/questions/3778450/is-local-static-variable-per-instance-or-per-class
 
 !!Referências  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 #Stefan Reif and Wolfgang Schröder-Preikschat, "Predictable Synchronisation Algorithms for Asynchronous Critical Sections,” Friedrich-Alexander-Universität Erlangen-Nürnberg, Dept. of Computer Science, Technical Reports, CS-2018-03, February 2018.

@@ -16,6 +16,8 @@ public:
     Condition();
     ~Condition();
 
+    int size() { return _queue.size(); }
+
     void wait();
     void signal();
     void broadcast();

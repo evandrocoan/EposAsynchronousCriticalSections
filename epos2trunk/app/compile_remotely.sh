@@ -12,7 +12,7 @@ popd > /dev/null
 # Use this on your '~/.bashrc' file:
 # export EPOS_COMPILER_MACHINE_PASS=123
 # export EPOS_COMPILER_MACHINE_ADDRESS=user.name@so.user.name.vms.ufsc.br
-# 
+#
 
 
 # EPOS_COMPILER_MACHINE_PASS=admin123
@@ -56,8 +56,11 @@ fi
 
 
 # REMOTE_COMMAND_TO_RUN="cd /home/evandro.coan/OperatingSystems/TeachingEpos;
-REMOTE_COMMAND_TO_RUN="cd $TARGET_DIRECTORY;
+# REMOTE_COMMAND_TO_RUN="PATH=/usr/local/ia32/gcc-7.2.0/bin:\$PATH;
+REMOTE_COMMAND_TO_RUN="
+cd $TARGET_DIRECTORY;
 printf '\nThe current directory is:\n'; pwd;
+printf '\nThe current path is: %s\n' \$PATH;
 printf 'Running the command: sh compile_and_run.sh $APPLICATION_TO_RUN\n';
 sh compile_and_run.sh $APPLICATION_TO_RUN;"
 

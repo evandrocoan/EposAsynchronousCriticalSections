@@ -346,6 +346,7 @@ void Thread::rescheduler(const IC::Interrupt_Id & interrupt)
 void Thread::time_slicer(const IC::Interrupt_Id & i)
 {
     lock();
+    db<Synchronizer>(TRC) << "Thread::time_slicer(i=" << i << ")" << endl;
 
     reschedule();
 }
@@ -397,7 +398,7 @@ int Thread::idle()
 
     CPU::int_disable();
     if(Machine::cpu_id() == 0) {
-        db<Thread>(WRN) << "The last thread has exited!" << endl;
+        db<Thread>(WRN) << endl << "The last thread has exited!" << endl;
         if(reboot) {
             db<Thread>(WRN) << "Rebooting the machine ..." << endl;
             Machine::reboot();

@@ -8,55 +8,62 @@
 
 using namespace EPOS;
 
-static volatile int shared_var = 0;
-
 Semaphore display_lock;
-Semaphore counter_lock; 
+// #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
+#define log(argument) db<Synchronizer>(WRN) << argument;
 
-OStream cout;
+static const int iterations = 1e5;
 
-int mythread0() {
-    display_lock.p();
-    cout << Thread0 << ": begin" << endl;
-    display_lock.v();
-    for (int i = 0; i < 1e7; i++) {
-        int ret = CPU::fas(value, replace);
+int old = 0;
+int current = 10;
+int next = 11;
+
+#define check(thread, name) \
+    log( thread << name \
+            << ", old=" << old \
+            << ", current=" << current \
+            << ", next=" << next \
+            << endl )
+
+int myThread1() {
+    check("Thread 1", ", begin")
+    
+    for (int i = 0; i < iterations; i++) 
+    {
+        old = CPU::fas(current, next);
+        current = CPU::fas(next, old);
+        next = CPU::fas(old, current);
+        // check("Thread 1", ", now")
     }
 
-    display_lock.p();
-    cout << arg << ": done" << endl;
-    display_lock.v();
+    check("Thread 1", ", result")
     return 0;
 }
 
-int mythread1() {
-    display_lock.p();
-    cout << Thread1 << ": begin" << endl;
-    display_lock.v();
-    for (int i = 0; i < 1e7; i++) {
-        int ret = CPU::fas(value, replace);
+int myThread2() {
+    check("Thread 2", ", begin")
+
+    for (int i = 0; i < iterations; i++) {
+        old = CPU::fas(current, next);
+        current = CPU::fas(next, old);
+        next = CPU::fas(old, current);
+        // check("Thread 2", ", now")
     }
 
-    display_lock.p();
-    cout << arg << ": done" << endl;
-    display_lock.v();
+    check("Thread 2", ", result")
     return 0;
 }
 
 int main()
 {
-    Thread p1(&mythread, 'A');
-    Thread p2(&mythread, 'B');
+    log( "iterations=" << iterations << endl )
+    Thread p1(&myThread1);
+    Thread p2(&myThread2);
 
-    display_lock.p();
-    cout << "main: begin (counter = " << counter << ")" << endl;
-    display_lock.v();
-
-    // join waits for the threads to finish
+    check("Thread 0", ", main")
     p1.join();
     p2.join();
 
-    cout << "main: done with both (counter = " << counter << ")"<< endl;
-
+    check("Thread 0", ", end")
     return 0;
 }

@@ -68,6 +68,10 @@ class Random;
 class Spin;
 class SREC;
 class Vectors;
+class Guard;
+
+template<typename Tn>
+class Closure;
 __END_UTIL
 
 __BEGIN_SYS
@@ -155,7 +159,6 @@ class Synchronizer;
 class Mutex;
 class Semaphore;
 class Condition;
-class Guard;
 
 class Clock;
 class Chronometer;

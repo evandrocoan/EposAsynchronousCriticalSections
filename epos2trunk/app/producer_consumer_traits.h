@@ -21,15 +21,15 @@ template<> struct Traits<Build>
     static const unsigned int MODE = LIBRARY;
 
     enum {IA32, AVR8, ARMv7};
-    static const unsigned int ARCHITECTURE = IA32;
+    static const unsigned int ARCHITECTURE = ARMv7;
 
     enum {PC, ATmega, Cortex};
-    static const unsigned int MACHINE = PC;
+    static const unsigned int MACHINE = Cortex;
 
-    enum {Legacy_PC, eMote1, eMote2, eMote3, Arduino, LM3S811, Zynq};
-    static const unsigned int MODEL = Legacy_PC;
+    enum {Legacy_PC, eMote3, LM3S811, Zynq};
+    static const unsigned int MODEL = LM3S811;
 
-    static const unsigned int CPUS = 1;
+    static const unsigned int CPUS = 1; // our
     static const unsigned int NODES = 1; // > 1 => NETWORKING
 };
 
@@ -79,7 +79,7 @@ template<> struct Traits<Serial_Display>: public Traits<void>
     static const bool enabled = true;
     enum {UART, USB};
     static const int ENGINE = UART;
-    static const int COLUMNS = 80;
+    static const int COLUMNS = 8000;
     static const int LINES = 24;
     static const int TAB_SIZE = 8;
 };
@@ -126,7 +126,7 @@ template<> struct Traits<Thread>: public Traits<void>
 {
     static const bool smp = Traits<System>::multicore;
 
-    typedef Scheduling_Criteria::DM Criterion;
+    typedef Scheduling_Criteria::RR Criterion; // our
     static const unsigned int QUANTUM = 10000; // us
 
     static const bool trace_idle = hysterically_debugged;
@@ -154,7 +154,7 @@ template<> struct Traits<Segment>: public Traits<void>
 
 template<> struct Traits<Alarm>: public Traits<void>
 {
-    static const bool visible = hysterically_debugged;
+    static const bool visible = false;
 };
 
 template<> struct Traits<Synchronizer>: public Traits<void>
