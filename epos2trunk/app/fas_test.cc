@@ -30,9 +30,9 @@ int myThread1() {
     
     for (int i = 0; i < iterations; i++) 
     {
-        old = CPU::cas(current, current, next);
-        current = CPU::cas(next, next, old);
-        next = CPU::cas(old, old, current);
+        old = CPU::fas(current, next);
+        current = CPU::fas(next, old);
+        next = CPU::fas(old, current);
         // check("Thread 1", ", now")
     }
 
@@ -44,9 +44,9 @@ int myThread2() {
     check("Thread 2", ", begin")
 
     for (int i = 0; i < iterations; i++) {
-        old = CPU::cas(current, current, next);
-        current = CPU::cas(next, next, old);
-        next = CPU::cas(old, old, current);
+        old = CPU::fas(current, next);
+        current = CPU::fas(next, old);
+        next = CPU::fas(old, current);
         // check("Thread 2", ", now")
     }
 

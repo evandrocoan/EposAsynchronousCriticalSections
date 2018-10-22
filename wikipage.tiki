@@ -656,9 +656,9 @@ int myThread1() {
     
     for (int i = 0; i < iterations; i++) 
     {
-        old = CPU::cas(current, current, next);
-        current = CPU::cas(next, next, old);
-        next = CPU::cas(old, old, current);
+        old = CPU::fas(current, next);
+        current = CPU::fas(next, old);
+        next = CPU::fas(old, current);
         // check("Thread 1", ", now")
     }
 
@@ -670,9 +670,9 @@ int myThread2() {
     check("Thread 2", ", begin")
 
     for (int i = 0; i < iterations; i++) {
-        old = CPU::cas(current, current, next);
-        current = CPU::cas(next, next, old);
-        next = CPU::cas(old, old, current);
+        old = CPU::fas(current, next);
+        current = CPU::fas(next, old);
+        next = CPU::fas(old, current);
         // check("Thread 2", ", now")
     }
 
@@ -702,9 +702,9 @@ int main()
 <3>: MMU is disabled! :<3>
 <0>: iterations=100000 :<0>
 <0>: Thread 0, main, old=0, current=10, next=11 :<0>
-<0>: Thread 1, begin, old=0, current=10, next=11 :<0>
+<2>: Thread 1, begin, old=0, current=10, next=11 :<2>
 <1>: Thread 2, begin, old=10, current=10, next=11 :<1>
-<0>: Thread 1, result, old=11, current=11, next=10 :<0>
+<2>: Thread 1, result, old=10, current=10, next=11 :<2>
 <1>: Thread 2, result, old=10, current=10, next=11 :<1>
 <1>: Thread 0, end, old=10, current=10, next=11 :<1>
 <0>: The last thread has exited! :<0>
