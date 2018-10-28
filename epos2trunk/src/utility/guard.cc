@@ -22,12 +22,12 @@ Guard::Element * Guard::vouch(Element * item)
     db<Synchronizer>(TRC) << "Guard::vouch(this=" << this << " head= " << _head << " tail= " << _tail <<  ")" << endl;
     item->next(NULL);
     Element * last = CPU::fas(_tail, item);
-    if (last){ 
+    if (last) { 
         if (CPU::cas(last->_next, reinterpret_cast<Element *>(NULL), item) == NULL)
             return NULL;
         delete item->object();
     }
-    _head = item;        
+    _head = item;
     return item;
 }
 
@@ -52,7 +52,7 @@ void Guard::submit(Critical_Section * cs)
     if (cur != NULL) do {
         cur->object()->run();
         cur = clear();
-    } while (cur != NULL);    
+    } while (cur != NULL);
 }
 
 __END_UTIL
