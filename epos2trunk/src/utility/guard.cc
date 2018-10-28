@@ -19,7 +19,7 @@ Guard::~Guard()
 
 Guard::Element * Guard::vouch(Element * item)
 {
-    db<Synchronizer>(TRC) << "Guard::vouch(this=" << this << " head= " << _head << " tail= " << _tail <<  ")" << endl;
+    db<Synchronizer>(TRC) << "Guard::vouch(this=" << this << " head=" << _head << " tail=" << _tail <<  ")" << endl;
     item->next(NULL);
     Element * last = CPU::fas(_tail, item);
     if (last) { 
@@ -33,7 +33,7 @@ Guard::Element * Guard::vouch(Element * item)
 
 Guard::Element * Guard::clear()
 {
-    db<Synchronizer>(TRC) << "Guard::clear(this=" << this << " head= " << _head << " tail= " << _tail <<  ")" << endl;
+    db<Synchronizer>(TRC) << "Guard::clear(this=" << this << " head=" << _head << " tail=" << _tail <<  ")" << endl;
     Element * item = _head;
     Element * next = CPU::fas(item->_next, reinterpret_cast<Element *>(DONE));
     bool mine = true;
