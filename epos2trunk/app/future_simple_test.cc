@@ -15,7 +15,7 @@ Semaphore display_lock;
 // #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
 #define log(argument) db<Synchronizer>(WRN) << argument;
 
-int producerFunction(EPOS::S::U::Future<int>* future) {
+int producerFunction(Future<int>* future) {
     Delay thinking(1000000);
     future->resolve(10);
 
@@ -23,23 +23,23 @@ int producerFunction(EPOS::S::U::Future<int>* future) {
     return 0;
 }
 
-int consumerFunction() {
+int consumerFunction(Future<int>* future) {
     log( "consumerFunction ()" << endl )
-    EPOS::S::U::Future<int>* future = new EPOS::S::U::Future<int>();
-
-    Thread* producer = new Thread(&producerFunction, future);
     log( "consumerFunction (result=" << future->get_value() << ")" << endl )
     log( "consumerFunction (result=" << future->get_value() << ")" << endl )
-
-    producer->join();
     return 0;
 }
 
 int main()
 {
     log( endl << "Starting main application..." << endl )
-    Thread* consumer = new Thread(&consumerFunction);
+    Future<int>* future = new Future<int>();
+
+    Thread* consumer = new Thread(&consumerFunction, future);
+    Thread* producer = new Thread(&producerFunction, future);
+
     consumer->join();
+    producer->join();
 
     log( "Exiting main application..." << endl )
     return 0;
