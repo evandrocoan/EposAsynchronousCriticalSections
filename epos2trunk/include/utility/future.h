@@ -13,7 +13,7 @@ class Future
 public:
     Future(): _semaphore(0), _is_resolved() {
         db<Synchronizer>(WRN)   << "Future(is_resolved=" << _is_resolved 
-                                << ", _semaphore=" << &_semaphore
+                                << ", _semaphore=" << _semaphore.size()
                                 << ") => " << this << endl;
     }
 
@@ -24,7 +24,7 @@ public:
     FutureType get_value() {
         db<Synchronizer>(WRN) << "Future::get_value(this=" << this 
                               << " is_resolved=" << _is_resolved 
-                              << " semaphore=" << &_semaphore 
+                              << " semaphore=" << _semaphore.size()
                               <<  ")" << endl;
         if(!_is_resolved) _semaphore.p();
         return _value;
@@ -33,7 +33,7 @@ public:
     void resolve(FutureType value) { 
         db<Synchronizer>(WRN) << "Future::resolve(this=" << this 
                               << " is_resolved=" << _is_resolved 
-                              << " semaphore=" << &_semaphore
+                              << " semaphore=" << _semaphore.size()
                               <<  ")" << endl;
         assert(!_is_resolved);
         _is_resolved = true;

@@ -17,6 +17,10 @@ public:
     void p();
     void v();
 
+    void lock()   { p(); }
+    void unlock() { v(); }
+    int size()    { return _value; }
+
 private:
     volatile int _value;
 };
