@@ -46,7 +46,7 @@ Guard::Element * Guard::clear()
 }
 
 // Class Methods
-void Guard::submit(Critical_Section * cs)
+void Guard::submit(Critical_Section<int> * cs)
 {
     Element * cur = vouch(&(cs->_link));
     if (cur != NULL) do {

@@ -16,6 +16,7 @@ Semaphore display_lock;
 #define log(argument) db<Synchronizer>(WRN) << argument;
 
 int producerFunction(Future<int>* future) {
+    log( "producerFunction ()" << endl )
     Delay thinking(1000000);
     future->resolve(10);
 

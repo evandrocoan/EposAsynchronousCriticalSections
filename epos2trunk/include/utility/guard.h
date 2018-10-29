@@ -6,32 +6,37 @@
 #include <architecture/ia32/cpu.h>
 #include <utility/list.h>
 #include <utility/handler.h>
+#include <utility/future.h>
 
 __BEGIN_UTIL
 
+
+template<typename FutureType>
 class Critical_Section
 {
 public:
     friend class Guard;
-    typedef Handler::Function Function;
+    // typedef Handler::Function Function;
+    typedef void (Function)(Future<FutureType>*);
     typedef List_Elements::Singly_Linked<Critical_Section> Element;
 
 public:
-    Critical_Section(Function * h): _handler(h), _link(this) {}
+    Critical_Section(Function * h, Future<FutureType>* future): _handler(h), _future(future), _link(this) {}
     ~Critical_Section() {}
 
-    void operator()() { _handler(); }
-    void run()        { _handler(); } // Alias for ()
+    void operator()() { run(); } // Alias for ()
+    void run()        { _handler(_future); } 
 
 private:
-    Function * _handler;
+    Function* _handler;
+    Future<FutureType>* _future;
     Element _link; // Inspired by the thread code
 };
 
 class Guard
 {
 public:
-    typedef Critical_Section::Element Element;
+    typedef Critical_Section<int>::Element Element;
 
 private:
     static const int NULL = 0;
@@ -41,7 +46,7 @@ public:
     Guard();
     ~Guard();
 
-    void submit(Critical_Section * cs);
+    void submit(Critical_Section<int> * cs);
     Element * vouch(Element * item);
     Element * clear();
 
