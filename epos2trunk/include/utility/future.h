@@ -3,7 +3,7 @@
 #ifndef __future_h
 #define __future_h
 
-#include <semaphore.h>
+#include <condition.h>
 
 __BEGIN_UTIL
 
@@ -11,9 +11,9 @@ template<typename FutureType>
 class Future 
 {
 public:
-    Future(): _semaphore(0), _is_resolved() {
-        db<Synchronizer>(WRN)   << "Future(is_resolved=" << _is_resolved 
-                                << ", _semaphore=" << _semaphore.size()
+    Future(): _condition(), _is_resolved() {
+        db<Synchronizer>(WRN)   << "Future(_is_resolved=" << _is_resolved 
+                                << ", _condition=" << _condition.size()
                                 << ") => " << this << endl;
     }
 
@@ -23,28 +23,28 @@ public:
 
     FutureType get_value() {
         db<Synchronizer>(WRN) << "Future::get_value(this=" << this 
-                              << " is_resolved=" << _is_resolved 
-                              << " semaphore=" << _semaphore.size()
+                              << " _is_resolved=" << _is_resolved 
+                              << " _condition=" << _condition.size()
                               <<  ")" << endl;
-        if(!_is_resolved) _semaphore.p();
+        if(!_is_resolved) _condition.wait();
         return _value;
     }
 
     void resolve(FutureType value) { 
         db<Synchronizer>(WRN) << "Future::resolve(this=" << this 
-                              << " is_resolved=" << _is_resolved 
-                              << " semaphore=" << _semaphore.size()
+                              << " _is_resolved=" << _is_resolved 
+                              << " _condition=" << _condition.size()
                               <<  ")" << endl;
         assert(!_is_resolved);
         _is_resolved = true;
         _value = value;
-        _semaphore.v();
+        _condition.broadcast();
     }
 
 private:
     bool _is_resolved;
     FutureType _value;
-    Semaphore _semaphore;
+    Condition _condition;
 };
 
 __END_UTIL
