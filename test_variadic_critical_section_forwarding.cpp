@@ -23,11 +23,11 @@ template<typename ... Tn>
 void test_function1(Tn ... an)
 {
     printf("Running test_function1\n");
-    new Critical_Section<char, int>(&test_function2, an ...);
+    new Critical_Section<Tn ...>(&test_function2, an ...);
 }
 
 int main()
 {
-    test_function1('a', 2);
+    test_function1('a', 1);
 }
 
