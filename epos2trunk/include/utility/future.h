@@ -36,8 +36,8 @@ public:
                               << " _condition=" << _condition.size()
                               <<  ")" << endl;
         assert(!_is_resolved);
-        _is_resolved = true;
         _value = value;
+        _is_resolved = true;
         _condition.broadcast();
     }
 
