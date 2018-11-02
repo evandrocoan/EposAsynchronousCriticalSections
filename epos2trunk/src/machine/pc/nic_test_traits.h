@@ -34,12 +34,12 @@ template<> struct Traits<Build>
 
 
 // Utilities
-template<> struct Traits<Debug>
+template<> struct Traits<Debug>: public Traits<void>
 {
     static const bool error   = true;
     static const bool warning = true;
-    static const bool info    = false;
-    static const bool trace   = false;
+    static const bool info    = hysterically_debugged;
+    static const bool trace   = hysterically_debugged;
 };
 
 template<> struct Traits<Lists>: public Traits<void>
