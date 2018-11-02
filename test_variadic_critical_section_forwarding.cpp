@@ -28,7 +28,7 @@ template<typename ReturnType, typename ... Tn>
 class Closure
 {
 public:
-    typedef ReturnType (*Function)(Tn ...);
+    typedef ReturnType(*Function)(Tn ...);
     Function _entry;
     char* _parameters;
 
