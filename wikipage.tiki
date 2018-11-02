@@ -612,6 +612,9 @@ static int fas(volatile int & value, volatile int & replacement) {
  }
 {CODE}
 
+!!!Futures [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+Das 2 implementações distintas de futures apresentadas, realizamos a implementação do modelo de future bloqueante, apresentado no artigo referência {DIV(type="span")}[{DIV}[#Refer_ncias_|2]]. Como a implementação atual do algoritmo do guarda não suporta passagens de parâmetros variádicos, manualmente fez-se a modificação dos métodos para que aceitem uma future como parâmetro.
+
 !!Testes [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Criamos um arquivo de testes baseado no exemplo de http://pages.cs.wisc.edu/~remzi/OSTEP/threads-intro.pdf.
 # Os exemplos com o EPOS multicore, com duas CPUS, variavelmente gerava exceções, que não ocorrem na versão single core. Não pode-se identificar exatamente qual a causa dessas exceções, que são do tipo GPF e PF. Uma constatação importante é que essas exceções ocorrem mesmo em versões minimamente modificadas das aplicações de testes padrões do EPOS.
@@ -1079,12 +1082,13 @@ int main()
 <0>: Rebooting the machine ... :<0>
 {CODE}
 
-!!!O que aprendemos com os testes: [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+!!!O que aprendemos com os testes [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 # Executar aplicações com mais de 1 CPU ativa variavelmente gera exceções (GPF). Isso acontece mesmo com a aplicação do jantar dos filósofos, se os delays forem removidos.
 # Quando requisições são enviadas ao sequencer em uma taxa maior do que ele consegue executar, a memória enche e exceções (PF) ocorrem.
 # Com o KVM não funciona o relógio e o escalonador não era chamado.
 # Sem o RR fica difícil gerar erros de sincronização.
 # Após a primeira execução, o qemu fica muito comportado e para de gerar erros de contagem durante a execução do arquivo corrente mais simples: count_sync_uncoordinated.cc
+# Compilando o EPOS utilizado/entregado no trabalho anterior de 2017.2 com GCC 7.2.0, não executa a aplicação principal. Baixamos o código deles, e compilamos. A seguir tem um log completo no modo histérico da execução, mostrando o problema: https://gist.github.com/evandrocoan/3159d9bf1c53620e2e01169d7a4b8d92
 
 !!Referências  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 #Stefan Reif and Wolfgang Schröder-Preikschat, "Predictable Synchronisation Algorithms for Asynchronous Critical Sections,” Friedrich-Alexander-Universität Erlangen-Nürnberg, Dept. of Computer Science, Technical Reports, CS-2018-03, February 2018.
