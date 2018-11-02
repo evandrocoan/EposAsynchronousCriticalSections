@@ -9,16 +9,6 @@ template<typename T1, typename ... Tn>
 struct SIZEOF<T1, Tn ...>
 { static const unsigned int Result = sizeof(T1) + SIZEOF<Tn ...>::Result ; };
 
-template<typename T>
-T GETPARAM(char* &_parameters)
-{
-    printf( "Running GETPARAM T: %d, address: %d\n", sizeof( T ), _parameters );
-    char* old = _parameters;
-
-    _parameters += sizeof( T );
-    return *reinterpret_cast<T *>(old);
-}
-
 /// https://stackoverflow.com/questions/47207621/build-function-parameters-with-variadic-templates
 template<class ReturnType>
 struct ArgumentEvaluteOrderer
@@ -54,16 +44,26 @@ public:
     ReturnType operator()()
     {
         char* walker = _parameters;
-        return ArgumentEvaluteOrderer<ReturnType>{ _entry, GETPARAM<Tn>(walker)... };
+        return ArgumentEvaluteOrderer<ReturnType>{ _entry, unpack_helper<Tn>(walker)... };
+    }
+
+    template<typename T>
+    static T unpack_helper(char* &_parameters)
+    {
+        printf( "Running unpack_helper T: %d, address: %d\n", sizeof( T ), _parameters );
+        char* old = _parameters;
+
+        _parameters += sizeof( T );
+        return *reinterpret_cast<T *>( old );
     }
 
     template<typename Head, typename ... Tail>
     static void pack_helper(char* pointer_address, Head head, Tail ... tail)
     {
-        printf( "Running Closure::pack_helper, Head: %d, address: %d\n", sizeof(Head), pointer_address );
+        printf( "Running Closure::pack_helper, Head: %d, address: %d\n", sizeof( Head ), pointer_address );
 
         *reinterpret_cast<Head *>(pointer_address) = head;
-        pack_helper(pointer_address + sizeof(Head), tail ...);
+        pack_helper(pointer_address + sizeof( Head ), tail ...);
     }
 
     static void pack_helper(char* pointer_address) {}
@@ -81,7 +81,7 @@ char test_function(char arg1, int arg2, bool arg3)
  *     correct evaluation order.
  */
 template<typename ReturnType, typename ... Tn>
-Closure<ReturnType, Tn ...> create_closure( ReturnType( *_entry )( Tn ... ), Tn ... an )
+Closure<ReturnType, Tn ...> create_closure( ReturnType(*_entry)( Tn ... ), Tn ... an )
 {
     printf( "Running create_closure\n" );
     return *( new Closure<ReturnType, Tn ...>( _entry, an ... ) );
