@@ -3,7 +3,7 @@
 // SIZEOF Type Package
 template<typename ... Tn>
 struct SIZEOF
-{ static const unsigned int  Result = 0; };
+{ static const unsigned int Result = 0; };
 
 template<typename T1, typename ... Tn>
 struct SIZEOF<T1, Tn ...>
@@ -14,6 +14,7 @@ T GETPARAM(char* &_parameters)
 {
     printf( "Running GETPARAM T: %d, address: %d\n", sizeof( T ), _parameters );
     char* old = _parameters;
+
     _parameters += sizeof( T );
     return *reinterpret_cast<T *>(old);
 }
@@ -33,11 +34,11 @@ struct ArgumentEvaluteOrderer
     operator ReturnType() const { return return_value; }
 };
 
-template<typename ... Tn>
+template<typename ReturnType, typename ... Tn>
 class Closure
 {
 public:
-    typedef int (*Function)(Tn ...);
+    typedef ReturnType (*Function)(Tn ...);
     Function _entry;
     char* _parameters;
 
@@ -50,16 +51,17 @@ public:
         pack_helper(_parameters, an ...);
     }
 
-    void operator()()
+    ReturnType operator()()
     {
         char* walker = _parameters;
-        ArgumentEvaluteOrderer<int>{ _entry, GETPARAM<Tn>(walker)... };
+        return ArgumentEvaluteOrderer<ReturnType>{ _entry, GETPARAM<Tn>(walker)... };
     }
 
     template<typename Head, typename ... Tail>
     static void pack_helper(char* pointer_address, Head head, Tail ... tail)
     {
         printf( "Running Closure::pack_helper, Head: %d, address: %d\n", sizeof(Head), pointer_address );
+
         *reinterpret_cast<Head *>(pointer_address) = head;
         pack_helper(pointer_address + sizeof(Head), tail ...);
     }
@@ -67,16 +69,22 @@ public:
     static void pack_helper(char* pointer_address) {}
 };
 
-int test_function(char arg1, int arg2, bool arg3)
+char test_function(char arg1, int arg2, bool arg3)
 {
     printf("Running test_function, arg1: %c, arg2: %d, arg3: %d\n", arg1, arg2, arg3);
 }
 
-template<typename ... Tn>
-Closure<Tn ...> create_closure(int(*_entry)(Tn ...), Tn ... an)
+/**
+ * Create a closure which can have any return type, except void because:
+ *  1. The function caller which runs internally the closure, returns something.
+ *  2. The `ArgumentEvaluteOrderer` also returns something while guarantee the function parameters
+ *     correct evaluation order.
+ */
+template<typename ReturnType, typename ... Tn>
+Closure<ReturnType, Tn ...> create_closure( ReturnType( *_entry )( Tn ... ), Tn ... an )
 {
     printf( "Running create_closure\n" );
-    return *( new Closure<Tn ...>( _entry, an ... ) );
+    return *( new Closure<ReturnType, Tn ...>( _entry, an ... ) );
 }
 
 // clang++ -Xclang -ast-print -fsyntax-only test.cpp
