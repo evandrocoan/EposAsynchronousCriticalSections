@@ -69,6 +69,9 @@ class Spin;
 class SREC;
 class Vectors;
 class Guard;
+
+template<typename ReturnType, typename ... Tn>
+class Critical_Section;
 __END_UTIL
 
 __BEGIN_SYS

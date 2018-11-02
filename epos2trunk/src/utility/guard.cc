@@ -4,7 +4,16 @@
 
 __BEGIN_UTIL
 
-// Object Methods
+Critical_Section_Base::Critical_Section_Base(): _link(this) 
+{
+    db<Synchronizer>(TRC) << "Critical_Section_Base(_link=" << _link << ") => " << this << endl;
+}
+
+Critical_Section_Base::~Critical_Section_Base()
+{
+    db<Synchronizer>(TRC) << "~Critical_Section_Base(this=" << this << " _link=" << _link << ")" << endl;
+}
+
 Guard::Guard(): _head(0), _tail(0)
 {
     db<Synchronizer>(TRC)   << "Guard(head=" << _head 
@@ -43,16 +52,6 @@ Guard::Element * Guard::clear()
     if (mine)
         delete item->object();
     return next;    
-}
-
-// Class Methods
-void Guard::submit(Critical_Section<int> * cs)
-{
-    Element * cur = vouch(&(cs->_link));
-    if (cur != reinterpret_cast<Element *>(NULL)) do {
-        cur->object()->run();
-        cur = clear();
-    } while (cur != reinterpret_cast<Element *>(NULL));
 }
 
 __END_UTIL

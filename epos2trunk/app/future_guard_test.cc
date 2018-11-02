@@ -16,7 +16,7 @@ Semaphore display_lock;
 // #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
 #define log(argument) db<Synchronizer>(WRN) << argument;
 
-void increment_counter(Future<int>* future) {
+int increment_counter(Future<int>* future) {
     Delay thinking(1000000);
     counter = counter + 1;
     log( "increment_counter (counter=" << counter << ")" << endl )
@@ -27,7 +27,7 @@ int functionA() {
     log( "functionA ()" << endl )
     Future<int>* future = new Future<int>();
 
-    guard.submit(new Critical_Section<int>(&increment_counter, future));
+    guard.submit(&increment_counter, future);
     log( "functionA (result=" << future->get_value() << ")" << endl )    return 0;
 }
 
@@ -35,7 +35,7 @@ int functionB() {
     log( "functionB ()" << endl )
     Future<int>* future = new Future<int>();
 
-    guard.submit(new Critical_Section<int>(&increment_counter, future));
+    guard.submit(&increment_counter, future);
     log( "functionB (result=" << future->get_value() << ")" << endl )
     return 0;
 }

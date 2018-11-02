@@ -36,6 +36,8 @@ public:
                               << " _condition=" << _condition.size()
                               <<  ")" << endl;
         assert(!_is_resolved);
+        // If `resolve()` was called and the instruction pointer got until here, and the thread is
+        // unscheduled, and another thread call `resolve()`, then, the `assert` above will not work.
         _value = value;
         _is_resolved = true;
         _condition.broadcast();
