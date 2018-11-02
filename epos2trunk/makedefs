@@ -192,6 +192,7 @@ CCLIB		= `$(CC) $(MACH_CC_FLAGS) -print-file-name=`
 CPP		= $(COMP_PREFIX)gcc -E
 CPPFLAGS	= $(MACH_CC_FLAGS) -I$(INCLUDE)
 
+# For GCC 7.2.0 add -Wno-narrowing -fno-builtin-calloc and remove all occurrences of -Werror
 CXX		= $(COMP_PREFIX)g++ -c --no-exceptions --no-rtti --no-use-cxa-atexit -std=c++0x
 CXXFLAGS	= $(MACH_CC_FLAGS) -O2 -nostdinc -Wall -Werror -fdata-sections -ffunction-sections -I$(INCLUDE)
 
