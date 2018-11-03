@@ -85,11 +85,15 @@ Closure<ReturnType, Tn ...> create_closure( ReturnType(*_entry)( Tn ... ), Tn ..
 }
 
 char test_function1(char arg1, int arg2, bool arg3) {
-    printf("   test_function: %c, %d, %d\n", arg1, arg2, arg3);
+    printf("   test_function1: %c, %d, %d\n", arg1, arg2, arg3);
 }
 
 char test_function2(const char* arg1, const char* arg2, char arg3) {
-    printf("   test_function: %s, %s, %c\n", arg1, arg2, arg3);
+    printf("   test_function2: %s, %s, %c\n", arg1, arg2, arg3);
+}
+
+char test_function3() {
+    printf("   test_function3\n");
 }
 
 // clang++ -Xclang -ast-print -fsyntax-only > test_variadic_critical_section_expanded.cpp
@@ -98,9 +102,11 @@ int main()
 {
     auto my_closure1 = create_closure( &test_function1, 'a', 1, true ); printf("\n");
     auto my_closure2 = create_closure( &test_function2, "testa 1", "testa 2", 'a' ); printf("\n");
+    auto my_closure3 = create_closure( &test_function3 ); printf("\n");
 
     my_closure1(); printf("\n");
-    my_closure2();
+    my_closure2(); printf("\n");
+    my_closure3();
 }
 
 // References
