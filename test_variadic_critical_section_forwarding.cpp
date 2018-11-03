@@ -88,8 +88,8 @@ char test_function1(char arg1, int arg2, bool arg3) {
     printf("   test_function: %c, %d, %d\n", arg1, arg2, arg3);
 }
 
-char test_function2(const char* arg1, const char* arg2) {
-    printf("   test_function: %s, %s\n", arg1, arg2);
+char test_function2(const char* arg1, const char* arg2, char arg3) {
+    printf("   test_function: %s, %s, %c\n", arg1, arg2, arg3);
 }
 
 // clang++ -Xclang -ast-print -fsyntax-only test.cpp
@@ -97,7 +97,7 @@ char test_function2(const char* arg1, const char* arg2) {
 int main()
 {
     auto my_closure1 = create_closure( &test_function1, 'a', 1, true ); printf("\n");
-    auto my_closure2 = create_closure( &test_function2, "testa 1", "testa 2" ); printf("\n");
+    auto my_closure2 = create_closure( &test_function2, "testa 1", "testa 2", 'a' ); printf("\n");
 
     my_closure1(); printf("\n");
     my_closure2();
@@ -155,5 +155,6 @@ int main()
 // https://blog.feabhas.com/2014/03/demystifying-c-lambdas/
 // https://stackoverflow.com/questions/1447199/c-closures-and-templates
 // http://matt.might.net/articles/c++-template-meta-programming-with-lambda-calculus/
+// https://www.gnu.org/software/gcc/gcc-4.4/cxx0x_status.html
 //
 
