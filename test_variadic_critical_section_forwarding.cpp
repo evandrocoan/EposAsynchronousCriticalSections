@@ -38,24 +38,52 @@ public:
         printf( "Running Closure::Closure(this=%d, _entry=%d, _size=%d)\n", this, &_entry, PARAMETERS_SIZE );
 
         _parameters = new char[PARAMETERS_SIZE];
-        pack_helper(_parameters, an ...);
+        pack_helper( _parameters, an ... );
+
+        /// A recursion to force the function parameters to be cached locally on each function,
+        /// because the initializer list on GCC 4.4.4 is not working, only on GCC 7.2.0.
+        /// You can comment this out if you are compiling this with GCC 7.2.0
+        char* walker = _parameters;
+        caller_helper( walker, an ... );
     }
 
     ReturnType operator()()
     {
         printf( "Running operator(this=%d)\n", this );
+
         char* walker = _parameters;
         return ArgumentEvaluteOrderer<ReturnType>{ _entry, unpack_helper<Tn>(walker)... };
     }
 
-    template<typename T>
-    static T unpack_helper(char* &_parameters)
+    template<typename Head, typename ... Tail>
+    static void caller_helper(char* pointer_address, Head head, Tail ... tail)
     {
-        printf( "Running unpack_helper T: %d, address: %d\n", sizeof( T ), _parameters );
-        char* old = _parameters;
+        printf( "Running Closure::caller_helper, Head: %d, address: %d\n", sizeof( Head ), pointer_address );
 
-        _parameters += sizeof( T );
-        return *reinterpret_cast<T *>( old );
+        unpack_helper<Head>( pointer_address );
+        caller_helper( pointer_address, tail... );
+    }
+
+    static void caller_helper(char* pointer_address) {}
+
+    template<typename T>
+    static T unpack_helper(char* &pointer_address)
+    {
+        static T real_value;
+        static bool is_defined = false;
+
+        if( is_defined ) {
+            printf( "Running Closure::unpack_helper, Head: %d, Getting cached value...\n", sizeof( T ) );
+            return real_value;
+        }
+
+        printf( "Running Closure::unpack_helper, Head: %d, address: %d\n", sizeof( T ), pointer_address );
+        char* old = pointer_address;
+        pointer_address += sizeof( T );
+
+        is_defined = true;
+        real_value = *reinterpret_cast<T *>( old );
+        return real_value;
     }
 
     template<typename Head, typename ... Tail>
@@ -96,17 +124,23 @@ char test_function3() {
     printf("   test_function3\n");
 }
 
+void test_function4() {
+    printf("   test_function4\n");
+}
+
 // clang++ -Xclang -ast-print -fsyntax-only > test_variadic_critical_section_expanded.cpp
 // https://stackoverflow.com/questions/4448094/can-we-see-the-template-instantiated-code-by-c-compiler
 int main()
 {
-    auto my_closure1 = create_closure( &test_function1, 'a', 1, true ); printf("\n");
+    auto my_closure1 = create_closure( &test_function1, 'a', 10, false ); printf("\n");
     auto my_closure2 = create_closure( &test_function2, "testa 1", "testa 2", 'a' ); printf("\n");
     auto my_closure3 = create_closure( &test_function3 ); printf("\n");
+    // auto my_closure4 = create_closure( &test_function4 ); printf("\n");
 
     my_closure1(); printf("\n");
     my_closure2(); printf("\n");
-    my_closure3();
+    my_closure3(); printf("\n");
+    // my_closure4();
 }
 
 // References
