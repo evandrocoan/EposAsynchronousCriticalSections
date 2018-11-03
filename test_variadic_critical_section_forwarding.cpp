@@ -24,12 +24,25 @@ struct ArgumentEvaluteOrderer
     operator ReturnType() const { return return_value; }
 };
 
+// https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer/7858971#7858971
+template<int ...>
+struct MetaSequenceOfIntegers { };
+
+template<int CurrentCount, int ...GeneratedSequence>
+struct GeneratorOfIntegerSequence: GeneratorOfIntegerSequence<CurrentCount-1, CurrentCount-1, GeneratedSequence...> { };
+
+template<int ...GeneratedSequence>
+struct GeneratorOfIntegerSequence<1, GeneratedSequence...>
+{
+  typedef MetaSequenceOfIntegers<GeneratedSequence...> type;
+};
+
 // https://stackoverflow.com/questions/34957810/variadic-templates-parameter-pack-and-its-discussed-ambiguity-in-a-parameter-li
-template < typename Tn, int... N>
+template < typename Tn >
 class Closure;
 
-template < typename ReturnType, typename... Tn, int... N >
-class Closure< ReturnType( Tn... ), N... >
+template < typename ReturnType, typename... Tn >
+class Closure< ReturnType( Tn... ) >
 {
 public:
     typedef ReturnType(*Function)(Tn ...);
@@ -58,10 +71,16 @@ public:
 
     ReturnType operator()()
     {
+        return _run( typename GeneratorOfIntegerSequence< sizeof...(Tn) + 1 >::type() );
+    }
+
+    template<int ...Sequence>
+    ReturnType _run(MetaSequenceOfIntegers<Sequence...>)
+    {
         printf( "Running operator(this=%d)\n", this );
 
         char* walker = _parameters;
-        return ArgumentEvaluteOrderer<ReturnType>{ _entry, unpack_helper<N, Tn>(walker)... };
+        return ArgumentEvaluteOrderer<ReturnType>{ _entry, unpack_helper<Sequence, Tn>(walker)... };
     }
 
     template<typename Head, typename ... Tail>
@@ -115,9 +134,9 @@ public:
  *     correct evaluation order.
  */
 template<typename ReturnType, typename ... Tn>
-Closure< ReturnType(Tn ...), 1, 2, 3 > create_closure( ReturnType(*_entry)( Tn ... ), Tn ... an )
+Closure< ReturnType(Tn ...) > create_closure( ReturnType(*_entry)( Tn ... ), Tn ... an )
 {
-    auto closure = new Closure< ReturnType(Tn ...), 1, 2, 3 >( _entry, an ... );
+    auto closure = new Closure< ReturnType(Tn ...) >( _entry, an ... );
     printf( "Running create_closure: %d\n", closure );
     return *closure;
 }
@@ -143,13 +162,13 @@ void test_function4() {
 int main()
 {
     auto my_closure1 = create_closure( &test_function1, 'a', 10, false ); printf("\n");
-    // auto my_closure2 = create_closure( &test_function2, "testa 1", "testa 2", 'a' ); printf("\n");
-    // auto my_closure3 = create_closure( &test_function3 ); printf("\n");
+    auto my_closure2 = create_closure( &test_function2, "testa 1", "testa 2", 'a' ); printf("\n");
+    auto my_closure3 = create_closure( &test_function3 ); printf("\n");
     // auto my_closure4 = create_closure( &test_function4 ); printf("\n");
 
     my_closure1(); printf("\n");
-    // my_closure2(); printf("\n");
-    // my_closure3(); printf("\n");
+    my_closure2(); printf("\n");
+    my_closure3(); printf("\n");
     // my_closure4();
 }
 
