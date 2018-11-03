@@ -14,14 +14,13 @@ using namespace EPOS;
 
 Guard counter_guard;
 
-int show(char arg1, const char * arg2, bool arg3, bool arg4, int arg5) {
+void show(char arg1, const char * arg2, bool arg3, bool arg4, int arg5) {
     log( "arg1=" << arg1 << ", arg2=" << arg2 << ", arg3=" << arg3 << ", arg4=" << arg4 << ", arg5=" << arg5 << endl )
-    return 0;
 }
 
 int main()
 {
-    log( "main: begin()" << endl )
+    log( endl << "main: begin()" << endl )
     counter_guard.submit(&show, 'A', "Test 1", true, false, 10);
 
     log( "main: exiting()" << endl )

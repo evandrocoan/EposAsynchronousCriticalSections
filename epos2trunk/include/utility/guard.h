@@ -21,11 +21,11 @@ public:
     Guard();
     ~Guard();
     
-    template<typename ReturnType, typename ... Tn>
-    void submit( ReturnType(*entry)( Tn ... ), Tn ... an )
+    template<typename ... Tn>
+    void submit( void(*entry)( Tn ... ), Tn ... an )
     {
         // Creates a closure with the critical section parameters
-        Closure<ReturnType, Tn ...>* cs = new (SYSTEM) Closure<ReturnType, Tn ...>(*entry, an ...);
+        Closure<int, Tn ...>* cs = new (SYSTEM) Closure<int, Tn ...>(reinterpret_cast<int(*)(Tn ...)>(*entry), an ...);
         db<Synchronizer>(WRN) << "Guard::submit(cs=" << cs << ")" << endl;
 
         Element * cur = vouch(&(cs->_link));
