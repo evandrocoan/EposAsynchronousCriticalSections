@@ -9,21 +9,6 @@ template<typename T1, typename ... Tn>
 struct SIZEOF<T1, Tn ...>
 { static const unsigned int Result = sizeof(T1) + SIZEOF<Tn ...>::Result ; };
 
-/// https://stackoverflow.com/questions/47207621/build-function-parameters-with-variadic-templates
-template<class ReturnType>
-struct ArgumentEvaluteOrderer
-{
-    /// This forbids our function from having a void return type
-    ReturnType return_value;
-
-    template<class... Args>
-    ArgumentEvaluteOrderer( ReturnType(*function)( Args... ), Args... args ): return_value{ function( args... ) }
-    {
-    }
-
-    operator ReturnType() const { return return_value; }
-};
-
 // https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer/7858971#7858971
 template<int ...>
 struct MetaSequenceOfIntegers { };
@@ -61,7 +46,6 @@ public:
 
         /// A recursion to force the function parameters to be cached locally on each function,
         /// because the initializer list on GCC 4.4.4 is not working, only on GCC 7.2.0.
-        /// You can comment this out if you are compiling this with GCC 7.2.0
         ///
         /// This bug was only fixed on GCC 4.9.1 - https://gcc.gnu.org/bugzilla/show_bug.cgi?id=51253
         /// Bug 51253 - [C++11][DR 1030] Evaluation order (sequenced-before relation) among initializer-clauses in braced-init-list
@@ -80,7 +64,7 @@ public:
         printf( "Running operator(this=%d)\n", this );
 
         char* walker = _parameters;
-        return ArgumentEvaluteOrderer<ReturnType>{ _entry, unpack_helper<Sequence, Tn>(walker)... };
+        return _entry( unpack_helper<Sequence, Tn>(walker)... );
     }
 
     template<typename Head, typename ... Tail>
@@ -128,10 +112,7 @@ public:
 };
 
 /**
- * Create a closure which can have any return type, except void because:
- *  1. The function caller which runs internally the closure, returns something.
- *  2. The `ArgumentEvaluteOrderer` also returns something while guarantee the function parameters
- *     correct evaluation order.
+ * Create a closure which can have any return type.
  */
 template<typename ReturnType, typename ... Tn>
 Closure< ReturnType(Tn ...) > create_closure( ReturnType(*_entry)( Tn ... ), Tn ... an )
@@ -164,12 +145,12 @@ int main()
     auto my_closure1 = create_closure( &test_function1, 'a', 10, false ); printf("\n");
     auto my_closure2 = create_closure( &test_function2, "testa 1", "testa 2", 'a' ); printf("\n");
     auto my_closure3 = create_closure( &test_function3 ); printf("\n");
-    // auto my_closure4 = create_closure( &test_function4 ); printf("\n");
+    auto my_closure4 = create_closure( &test_function4 ); printf("\n");
 
     my_closure1(); printf("\n");
     my_closure2(); printf("\n");
     my_closure3(); printf("\n");
-    // my_closure4();
+    my_closure4(); printf("\n");
 }
 
 // References
