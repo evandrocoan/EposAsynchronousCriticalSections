@@ -1,15 +1,15 @@
 #include <stdio.h>
 
 template<typename ... Tn>
-class Critical_Section
+class Closure
 {
 public:
     typedef void (*Function)(Tn ...);
     Function _entry;
 
-    Critical_Section(Function _entry, Tn ... an): _entry(_entry)
+    Closure(Function _entry, Tn ... an): _entry(_entry)
     {
-        printf("Running Critical_Section\n");
+        printf("Running Closure\n");
         this->_entry('b', 2);
     }
 };
@@ -21,6 +21,6 @@ void test_function(char arg1, int arg2)
 
 int main()
 {
-    new Critical_Section<char, int>(&test_function, 'a', 1);
+    new Closure<char, int>(&test_function, 'a', 1);
 }
 

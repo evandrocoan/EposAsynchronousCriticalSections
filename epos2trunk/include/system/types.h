@@ -71,7 +71,7 @@ class Vectors;
 class Guard;
 
 template<typename ReturnType, typename ... Tn>
-class Critical_Section;
+class Closure;
 __END_UTIL
 
 __BEGIN_SYS

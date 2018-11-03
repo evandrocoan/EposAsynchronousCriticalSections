@@ -3,7 +3,6 @@
 #include <thread.h>
 #include <machine.h>
 #include <utility/guard.h>
-#include <utility/critical_section.h>
 #include <alarm.h>
 
 using namespace EPOS;

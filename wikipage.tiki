@@ -439,25 +439,25 @@ Para a implementação do algoritmo das guardas no EPOS foram definidas três no
 
 Neste capítulo será descrito como ocorreu o processo de implementação das novas classes que implementam o algoritmo das guardas, assim como os testes realizados para validação da implementação.
 
-!!!Critical_Section [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+!!!Closure [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Assim como ocorre com os algoritmos de sincronização tradicionais, uma das bases dos algoritmos de sincronização baseados em delegação é o conceito de seções críticas. Dessa forma, foi definida uma nova classe para representar essas entidades. 
 
-A classe que representa seções críticas  foi criada com base na classe Function_Handler e recebeu o nome de Critical_Section. Essa classe possui apenas dois atributos, _handler e _link. O atributo _handler representa a função relacionada à seção crítica e o atributo _link representa um elemento de lista simples. Além desses dois atributos, a classe Critical_Section também implementa o método público run(), que é utilizado pelo sequencer para executar uma seção crítica, que na verdade é o mesmo trabalho realizado pelo operator “()”, que deixava o código pouco intuitivo. A Listagem 5 exibe o código da classe Critical_Section.
+A classe que representa seções críticas  foi criada com base na classe Function_Handler e recebeu o nome de Closure. Essa classe possui apenas dois atributos, _handler e _link. O atributo _handler representa a função relacionada à seção crítica e o atributo _link representa um elemento de lista simples. Além desses dois atributos, a classe Closure também implementa o método público run(), que é utilizado pelo sequencer para executar uma seção crítica, que na verdade é o mesmo trabalho realizado pelo operator “()”, que deixava o código pouco intuitivo. A Listagem 5 exibe o código da classe Closure.
 
-O construtor da classe Critical_Section recebe um objeto representando uma função, que deve ser compatível com o tipo Function, definido no arquivo handler.h, como parâmetro. Além disso, o construtor cria o _link relativo à seção crítica sendo construída, que será utilizado para adição e remoção de seções críticas de estruturas de dados, da mesma forma como acontece com objetos da classe Thread. 
+O construtor da classe Closure recebe um objeto representando uma função, que deve ser compatível com o tipo Function, definido no arquivo handler.h, como parâmetro. Além disso, o construtor cria o _link relativo à seção crítica sendo construída, que será utilizado para adição e remoção de seções críticas de estruturas de dados, da mesma forma como acontece com objetos da classe Thread. 
 
 ::__Listagem 5:__ Seção crítica::
 {CODE(colors="c")}
-class Critical_Section
+class Closure
 {
 public:
    friend class Guard;
    typedef Handler::Function Function;
-   typedef List_Elements::Singly_Linked<Critical_Section> Element;
+   typedef List_Elements::Singly_Linked<Closure> Element;
 
 public:
-   Critical_Section(Function * h): _handler(h), _link(this) {}
-   ~Critical_Section() {}
+   Closure(Function * h): _handler(h), _link(this) {}
+   ~Closure() {}
 
    void operator()() { _handler(); }
    void run()        { _handler(); } // Alias for ()
@@ -467,7 +467,7 @@ private:
    Element _link; // Inspired by the thread code
 };
 {CODE}
-Exemplos da utilização da classe Critical_Section durante a submissão de seções críticas à guarda serão na seção sobre os testes realizados.
+Exemplos da utilização da classe Closure durante a submissão de seções críticas à guarda serão na seção sobre os testes realizados.
 
 !!!Element [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Como elementos da guarda são elementos de lista simples, com apenas um nível de encadeamento, optou-se por utilizar a classe List_Elements::Singly_Linked, Listagem 6, definida no arquivo list.h, para representá-los. 
@@ -507,7 +507,7 @@ O código onde da classe Guard, definida no arquivo utility/guard.h, é mostrado
 class Guard
 {
 public:
-   typedef Critical_Section::Element Element;
+   typedef Closure::Element Element;
 
 private:
    static const int NULL = 0;
@@ -517,7 +517,7 @@ public:
    Guard();
    ~Guard();
 
-   void submit(Critical_Section * cs);
+   void submit(Closure * cs);
    Element * vouch(Element * item);
    Element * clear();
 
@@ -543,7 +543,7 @@ Guard::~Guard()
    db<Synchronizer>(TRC) << "~Guard(this=" << this << ")" << endl;
 }
 
-void Guard::submit(Critical_Section * cs)
+void Guard::submit(Closure * cs)
 {
    Element * cur = vouch(&(cs->_link));
    if (cur != NULL) do {
@@ -769,24 +769,24 @@ void increment_counter(){
 int mythread(int arg) {
     switch(arg) {
         case 1:
-            display_guard.submit(new Critical_Section(&a_begin));
+            display_guard.submit(new Closure(&a_begin));
             break;
         case 2:
-            display_guard.submit(new Critical_Section(&b_begin));
+            display_guard.submit(new Closure(&b_begin));
             break;
         case 3:
-            display_guard.submit(new Critical_Section(&c_begin));
+            display_guard.submit(new Closure(&c_begin));
             break;        
         case 4:
-            display_guard.submit(new Critical_Section(&d_begin));
+            display_guard.submit(new Closure(&d_begin));
             break;
         case 5:
-            display_guard.submit(new Critical_Section(&e_begin));
+            display_guard.submit(new Closure(&e_begin));
             break;
     }
 
     for (int i = iterations; i > 0 ; i--) {
-        counter_guard.submit(new Critical_Section(&increment_counter));
+        counter_guard.submit(new Closure(&increment_counter));
     }
 
     return 0;

@@ -4,7 +4,6 @@
 #include <machine.h>
 #include <utility/guard.h>
 #include <utility/future.h>
-#include <utility/critical_section.h>
 #include <semaphore.h>
 #include <alarm.h>
 

@@ -1,27 +1,27 @@
 // EPOS Guard Component Declarations
 
-#ifndef __critical_section_h
-#define __critical_section_h
+#ifndef __closure_h
+#define __closure_h
 
 #include <utility/list.h>
 
 __BEGIN_UTIL
 
-class Critical_Section_Base
+class Closure_Base
 {
     /// The Guard class requires access to our the _link private attribute
     friend class Guard;
-    typedef List_Elements::Singly_Linked<Critical_Section_Base> Element;
+    typedef List_Elements::Singly_Linked<Closure_Base> Element;
 
 public:
-    Critical_Section_Base(): _link(this) {
-        db<Synchronizer>(TRC) << "Critical_Section_Base(_link=" << &_link << ") => " << this << endl;
+    Closure_Base(): _link(this) {
+        db<Synchronizer>(TRC) << "Closure_Base(_link=" << &_link << ") => " << this << endl;
     }
 
     /// It is not required to have a destructor for this class, then, it is not required for it to
     /// be virtual. But, we add a virtual destructor just for academic purposes of understanding.
-    ~Critical_Section_Base() {
-        db<Synchronizer>(TRC) << "~Critical_Section_Base(this=" << this << " _link=" << &_link << ")" << endl;
+    ~Closure_Base() {
+        db<Synchronizer>(TRC) << "~Closure_Base(this=" << this << " _link=" << &_link << ")" << endl;
     }
 
     /// This must to be virtual otherwise the derived classes objects run() method would not be
@@ -48,27 +48,27 @@ struct ArgumentEvaluteOrderer
 };
 
 template<typename ReturnType, typename ... Tn>
-class Critical_Section: public Critical_Section_Base
+class Closure: public Closure_Base
 {
 public:
     typedef ReturnType(*Function)(Tn ...);
 
 public:
 
-    Critical_Section(Function _entry, Tn ... an): _entry(_entry)
+    Closure(Function _entry, Tn ... an): _entry(_entry)
     {
-        db<Synchronizer>(TRC) << "Critical_Section(_entry=" << &_entry << ") => " << this << endl;
+        db<Synchronizer>(TRC) << "Closure(_entry=" << &_entry << ") => " << this << endl;
         static const unsigned int PARAMETERS_SIZE = SIZEOF<Tn ... >::Result;
         _parameters = new (SYSTEM) char[PARAMETERS_SIZE];
 
-        db<Synchronizer>(TRC) << "Critical_Section(size=" << PARAMETERS_SIZE 
+        db<Synchronizer>(TRC) << "Closure(size=" << PARAMETERS_SIZE 
                 << " address=" << reinterpret_cast<int *>(_parameters) << ")" << endl;
 
         pack_helper(_parameters, an ...);
     }
 
-    ~Critical_Section() {
-        db<Synchronizer>(TRC) << "Critical_Section(this=" << this << " _entry=" << &_entry 
+    ~Closure() {
+        db<Synchronizer>(TRC) << "Closure(this=" << this << " _entry=" << &_entry 
                 << ", _parameters=" << reinterpret_cast<int *>(_parameters) << ")" << endl;
 
         delete _parameters;
@@ -82,7 +82,7 @@ public:
     template<typename T>
     static T unpack_helper(char* &_parameters)
     {
-        db<Synchronizer>(TRC) << "Critical_Section::unpack_helper(T=" << sizeof( T ) 
+        db<Synchronizer>(TRC) << "Closure::unpack_helper(T=" << sizeof( T ) 
                 << ", address=" << reinterpret_cast<int *>(_parameters) << ")" << endl;
 
         char* old = _parameters;
@@ -93,7 +93,7 @@ public:
     template<typename Head, typename ... Tail>
     static void pack_helper(char* pointer_address, Head head, Tail ... tail)
     {
-        db<Synchronizer>(TRC) << "Critical_Section::pack_helper(T=" << sizeof( Head ) 
+        db<Synchronizer>(TRC) << "Closure::pack_helper(T=" << sizeof( Head ) 
                 << ", address=" << reinterpret_cast<int *>(pointer_address) << ")" << endl;
 
         *reinterpret_cast<Head *>(pointer_address) = head;
