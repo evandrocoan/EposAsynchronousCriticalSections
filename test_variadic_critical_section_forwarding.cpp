@@ -35,14 +35,15 @@ public:
     Closure(Function _entry, Tn ... an): _entry(_entry)
     {
         static const unsigned int PARAMETERS_SIZE = SIZEOF<Tn ...>::Result;
-        _parameters = new char[PARAMETERS_SIZE];
+        printf( "Running Closure::Closure(this=%d, _entry=%d, _size=%d)\n", this, &_entry, PARAMETERS_SIZE );
 
-        printf( "Running Closure::Closure, size: %d, address: %d\n", PARAMETERS_SIZE, _parameters );
+        _parameters = new char[PARAMETERS_SIZE];
         pack_helper(_parameters, an ...);
     }
 
     ReturnType operator()()
     {
+        printf( "Running operator(this=%d)\n", this );
         char* walker = _parameters;
         return ArgumentEvaluteOrderer<ReturnType>{ _entry, unpack_helper<Tn>(walker)... };
     }
@@ -69,11 +70,6 @@ public:
     static void pack_helper(char* pointer_address) {}
 };
 
-char test_function(char arg1, int arg2, bool arg3)
-{
-    printf("Running test_function, arg1: %c, arg2: %d, arg3: %d\n", arg1, arg2, arg3);
-}
-
 /**
  * Create a closure which can have any return type, except void because:
  *  1. The function caller which runs internally the closure, returns something.
@@ -83,16 +79,28 @@ char test_function(char arg1, int arg2, bool arg3)
 template<typename ReturnType, typename ... Tn>
 Closure<ReturnType, Tn ...> create_closure( ReturnType(*_entry)( Tn ... ), Tn ... an )
 {
-    printf( "Running create_closure\n" );
-    return *( new Closure<ReturnType, Tn ...>( _entry, an ... ) );
+    auto closure = new Closure<ReturnType, Tn ...>( _entry, an ... );
+    printf( "Running create_closure: %d\n", closure );
+    return *closure;
+}
+
+char test_function1(char arg1, int arg2, bool arg3) {
+    printf("   test_function: %c, %d, %d\n", arg1, arg2, arg3);
+}
+
+char test_function2(const char* arg1, const char* arg2) {
+    printf("   test_function: %s, %s\n", arg1, arg2);
 }
 
 // clang++ -Xclang -ast-print -fsyntax-only test.cpp
 // https://stackoverflow.com/questions/4448094/can-we-see-the-template-instantiated-code-by-c-compiler
 int main()
 {
-    auto my_closure = create_closure( &test_function, 'a', 1, true );
-    my_closure();
+    auto my_closure1 = create_closure( &test_function1, 'a', 1, true ); printf("\n");
+    auto my_closure2 = create_closure( &test_function2, "testa 1", "testa 2" ); printf("\n");
+
+    my_closure1(); printf("\n");
+    my_closure2();
 }
 
 // References
