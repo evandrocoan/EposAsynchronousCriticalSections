@@ -3,66 +3,37 @@
 #include <thread.h>
 #include <machine.h>
 #include <utility/guard.h>
+#include <utility/critical_section.h>
 #include <alarm.h>
 
 using namespace EPOS;
 
 static volatile int counter = 0;
-static const int iterations = 1e4;
+static const int iterations = 1e0;
 
 Guard counter_guard;
 Guard display_guard;
 Thread * pool[5];
 
-void a_begin() {
-    db<Synchronizer>(WRN)   << "A: begin (counter=" << counter << ")" << endl;
+int show(char arg, const char * type) {
+    db<Synchronizer>(WRN) << arg << ": " << type << " (counter=" << counter << ")" << endl;
+    return 0;
 }
 
-void b_begin() {
-    db<Synchronizer>(WRN)   << "B: begin (counter=" << counter << ")" << endl;
-}
-
-void c_begin() {
-    db<Synchronizer>(WRN)   << "C: begin (counter=" << counter << ")" << endl;
-}
-
-void d_begin() {
-    db<Synchronizer>(WRN)   << "D: begin (counter=" << counter << ")" << endl;
-}
-
-void e_begin() {
-    db<Synchronizer>(WRN)   << "E: begin (counter=" << counter << ")" << endl;
-}
-
-void increment_counter() {
+int increment_counter() {
     counter = counter + 1;
-    // db<Synchronizer>(WRN)   << "increment_counter (counter=" << counter 
-    //                         << ")" << endl;
+    // db<Synchronizer>(WRN)   << "increment_counter (counter=" << counter << ")" << endl;
+    return 0;
 }
 
-int mythread(int arg) {
-    switch(arg) {
-        case 1:
-            display_guard.submit(new Critical_Section(&a_begin));
-            break;
-        case 2:
-            display_guard.submit(new Critical_Section(&b_begin));
-            break;
-        case 3:
-            display_guard.submit(new Critical_Section(&c_begin));
-            break;        
-        case 4:
-            display_guard.submit(new Critical_Section(&d_begin));
-            break;
-        case 5:
-            display_guard.submit(new Critical_Section(&e_begin));
-            break;
-    }
+int mythread(char arg) {
+    display_guard.submit(&show, arg, "begin");
 
     for (int i = iterations; i > 0 ; i--) {
-        counter_guard.submit(new Critical_Section(&increment_counter));
+        counter_guard.submit(&increment_counter);
     }
 
+    display_guard.submit(&show, arg, "end");
     return 0;
 }
 
@@ -70,11 +41,11 @@ int main()
 {
     db<Synchronizer>(WRN)   << "main: begin (counter=" << counter << ")" << endl;
 
-    pool[0] = new Thread(&mythread, 1);
-    pool[1] = new Thread(&mythread, 2);
-    pool[2] = new Thread(&mythread, 3);
-    pool[3] = new Thread(&mythread, 4);
-    pool[4] = new Thread(&mythread, 5);
+    pool[0] = new Thread(&mythread, 'A');
+    pool[1] = new Thread(&mythread, 'B');
+    pool[2] = new Thread(&mythread, 'C');
+    pool[3] = new Thread(&mythread, 'D');
+    pool[4] = new Thread(&mythread, 'D');
 
     db<Synchronizer>(WRN)   << "main: start joining the threads (counter=" << counter << ")" << endl;
 
