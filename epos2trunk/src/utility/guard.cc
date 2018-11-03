@@ -4,25 +4,13 @@
 
 __BEGIN_UTIL
 
-Critical_Section_Base::Critical_Section_Base(): _link(this) 
-{
-    db<Synchronizer>(TRC) << "Critical_Section_Base(_link=" << _link << ") => " << this << endl;
-}
-
-Critical_Section_Base::~Critical_Section_Base()
-{
-    db<Synchronizer>(TRC) << "~Critical_Section_Base(this=" << this << " _link=" << _link << ")" << endl;
-}
-
-Guard::Guard(): _head(0), _tail(0)
-{
+Guard::Guard(): _head(0), _tail(0) {
     db<Synchronizer>(TRC)   << "Guard(head=" << _head 
                             << ", tail=" << _tail 
                             << ") => " << this << endl;
 }
 
-Guard::~Guard()
-{
+Guard::~Guard() {
     db<Synchronizer>(TRC) << "~Guard(this=" << this << ")" << endl;
 }
 

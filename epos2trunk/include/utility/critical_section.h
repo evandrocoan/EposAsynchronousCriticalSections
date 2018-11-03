@@ -14,12 +14,15 @@ class Critical_Section_Base
     typedef List_Elements::Singly_Linked<Critical_Section_Base> Element;
 
 public:
-    Critical_Section_Base();
+    Critical_Section_Base(): _link(this) {
+        db<Synchronizer>(TRC) << "Critical_Section_Base(_link=" << &_link << ") => " << this << endl;
+    }
 
     /// It is not required to have a destructor for this class, then, it is not required for it to
     /// be virtual. But, we add a virtual destructor just for academic purposes of understanding.
-    virtual ~Critical_Section_Base();
-
+    ~Critical_Section_Base() {
+        db<Synchronizer>(TRC) << "~Critical_Section_Base(this=" << this << " _link=" << &_link << ")" << endl;
+    }
 
     /// This must to be virtual otherwise the derived classes objects run() method would not be
     /// called when accessed by a base class pointer.
@@ -54,22 +57,24 @@ public:
 
     Critical_Section(Function _entry, Tn ... an): _entry(_entry)
     {
-        db<Synchronizer>(TRC) << "Critical_Section(_entry=" << _entry << ") => " << this << endl;
+        db<Synchronizer>(TRC) << "Critical_Section(_entry=" << &_entry << ") => " << this << endl;
         static const unsigned int PARAMETERS_SIZE = SIZEOF<Tn ... >::Result;
         _parameters = new (SYSTEM) char[PARAMETERS_SIZE];
 
-        db<Synchronizer>(TRC) << "Critical_Section(size=" << PARAMETERS_SIZE << " address=" << _parameters << ")" << endl;
+        db<Synchronizer>(TRC) << "Critical_Section(size=" << PARAMETERS_SIZE 
+                << " address=" << reinterpret_cast<int *>(_parameters) << ")" << endl;
+
         pack_helper(_parameters, an ...);
     }
 
-    ~Critical_Section()
-    {
-        db<Synchronizer>(TRC) << "Critical_Section(this=" << this << " _entry=" << _entry << ", _parameters=" << _parameters << ")" << endl;
+    ~Critical_Section() {
+        db<Synchronizer>(TRC) << "Critical_Section(this=" << this << " _entry=" << &_entry 
+                << ", _parameters=" << reinterpret_cast<int *>(_parameters) << ")" << endl;
+
         delete _parameters;
     }
 
-    void run() 
-    { 
+    void run() { 
         char* walker = _parameters;
         ArgumentEvaluteOrderer<ReturnType>{ _entry, unpack_helper<Tn>(walker)... };
     }
@@ -77,9 +82,10 @@ public:
     template<typename T>
     static T unpack_helper(char* &_parameters)
     {
-        db<Synchronizer>(TRC) << "Critical_Section::unpack_helper(T=" << sizeof( T ) << ", address=" << _parameters << ")" << endl;
-        char* old = _parameters;
+        db<Synchronizer>(TRC) << "Critical_Section::unpack_helper(T=" << sizeof( T ) 
+                << ", address=" << reinterpret_cast<int *>(_parameters) << ")" << endl;
 
+        char* old = _parameters;
         _parameters += sizeof( T );
         return *reinterpret_cast<T *>( old );
     }
@@ -87,7 +93,8 @@ public:
     template<typename Head, typename ... Tail>
     static void pack_helper(char* pointer_address, Head head, Tail ... tail)
     {
-        db<Synchronizer>(TRC) << "Critical_Section::unpack_helper(T=" << sizeof( Head ) << ", address=" << pointer_address << ")" << endl;
+        db<Synchronizer>(TRC) << "Critical_Section::pack_helper(T=" << sizeof( Head ) 
+                << ", address=" << reinterpret_cast<int *>(pointer_address) << ")" << endl;
 
         *reinterpret_cast<Head *>(pointer_address) = head;
         pack_helper(pointer_address + sizeof( Head ), tail ...);

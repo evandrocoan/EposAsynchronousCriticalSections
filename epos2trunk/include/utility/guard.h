@@ -26,6 +26,7 @@ public:
     {
         // Creates a closure with the critical section parameters
         Critical_Section<ReturnType, Tn ...>* cs = new (SYSTEM) Critical_Section<ReturnType, Tn ...>(*entry, an ...);
+        db<Synchronizer>(WRN) << "Guard::submit(cs=" << cs << ")" << endl;
 
         Element * cur = vouch(&(cs->_link));
         if (cur != reinterpret_cast<Element *>(NULL)) do {
