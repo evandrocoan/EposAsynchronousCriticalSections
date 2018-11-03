@@ -10,18 +10,23 @@ using namespace EPOS;
 static volatile int counter = 0;
 static const int iterations = 1e0;
 
+// #include <semaphore.h>
+// Semaphore display_lock;
+// #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
+#define log(argument) db<Synchronizer>(WRN) << argument;
+
 Guard counter_guard;
 Guard display_guard;
 Thread * pool[5];
 
 int show(char arg, const char * type) {
-    db<Synchronizer>(WRN) << arg << ": " << type << " (counter=" << counter << ")" << endl;
+    log( arg << ": " << type << " (counter=" << counter << ")" << endl )
     return 0;
 }
 
 int increment_counter() {
     counter = counter + 1;
-    // db<Synchronizer>(WRN)   << "increment_counter (counter=" << counter << ")" << endl;
+    log( "increment_counter (counter=" << counter << ")" << endl )
     return 0;
 }
 
@@ -38,7 +43,7 @@ int mythread(char arg) {
 
 int main()
 {
-    db<Synchronizer>(WRN)   << "main: begin (counter=" << counter << ")" << endl;
+    log( "main: begin (counter=" << counter << ")" << endl )
 
     pool[0] = new Thread(&mythread, 'A');
     pool[1] = new Thread(&mythread, 'B');
@@ -46,19 +51,15 @@ int main()
     pool[3] = new Thread(&mythread, 'D');
     pool[4] = new Thread(&mythread, 'D');
 
-    db<Synchronizer>(WRN)   << "main: start joining the threads (counter=" << counter << ")" << endl;
-
-    // join waits for the threads to finish
+    log( "main: start joining the threads (counter=" << counter << ")" << endl )
     for(int i = 0; i < 5; i++) {
         pool[i]->join();
     }
 
-    db<Synchronizer>(WRN)   << "main: done with both (counter=" << counter << ")" << endl;
-
+    log( "main: done with both (counter=" << counter << ")" << endl )
     for(int i = 0; i < 5; i++)
         delete pool[i];
 
-    db<Synchronizer>(WRN)   << "main: exiting (counter=" << counter << ")" << endl;
-
+    log( "main: exiting (counter=" << counter << ")" << endl )
     return 0;
 }

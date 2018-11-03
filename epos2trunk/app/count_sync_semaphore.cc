@@ -12,6 +12,7 @@ int counter = 0;
 Semaphore display_lock;
 Semaphore counter_lock; 
 #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
+// #define log(argument) db<Synchronizer>(WRN) << argument;
 
 // mythread()
 // Simply adds 1 to counter repeatedly, in a loop
