@@ -54,7 +54,6 @@ public:
     typedef ReturnType(*Function)(Tn ...);
 
 public:
-
     Closure(Function _entry, Tn ... an): _entry(_entry)
     {
         db<Synchronizer>(TRC) << "Closure(_entry=" << &_entry << ") => " << this << endl;

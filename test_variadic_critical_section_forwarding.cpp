@@ -92,7 +92,7 @@ char test_function2(const char* arg1, const char* arg2, char arg3) {
     printf("   test_function: %s, %s, %c\n", arg1, arg2, arg3);
 }
 
-// clang++ -Xclang -ast-print -fsyntax-only test.cpp
+// clang++ -Xclang -ast-print -fsyntax-only > test_variadic_critical_section_expanded.cpp
 // https://stackoverflow.com/questions/4448094/can-we-see-the-template-instantiated-code-by-c-compiler
 int main()
 {
