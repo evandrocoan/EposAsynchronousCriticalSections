@@ -73,7 +73,7 @@ private:
     }
 
     template<typename Head, typename ... Tail>
-    static void caller_helper(char* pointer_address, Head head, Tail ... tail)
+    void caller_helper(char* pointer_address, Head head, Tail ... tail)
     {
         constexpr int count = parameters_count - sizeof...( Tail );
         printf( "Closure::caller_helper, Head=%d, address=%d, count=%d\n", sizeof( Head ), pointer_address, count );
@@ -82,10 +82,10 @@ private:
         caller_helper( pointer_address, tail... );
     }
 
-    static void caller_helper(char* pointer_address) {}
+    void caller_helper(char* pointer_address) {}
 
     template<const int count, typename T>
-    static T unpack_helper(char* &pointer_address)
+    T unpack_helper(char* &pointer_address)
     {
         static T real_value;
         static bool is_defined = false;
@@ -144,18 +144,26 @@ void test_function4() {
     printf("   test_function4\n");
 }
 
+void test_function5(const char* arg1) {
+    printf("   test_function5=%s\n", arg1);
+}
+
 // clang++ -Xclang -ast-print -fsyntax-only > test_variadic_critical_section_expanded.cpp
 // https://stackoverflow.com/questions/4448094/can-we-see-the-template-instantiated-code-by-c-compiler
 int main()
 {
     auto my_closure1 = create_closure( &test_function1, 'a', 10, false ); printf( "\n" );
-    auto my_closure2 = create_closure( &test_function2, "testa 1", "testa 2", 'a' ); printf( "\n" );
+    auto my_closure2 = create_closure( &test_function2, "testa 1", "testa 2", 'b' ); printf( "\n" );
     auto my_closure3 = create_closure( &test_function3 ); printf( "\n" );
     auto my_closure4 = create_closure( &test_function4 ); printf( "\n" );
+    auto my_closure5 = create_closure( &test_function5, "Testa 3" ); printf( "\n" );
+    auto my_closure6 = create_closure( &test_function5, "Testa 4" ); printf( "\n" );
 
     my_closure1(); printf( "\n" );
     my_closure2(); printf( "\n" );
     my_closure3(); printf( "\n" );
     my_closure4(); printf( "\n" );
+    my_closure5(); printf( "\n" );
+    my_closure6(); printf( "\n" );
 }
 

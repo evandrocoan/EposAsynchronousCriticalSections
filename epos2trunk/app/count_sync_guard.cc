@@ -47,7 +47,7 @@ int main()
     pool[1] = new Thread(&mythread, 'B');
     pool[2] = new Thread(&mythread, 'C');
     pool[3] = new Thread(&mythread, 'D');
-    pool[4] = new Thread(&mythread, 'D');
+    pool[4] = new Thread(&mythread, 'E');
 
     log( "main: start joining the threads (counter=" << counter << ")" << endl )
     for(int i = 0; i < 5; i++) {

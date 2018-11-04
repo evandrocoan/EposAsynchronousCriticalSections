@@ -24,6 +24,7 @@ int main()
 {
     log( endl << "main: begin()" << endl )
     counter_guard.submit(&show, 'A', "Test 1", "Test 2", true, false, "Test 3", 10);
+    counter_guard.submit(&show, 'B', "Test 4", "Test 5", false, false, "Test 6", 20);
 
     log( "main: exiting()" << endl )
     return 0;
