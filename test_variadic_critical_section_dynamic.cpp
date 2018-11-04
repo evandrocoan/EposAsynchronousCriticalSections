@@ -124,8 +124,9 @@ void test_function5(const char* arg1) {
     printf("   test_function5=%s\n", arg1);
 }
 
-template<typename ClosureType>
-void test_closure(ClosureType closure) {
+template<typename ... Tn>
+void test_closure(Tn ... an) {
+    auto closure = create_closure(an ...);
     closure();
     printf( "\n" );
 }
@@ -134,11 +135,11 @@ void test_closure(ClosureType closure) {
 // https://stackoverflow.com/questions/4448094/can-we-see-the-template-instantiated-code-by-c-compiler
 int main()
 {
-    test_closure( create_closure( &test_function1, 'a', 10, false ) );
-    test_closure( create_closure( &test_function2, "test1", "test2", 'b' ) );
-    test_closure( create_closure( &test_function3 ) );
-    test_closure( create_closure( &test_function4 ) );
-    test_closure( create_closure( &test_function5, "Testa 3" ) );
-    test_closure( create_closure( &test_function5, "Testa 4" ) );
+    test_closure( &test_function1, 'a', 10, false );
+    test_closure( &test_function2, "test1", "test2", 'b' );
+    test_closure( &test_function3 );
+    test_closure( &test_function4 );
+    test_closure( &test_function5, "Testa 3" );
+    test_closure( &test_function5, "Testa 4" );
 }
 
