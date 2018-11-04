@@ -1156,6 +1156,21 @@ int main()
 #https://stackoverflow.com/questions/20588191/error-with-variadiac-template-parameter-pack-must-be-expanded
 #https://stackoverflow.com/questions/37200391/multiple-variadic-parameter-pack-for-template-class
 #https://stackoverflow.com/questions/34940875/parameter-pack-must-be-at-the-end-of-the-parameter-list-when-and-why
+#https://stackoverflow.com/questions/15904288/how-to-reverse-the-order-of-arguments-of-a-variadic-template-function
+#https://stackoverflow.com/questions/12906523/how-can-i-interpret-a-stackdump-file
+#https://stackoverflow.com/questions/320001/using-a-stackdump-from-cygwin-executable
+#https://stackoverflow.com/questions/37628530/how-to-debug-using-stackdump-file-in-cygwin
+#https://stackoverflow.com/questions/8305866/how-to-analyze-a-programs-core-dump-file-with-gdb
+#https://stackoverflow.com/questions/5115613/core-dump-file-analysis
+#https://www.linuxquestions.org/questions/programming-9/cygwin-gcc-compiled-code-generates-a-stackdump-how-to-analyze-with-gdb-874630/
+#http://cygwin.1069669.n5.nabble.com/exe-stackdump-and-core-dump-files-questions-td17219.html
+#https://stackoverflow.com/questions/10208233/what-comes-first-template-instantiation-vs-macro-expansion/10208278#10208278
+#https://stackoverflow.com/questions/44050323/class-member-variables-based-on-variadic-template
+#https://stackoverflow.com/questions/40356688/c-define-a-class-member-type-according-to-its-template
+#https://stackoverflow.com/questions/11394832/how-to-define-a-template-member-function-of-a-template-class
+#https://stackoverflow.com/questions/29668447/c-independent-static-variable-for-each-object-inside-a-method
+#http://www.cplusplus.com/forum/general/142258/
+#https://stackoverflow.com/questions/3778450/is-local-static-variable-per-instance-or-per-class
 
 !!Referências  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 #Stefan Reif and Wolfgang Schröder-Preikschat, "Predictable Synchronisation Algorithms for Asynchronous Critical Sections,” Friedrich-Alexander-Universität Erlangen-Nürnberg, Dept. of Computer Science, Technical Reports, CS-2018-03, February 2018.
