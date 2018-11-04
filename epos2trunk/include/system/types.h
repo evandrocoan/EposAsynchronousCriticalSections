@@ -70,7 +70,7 @@ class SREC;
 class Vectors;
 class Guard;
 
-template<typename ReturnType, typename ... Tn>
+template<typename Tn>
 class Closure;
 __END_UTIL
 

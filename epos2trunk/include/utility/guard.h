@@ -25,8 +25,7 @@ public:
     void submit( void(*entry)( Tn ... ), Tn ... an )
     {
         // Creates a closure with the critical section parameters
-        Closure<int, Tn ...>* cs = new (SYSTEM) Closure<int, Tn ...>(reinterpret_cast<int(*)(Tn ...)>(*entry), an ...);
-        db<Synchronizer>(WRN) << "Guard::submit(cs=" << cs << ")" << endl;
+        Closure<void(Tn ...)>* cs = new (SYSTEM) Closure<void(Tn ...)>(*entry, an ...);
 
         Element * cur = vouch(&(cs->_link));
         if (cur != reinterpret_cast<Element *>(NULL)) do {
