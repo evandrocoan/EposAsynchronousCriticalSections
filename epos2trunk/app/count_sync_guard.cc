@@ -19,15 +19,13 @@ Guard counter_guard;
 Guard display_guard;
 Thread * pool[5];
 
-int show(char arg, const char * type) {
+void show(char arg, const char * type) {
     log( arg << ": " << type << " (counter=" << counter << ")" << endl )
-    return 0;
 }
 
-int increment_counter() {
+void increment_counter() {
     counter = counter + 1;
     log( "increment_counter (counter=" << counter << ")" << endl )
-    return 0;
 }
 
 int mythread(char arg) {
