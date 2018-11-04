@@ -13,17 +13,19 @@ struct SIZEOF<T1, Tn ...>
 template<int ...>
 struct MetaSequenceOfIntegers { };
 
-template<typename Tn, int... GeneratedSequence>
+template<int AccumulatedSize, typename Tn, int... GeneratedSequence>
 struct GeneratorOfIntegerSequence;
 
-template<typename Grouper, typename Head, typename... Tail, int... GeneratedSequence>
-struct GeneratorOfIntegerSequence< Grouper( Head, Tail... ), GeneratedSequence... >
+template<int AccumulatedSize, typename Grouper, typename Head, typename... Tail, int... GeneratedSequence>
+struct GeneratorOfIntegerSequence< AccumulatedSize, Grouper( Head, Tail... ), GeneratedSequence... >
 {
-    typedef typename GeneratorOfIntegerSequence<Grouper( Tail... ), sizeof(Head), GeneratedSequence...>::type type; 
+    typedef typename GeneratorOfIntegerSequence
+            < AccumulatedSize + sizeof(Head), Grouper( Tail... ), AccumulatedSize, GeneratedSequence...
+            >::type type; 
 };
 
-template<typename Grouper, int... GeneratedSequence>
-struct GeneratorOfIntegerSequence<Grouper(), GeneratedSequence...>
+template<int AccumulatedSize, typename Grouper, int... GeneratedSequence>
+struct GeneratorOfIntegerSequence<AccumulatedSize, Grouper(), GeneratedSequence...>
 {
   typedef MetaSequenceOfIntegers<GeneratedSequence...> type;
 };
@@ -37,27 +39,28 @@ class Closure<ReturnType( Tn... )>
 {
 public:
     typedef ReturnType(*Function)(Tn ...);
-    static constexpr unsigned int parameters_count = sizeof...( Tn );
-    static constexpr unsigned int PARAMETERS_SIZE = SIZEOF<Tn ...>::Result;
+    static const unsigned int PARAMETERS_COUNT = sizeof...( Tn );
+    static const unsigned int PARAMETERS_LENGTH = SIZEOF<Tn ...>::Result;
 
     Function _entry;
     char* _parameters;
 
     Closure(Function _entry, Tn ... an): _entry(_entry)
     {
-        printf( "Closure::Closure(this=%d, _entry=%d, _size=%d, sizeof=%d)\n", this, &_entry, PARAMETERS_SIZE, sizeof(*this) );
+        printf( "Closure::Closure(this=%d, _entry=%d, PARAMETERS_COUNT=%d, PARAMETERS_LENGTH=%d, sizeof=%d)\n", 
+                this, &_entry, PARAMETERS_COUNT, PARAMETERS_LENGTH, sizeof(*this) );
 
-        _parameters = new char[PARAMETERS_SIZE];
+        _parameters = new char[PARAMETERS_LENGTH];
         pack_helper( _parameters, an ... );
     }
 
     ~Closure() {
-        printf( "Closure::~Closure(this=%d, _entry=%d, _size=%d, address=%d)\n", this, &_entry, PARAMETERS_SIZE, _parameters );
+        printf( "Closure::~Closure(this=%d, _entry=%d, _size=%d, address=%d)\n", this, &_entry, PARAMETERS_LENGTH, _parameters );
         delete _parameters;
     }
 
     ReturnType operator()() {
-        return _run( typename GeneratorOfIntegerSequence< int(Tn...) >::type() );
+        return _run( typename GeneratorOfIntegerSequence< 0, int(Tn...) >::type() );
     }
 
 private:
@@ -71,7 +74,9 @@ private:
     template<const int position, typename T>
     T unpack_helper()
     {
-        printf( "Closure::unpack_helper, Head=%d, address=%d, position=%d\n", sizeof( T ), _parameters, position );
+        printf( "Closure::unpack_helper, Head=%d, address=%d(%d), position=%d\n", 
+                sizeof( T ), _parameters, _parameters + position, position );
+
         return *reinterpret_cast<T *>( _parameters + position );
     }
 
@@ -104,7 +109,7 @@ char test_function1(char arg1, int arg2, bool arg3) {
 }
 
 char test_function2(const char* arg1, const char* arg2, char arg3) {
-    printf("   test_function2=%s, %s, %c\n", arg1, arg2, arg3);
+    // printf("   test_function2=%s, %s, %c\n", arg1, arg2, arg3);
 }
 
 char test_function3() {
@@ -123,18 +128,18 @@ void test_function5(const char* arg1) {
 // https://stackoverflow.com/questions/4448094/can-we-see-the-template-instantiated-code-by-c-compiler
 int main()
 {
-    auto my_closure1 = create_closure( &test_function1, 'a', 10, false ); printf( "\n" );
-    auto my_closure2 = create_closure( &test_function2, "testa 1", "testa 2", 'b' ); printf( "\n" );
-    auto my_closure3 = create_closure( &test_function3 ); printf( "\n" );
-    auto my_closure4 = create_closure( &test_function4 ); printf( "\n" );
-    auto my_closure5 = create_closure( &test_function5, "Testa 3" ); printf( "\n" );
-    auto my_closure6 = create_closure( &test_function5, "Testa 4" ); printf( "\n" );
+    // auto my_closure1 = create_closure( &test_function1, 'a', 10, false ); printf( "\n" );
+    auto my_closure2 = create_closure( &test_function2, "test1", "test2", 'b' ); printf( "\n" );
+    // auto my_closure3 = create_closure( &test_function3 ); printf( "\n" );
+    // auto my_closure4 = create_closure( &test_function4 ); printf( "\n" );
+    // auto my_closure5 = create_closure( &test_function5, "Testa 3" ); printf( "\n" );
+    // auto my_closure6 = create_closure( &test_function5, "Testa 4" ); printf( "\n" );
 
-    my_closure1(); printf( "\n" );
+    // my_closure1(); printf( "\n" );
     my_closure2(); printf( "\n" );
-    my_closure3(); printf( "\n" );
-    my_closure4(); printf( "\n" );
-    my_closure5(); printf( "\n" );
-    my_closure6(); printf( "\n" );
+    // my_closure3(); printf( "\n" );
+    // my_closure4(); printf( "\n" );
+    // my_closure5(); printf( "\n" );
+    // my_closure6(); printf( "\n" );
 }
 
