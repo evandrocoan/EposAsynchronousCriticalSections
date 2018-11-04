@@ -18,9 +18,9 @@ public:
         db<Synchronizer>(TRC) << "Closure_Base(_link=" << &_link << ") => " << this << endl;
     }
 
-    /// It is not required to have a destructor for this class, then, it is not required for it to
-    /// be virtual. But, we add a virtual destructor just for academic purposes of understanding.
-    ~Closure_Base() {
+    /// This must to be virtual otherwise the derived classes objects destructor method would not be
+    /// called when accessed by a base class pointer.
+    virtual ~Closure_Base() {
         db<Synchronizer>(TRC) << "~Closure_Base(this=" << this << " _link=" << &_link << ")" << endl;
     }
 
@@ -76,18 +76,20 @@ public:
         db<Synchronizer>(TRC) << "Closure::Closure(_entry=" << &_entry << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
                 << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH << ", sizeof=" << sizeof(*this) << ") => " << this << endl;
 
-        _parameters = new char[PARAMETERS_LENGTH];
+        if(PARAMETERS_LENGTH) 
+            _parameters = new char[PARAMETERS_LENGTH];
         pack_helper( _parameters, an ... );
     }
 
     ~Closure() {
-        db<Synchronizer>(TRC) << "Closure::Closure(this=" << this << "_entry=" << &_entry << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
+        db<Synchronizer>(TRC) << "Closure::~Closure(this=" << this << "_entry=" << &_entry << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
                 << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH << ", sizeof=" << sizeof(*this) << ")" << endl;
 
-        delete _parameters;
+        if(PARAMETERS_LENGTH)
+            delete _parameters;
     }
 
-    ReturnType run() {
+    void run() {
         return _run( typename GeneratorOfIntegerSequence< 0, int(Tn...) >::type() );
     }
 
