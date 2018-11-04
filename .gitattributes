@@ -1,4 +1,4 @@
-* text=auto !eol
+* text=false
 / svn_global_002dignores=*.sublime-workspace%0A
 /OperatingSystems.sublime-project -text
 /README.md -text
