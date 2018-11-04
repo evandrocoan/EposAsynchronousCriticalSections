@@ -21,11 +21,13 @@ template <int AccumulatedSize, typename Grouper, typename Head, typename ...Tail
 template <int AccumulatedSize, typename Grouper, int ...GeneratedSequence> struct GeneratorOfIntegerSequence<AccumulatedSize, type-parameter-0-1 (), <GeneratedSequence...>> {
     typedef MetaSequenceOfIntegers<GeneratedSequence...> type;
 };
-template <int ...Sequence> void _run(MetaSequenceOfIntegers<Sequence...>) {
+template <int ...Sequence> void intergers_sequencer_generator(MetaSequenceOfIntegers<Sequence...>) {
+    int array[] = {Sequence...};
 }
-template<> void _run<<5, 1, 0>>(MetaSequenceOfIntegers<5, 1, 0>) {
+template<> void intergers_sequencer_generator<<5, 1, 0>>(MetaSequenceOfIntegers<5, 1, 0>) {
+    int array[] = {5, 1, 0};
 }
 int main(int argc, const char *argv[]) {
-    _run(GeneratorOfIntegerSequence<0, int (char, int, char)>::type());
+    intergers_sequencer_generator(GeneratorOfIntegerSequence<0, int (char, int, char)>::type());
     return 0;
 }

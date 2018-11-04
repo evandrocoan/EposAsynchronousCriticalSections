@@ -20,12 +20,14 @@ struct GeneratorOfIntegerSequence<AccumulatedSize, Grouper(), GeneratedSequence.
 
 
 template<int ...Sequence>
-void _run(MetaSequenceOfIntegers<Sequence...>) { }
+void intergers_sequencer_generator(MetaSequenceOfIntegers<Sequence...>) {
+    int array[] = {Sequence...};
+}
 
 // clang++ -Xclang -ast-print -fsyntax-only parameter_pack_sequencer_size_generator.cpp > parameter_pack_sequencer_size_expanded.cpp
 // https://stackoverflow.com/questions/4448094/can-we-see-the-template-instantiated-code-by-c-compiler
 int main(int argc, char const *argv[])
 {
-    _run( GeneratorOfIntegerSequence< 0, int(char, int, char) >::type() );
+    intergers_sequencer_generator( GeneratorOfIntegerSequence< 0, int(char, int, char) >::type() );
     return 0;
 }
