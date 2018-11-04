@@ -9,25 +9,31 @@ template<typename T1, typename ... Tn>
 struct SIZEOF<T1, Tn ...>
 { static const unsigned int Result = sizeof(T1) + SIZEOF<Tn ...>::Result ; };
 
-// https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer/7858971#7858971
+// https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer/7858971
 template<int ...>
 struct MetaSequenceOfIntegers { };
 
-template<int CurrentCount, int ...GeneratedSequence>
-struct GeneratorOfIntegerSequence: GeneratorOfIntegerSequence<CurrentCount-1, CurrentCount-1, GeneratedSequence...> { };
+template<typename Tn, int... GeneratedSequence>
+struct GeneratorOfIntegerSequence;
 
-template<int ...GeneratedSequence>
-struct GeneratorOfIntegerSequence<1, GeneratedSequence...>
+template<typename Grouper, typename Head, typename... Tail, int... GeneratedSequence>
+struct GeneratorOfIntegerSequence< Grouper( Head, Tail... ), GeneratedSequence... >
+{
+    typedef typename GeneratorOfIntegerSequence<Grouper( Tail... ), sizeof(Head), GeneratedSequence...>::type type; 
+};
+
+template<typename Grouper, int... GeneratedSequence>
+struct GeneratorOfIntegerSequence<Grouper(), GeneratedSequence...>
 {
   typedef MetaSequenceOfIntegers<GeneratedSequence...> type;
 };
 
 // https://stackoverflow.com/questions/34957810/variadic-templates-parameter-pack-and-its-discussed-ambiguity-in-a-parameter-li
-template < typename Tn >
+template<typename Tn>
 class Closure;
 
-template < typename ReturnType, typename... Tn >
-class Closure< ReturnType( Tn... ) >
+template<typename ReturnType, typename... Tn>
+class Closure<ReturnType( Tn... )>
 {
 public:
     typedef ReturnType(*Function)(Tn ...);
@@ -43,14 +49,6 @@ public:
 
         _parameters = new char[PARAMETERS_SIZE];
         pack_helper( _parameters, an ... );
-
-        /// A recursion to force the function parameters to be cached locally on each function,
-        /// because the initializer list on GCC 4.4.4 is not working, only on GCC 7.2.0.
-        ///
-        /// This bug was only fixed on GCC 4.9.1 - https://gcc.gnu.org/bugzilla/show_bug.cgi?id=51253
-        /// Bug 51253 - [C++11][DR 1030] Evaluation order (sequenced-before relation) among initializer-clauses in braced-init-list
-        char* walker = _parameters;
-        caller_helper( walker, an ... );
     }
 
     ~Closure() {
@@ -59,7 +57,7 @@ public:
     }
 
     ReturnType operator()() {
-        return _run( typename GeneratorOfIntegerSequence< sizeof...(Tn) + 1 >::type() );
+        return _run( typename GeneratorOfIntegerSequence< int(Tn...) >::type() );
     }
 
 private:
@@ -67,41 +65,14 @@ private:
     ReturnType _run(MetaSequenceOfIntegers<Sequence...>)
     {
         printf( "Closure::_run(this=%d)\n", this );
-
-        char* walker = _parameters;
-        return _entry( unpack_helper<Sequence, Tn>(walker)... );
+        return _entry( unpack_helper<Sequence, Tn>()... );
     }
 
-    template<typename Head, typename ... Tail>
-    void caller_helper(char* pointer_address, Head head, Tail ... tail)
+    template<const int position, typename T>
+    T unpack_helper()
     {
-        constexpr int count = parameters_count - sizeof...( Tail );
-        printf( "Closure::caller_helper, Head=%d, address=%d, count=%d\n", sizeof( Head ), pointer_address, count );
-
-        unpack_helper<count, Head>( pointer_address );
-        caller_helper( pointer_address, tail... );
-    }
-
-    void caller_helper(char* pointer_address) {}
-
-    template<const int count, typename T>
-    T unpack_helper(char* &pointer_address)
-    {
-        static T real_value;
-        static bool is_defined = false;
-
-        if( is_defined ) {
-            printf( "Closure::unpack_helper, Head=%d, Getting cached value...\n", sizeof( T ) );
-            return real_value;
-        }
-
-        printf( "Closure::unpack_helper, Head=%d, address=%d, count=%d\n", sizeof( T ), pointer_address, count );
-        char* old = pointer_address;
-        pointer_address += sizeof( T );
-
-        is_defined = true;
-        real_value = *reinterpret_cast<T *>( old );
-        return real_value;
+        printf( "Closure::unpack_helper, Head=%d, address=%d, position=%d\n", sizeof( T ), _parameters, position );
+        return *reinterpret_cast<T *>( _parameters + position );
     }
 
 public:
