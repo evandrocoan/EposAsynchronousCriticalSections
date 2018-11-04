@@ -8,7 +8,7 @@
 using namespace EPOS;
 
 static volatile int counter = 0;
-static const int iterations = 1e0;
+static const int iterations = 1e3;
 
 // #include <semaphore.h>
 // Semaphore display_lock;
@@ -25,7 +25,7 @@ void show(char arg, const char * type) {
 
 void increment_counter() {
     counter = counter + 1;
-    log( "increment_counter (counter=" << counter << ")" << endl )
+    // log( "increment_counter (counter=" << counter << ")" << endl )
 }
 
 int mythread(char arg) {
@@ -33,6 +33,7 @@ int mythread(char arg) {
 
     for (int i = iterations; i > 0 ; i--) {
         counter_guard.submit(&increment_counter);
+        // Delay label(1000);
     }
 
     display_guard.submit(&show, arg, "end");
@@ -41,7 +42,7 @@ int mythread(char arg) {
 
 int main()
 {
-    log( "main: begin (counter=" << counter << ")" << endl )
+    log( endl << "main: begin (counter=" << counter << ")" << endl )
 
     pool[0] = new Thread(&mythread, 'A');
     pool[1] = new Thread(&mythread, 'B');
