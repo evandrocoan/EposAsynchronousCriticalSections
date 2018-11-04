@@ -42,20 +42,24 @@ public:
     static const unsigned int PARAMETERS_COUNT = sizeof...( Tn );
     static const unsigned int PARAMETERS_LENGTH = SIZEOF<Tn ...>::Result;
 
+private:
     Function _entry;
     char* _parameters;
 
+public:
     Closure(Function _entry, Tn ... an): _entry(_entry)
     {
-        printf( "Closure::Closure(this=%d, _entry=%d, PARAMETERS_COUNT=%d, PARAMETERS_LENGTH=%d, sizeof=%d)\n",
-                this, &_entry, PARAMETERS_COUNT, PARAMETERS_LENGTH, sizeof(*this) );
+        printf( "Closure::Closure(_entry=%d, PARAMETERS_COUNT=%d, PARAMETERS_LENGTH=%d, sizeof=%d) => %d\n",
+                &_entry, PARAMETERS_COUNT, PARAMETERS_LENGTH, sizeof(*this), this );
 
         _parameters = new char[PARAMETERS_LENGTH];
         pack_helper( _parameters, an ... );
     }
 
     ~Closure() {
-        printf( "Closure::~Closure(this=%d, _entry=%d, _size=%2d, address=%d)\n", this, &_entry, PARAMETERS_LENGTH, _parameters );
+        printf( "Closure::~Closure(this=%d, _entry=%d, PARAMETERS_COUNT=%d, PARAMETERS_LENGTH=%d, sizeof=%d)\n",
+                this, &_entry, PARAMETERS_COUNT, PARAMETERS_LENGTH, sizeof(*this) );
+
         delete _parameters;
     }
 
@@ -74,8 +78,8 @@ private:
     template<const int position, typename T>
     T unpack_helper()
     {
-        printf( "Closure::unpack_helper, Head=%d, address=%d(%d), position=%d\n",
-                sizeof( T ), _parameters, _parameters + position, position );
+        printf( "Closure::unpack_helper(Head=%d, address=%d(%d), position=%d)\n",
+                sizeof( T ), _parameters + position, _parameters, position );
 
         return *reinterpret_cast<T *>( _parameters + position );
     }
@@ -84,7 +88,7 @@ public:
     template<typename Head, typename ... Tail>
     static void pack_helper(char* pointer_address, Head head, Tail ... tail)
     {
-        printf( "Closure::pack_helper, Head=%d, address=%d\n", sizeof( Head ), pointer_address );
+        printf( "Closure::pack_helper(Head=%d, address=%d)\n", sizeof( Head ), pointer_address );
 
         *reinterpret_cast<Head *>(pointer_address) = head;
         pack_helper(pointer_address + sizeof( Head ), tail ...);
