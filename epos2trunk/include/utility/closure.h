@@ -89,8 +89,12 @@ public:
             delete _parameters;
     }
 
+    void operator()() {
+        run();
+    }
+
     void run() {
-        return _run( typename GeneratorOfIntegerSequence< 0, int(Tn...) >::type() );
+        _run( typename GeneratorOfIntegerSequence< 0, int(Tn...) >::type() );
     }
 
 private:
