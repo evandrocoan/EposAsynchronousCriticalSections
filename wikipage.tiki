@@ -670,10 +670,6 @@ Veja um exemplo completo de teste/uso das closures meta programadas:
 #include <utility/closure.h>
 
 using namespace EPOS;
-
-// #include <semaphore.h>
-// Semaphore display_lock;
-// #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
 #define log(argument) db<Synchronizer>(WRN) << argument;
 
 template<typename ReturnType, typename ... Tn>
@@ -874,10 +870,6 @@ Agora mostra-se um exemplo de uso de closures e do algoritmo do Guarda.
 #include <alarm.h>
 
 using namespace EPOS;
-
-// #include <semaphore.h>
-// Semaphore display_lock;
-// #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
 #define log(argument) db<Synchronizer>(WRN) << argument;
 
 Guard counter_guard;
@@ -1125,7 +1117,6 @@ Agora ve-sê um simples programa que demonstra o uso de futures:
 #include <alarm.h>
 
 using namespace EPOS;
-
 Semaphore display_lock;
 
 // #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
@@ -1278,8 +1269,8 @@ Aqui testa-se a implementação nova de FAS feita, repetidamente fazendo a troca
 #include <cpu.h>
 
 using namespace EPOS;
-
 Semaphore display_lock;
+
 // #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
 #define log(argument) db<Synchronizer>(WRN) << argument;
 
@@ -1370,14 +1361,10 @@ Neste teste, utiliza-se a implementação do guarda para controlar o acesso a se
 #include <alarm.h>
 
 using namespace EPOS;
+#define log(argument) db<Synchronizer>(WRN) << argument;
 
 static volatile int counter = 0;
-static const int iterations = 1e4;
-
-// #include <semaphore.h>
-// Semaphore display_lock;
-// #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
-#define log(argument) db<Synchronizer>(WRN) << argument;
+static const int iterations = 1e3;
 
 Guard counter_guard;
 Guard display_guard;
@@ -1467,7 +1454,6 @@ O que se espera deste teste, ao contrário do teste anterior, é que a contagem 
 #include <alarm.h>
 
 using namespace EPOS;
-
 int counter = 0;
 
 Semaphore display_lock;

@@ -6,7 +6,6 @@
 #include <machine.h>
 
 using namespace EPOS;
-
 int counter = 0;
 
 Semaphore display_lock;

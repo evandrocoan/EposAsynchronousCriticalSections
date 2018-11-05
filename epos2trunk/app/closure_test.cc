@@ -3,10 +3,6 @@
 #include <utility/closure.h>
 
 using namespace EPOS;
-
-// #include <semaphore.h>
-// Semaphore display_lock;
-// #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
 #define log(argument) db<Synchronizer>(WRN) << argument;
 
 template<typename ReturnType, typename ... Tn>

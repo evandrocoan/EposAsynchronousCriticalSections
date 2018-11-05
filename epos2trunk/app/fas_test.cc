@@ -7,12 +7,11 @@
 #include <cpu.h>
 
 using namespace EPOS;
+static const int iterations = 1e5;
 
 Semaphore display_lock;
 // #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
 #define log(argument) db<Synchronizer>(WRN) << argument;
-
-static const int iterations = 1e5;
 
 int old = 0;
 int current = 10;
@@ -27,8 +26,8 @@ int next = 11;
 
 int myThread1() {
     check("Thread 1", ", begin")
-    
-    for (int i = 0; i < iterations; i++) 
+
+    for (int i = 0; i < iterations; i++)
     {
         old = CPU::fas(current, next);
         current = CPU::fas(next, old);

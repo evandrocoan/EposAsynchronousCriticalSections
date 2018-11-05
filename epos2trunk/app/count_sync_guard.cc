@@ -6,14 +6,10 @@
 #include <alarm.h>
 
 using namespace EPOS;
+#define log(argument) db<Synchronizer>(WRN) << argument;
 
 static volatile int counter = 0;
 static const int iterations = 1e3;
-
-// #include <semaphore.h>
-// Semaphore display_lock;
-// #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
-#define log(argument) db<Synchronizer>(WRN) << argument;
 
 Guard counter_guard;
 Guard display_guard;
