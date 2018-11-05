@@ -1,5 +1,5 @@
-* text=lf
-/ svn_global_002dignores=*.sublime-workspace%0A
+* eol=lf
+/.gitattributes eol=crlf
 /OperatingSystems.sublime-project -text
 /README.md -text
 /parameter_pack_sequencer_size_expanded.cpp eol=lf
@@ -162,6 +162,7 @@ epos2trunk/include/uart.h -text
 epos2trunk/include/udp.h -text
 epos2trunk/include/usb.h -text
 epos2trunk/include/utility/array.h -text
+# epos2trunk/include/utility/closure.h eol=lf
 epos2trunk/include/utility/bignum.h -text
 epos2trunk/include/utility/bitmap.h -text
 epos2trunk/include/utility/buffer.h -text
