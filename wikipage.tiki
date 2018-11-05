@@ -1214,28 +1214,32 @@ $ clang++ -Xclang -ast-print -fsyntax-only closure_test.cpp > expanded.cpp
 template<> class Closure<char (const char *, const char *, char)> {
 public:
     typedef char (*Function)(const char *, const char *, char);
+
     static const unsigned int PARAMETERS_COUNT = sizeof...(Tn);
-    static const unsigned int PARAMETERS_LENGTH = SIZEOF<const char *, const char *, char>::Result;
+    static const unsigned int PARAMETERS_LENGTH = SIZEOF<
+            const char *, const char *, char>::Result;
 
     Closure<char (const char *, const char *, char)>::Function _entry;
     char *_parameters;
 
-    Closure(Closure<char (const char *, const char *, char)>::Function _entry, const char *an, const char *an, char an) : _entry(_entry)     {
+    Closure(Closure<char (const char *, const char *, char)>::
+                Function _entry, const char *an, const char *an, char an) : _entry(_entry) {
         this->_parameters = new char [PARAMETERS_LENGTH];
         pack_helper(this->_parameters, an, an, an);
     }
 
-    ~Closure<char (const char *, const char *, char)>()     {
+    ~Closure<char (const char *, const char *, char)>() {
         delete this->_parameters;
     }
 
-    char operator()()     {
-        return this->_run(typename GeneratorOfIntegerSequence<0, int (const char *, const char *, char)>::type());
+    char operator()() {
+        return this->_run(typename GeneratorOfIntegerSequence<
+                0, int (const char *, const char *, char)>::type());
     }
 
 private:
     template <int ...Sequence> char _run(MetaSequenceOfIntegers<Sequence...>);
-    template<> char _run<<0, 8, 16>>(MetaSequenceOfIntegers<0, 8, 16>)     {
+    template<> char _run<<0, 8, 16>>(MetaSequenceOfIntegers<0, 8, 16>) {
         return this->_entry(
             this->unpack_helper<0, const char *>(), 
             this->unpack_helper<8, const char *>(), 
@@ -1244,42 +1248,65 @@ private:
     }
 
     template <int position, typename T> T unpack_helper();
-    template<> const char *unpack_helper<0, const char *>()     {
+    template<> const char *unpack_helper<0, const char *>() {
         return *reinterpret_cast<const char **>(this->_parameters + 0);
     }
 
-    template<> const char *unpack_helper<8, const char *>()     {
+    template<> const char *unpack_helper<8, const char *>() {
         return *reinterpret_cast<const char **>(this->_parameters + 8);
     }
 
-    template<> char unpack_helper<16, char>()     {
+    template<> char unpack_helper<16, char>() {
         return *reinterpret_cast<char *>(this->_parameters + 16);
     }
 
 public:
-    template <typename Head, typename ...Tail> static void pack_helper(char *pointer_address, Head head, Tail ...tail);
-    template<> static void pack_helper<const char *, <const char *, char>>(char *pointer_address, const char *head, const char *tail, char tail)     {
+    template <typename Head, typename ...Tail> static void pack_helper(
+            char *pointer_address, Head head, Tail ...tail);
+    template<> static void pack_helper<const char *, <const char *, char>>(
+                char *pointer_address, const char *head, const char *tail, char tail) {
         *reinterpret_cast<const char **>(pointer_address) = head;
         pack_helper(pointer_address + sizeof(const char *), tail, tail);
     }
 
-    template<> static void pack_helper<const char *, <char>>(char *pointer_address, const char *head, char tail)     {
+    template<> static void pack_helper<const char *, <char>>(char *pointer_address, 
+                const char *head, char tail) {
         *reinterpret_cast<const char **>(pointer_address) = head;
         pack_helper(pointer_address + sizeof(const char *), tail);
     }
 
-    template<> static void pack_helper<char, <>>(char *pointer_address, char head)     {
+    template<> static void pack_helper<char, <>>(char *pointer_address, char head) {
         *reinterpret_cast<char *>(pointer_address) = head;
         pack_helper(pointer_address + sizeof(char));
     }
 
-    static void pack_helper(char *pointer_address)     {
+    static void pack_helper(char *pointer_address) {
     }
 }
 ~/np~{DIV}
 {DIV}^
 %%%
 !!!!Integração com Guarda  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+Para integrar a nova interface de ''Critical_Section'' no algoritmo do Guarda, foi necessário somente modificar o método ''Guard::submit'', que agora passa a ser um método meta programado:
+^::__Listagem 23:__ Arquivo ''/include/utility/guard.h''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+template<typename ... Tn>
+void submit( void(*entry)( Tn ... ), Tn ... an )
+{
+    // Creates a closure with the critical section parameters
+    Critical_Section<Tn ...>* cs = new (SYSTEM) Critical_Section<Tn ...>(entry, an ...);
+
+    Element * cur = vouch(&(cs->_link));
+    if (cur != reinterpret_cast<Element *>(NULL)) do {
+        cur->object()->start();
+        cur = clear();
+    } while (cur != reinterpret_cast<Element *>(NULL));
+}
+~/np~{DIV}
+{DIV}^
+Obrigativamente a nossa closure que representa a seção crítica, tem que retornar ''void'', pois no contexto de execução do algoritmo do guarda, uma vez que a ''Closure'' começa a executar, a única forma que ela tem para se comunicar com a thread original é através de uma memória compartilhada, que em nosso caso é utilizado o mecanismo de ''Futures'', como já explicado.
+
 Agora mostra-se um exemplo de uso de closures e do algoritmo do Guarda.
 ^::__Listagem 23:__ Arquivo ''/app/closure_guard_test.cc''::
 {DIV(type="span")}
