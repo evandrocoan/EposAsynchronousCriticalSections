@@ -1,7 +1,6 @@
 // EPOS Synchronizer Component Test Program
 
 #include <thread.h>
-#include <machine.h>
 #include <utility/guard.h>
 #include <utility/future.h>
 #include <semaphore.h>

@@ -616,7 +616,7 @@ static int fas(volatile int & value, volatile int & replacement) {
 !!!Futures [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Das 2 implementações distintas de futures apresentadas, realizamos a implementação do modelo de future bloqueante, apresentado no artigo referência {DIV(type="span")}[{DIV}[#Refer_ncias_|2]]. Como a implementação atual do algoritmo do guarda não suporta passagens de parâmetros variádicos, manualmente fez-se a implementação dos métodos para que aceitem vários parâmetros com meta programação. Ver a seção [#Closure_Metaprogramada|Closure Metaprogramada]. 
 
-Uma vez que a future é resolvida, i.e., seu método 'resolve()' é chamado e seu valor é definido, ele não pode ser mais alterado, e qualquer um que tentar obter o valor da future com 'get_value()' não precisará mais bloquear, pois o valor não é indefinido. Futures são implementadas totalmente no arquivo header '.h' por que são meta classes que são instanciadas pelo compilador e seu código é gerado somente caso alguém crie uma especialização com algum tipo de dado.
+Uma vez que a future é resolvida, i.e., seu método ''resolve()'' é chamado e seu valor é definido, ele não pode ser mais alterado, e qualquer um que tentar obter o valor da future com ''get_value()'' não precisará mais bloquear, pois o valor não é indefinido. Futures são implementadas totalmente no arquivo header ''.h'' por que são meta classes que são instanciadas pelo compilador e seu código é gerado somente caso alguém crie uma especialização com algum tipo de dado.
 ::__Listagem XX:__ Implementação de future em ''/include/utility/future.h''::
 {CODE(colors="c")}
 // EPOS Guard Component Declarations
@@ -657,8 +657,9 @@ public:
                               << " _condition=" << _condition.size()
                               <<  ")" << endl;
         assert(!_is_resolved);
-        // If `resolve()` was called and the instruction pointer got until here, and the thread is
-        // unscheduled, and another thread call `resolve()`, then, the `assert` above will not work.
+        // If `resolve()` was called and the instruction pointer got until here, and the thread
+        // is unscheduled, and another thread call `resolve()`, then, the `assert` above will 
+        // not work.
         _value = value;
         _is_resolved = true;
         _condition.broadcast();
@@ -673,6 +674,147 @@ private:
 __END_UTIL
 
 #endif
+{CODE}
+
+Agora vemos um simples programa que demonstra o uso de futures:
+::__Listagem 11:__ Arquivo de Teste ''/app/future_simple_test.cc''::
+{CODE(colors="c")}
+// EPOS Synchronizer Component Test Program
+
+#include <thread.h>
+#include <utility/future.h>
+#include <semaphore.h>
+#include <alarm.h>
+
+using namespace EPOS;
+
+Semaphore display_lock;
+
+// #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
+#define log(argument) db<Synchronizer>(WRN) << argument;
+
+int producerFunction(Future<int>* future) {
+    log( "producerFunction ()" << endl )
+    Delay thinking(1000000);
+    future->resolve(10);
+
+    log( "producerFunction (resolving future=" << future << " to 10)" << endl )
+    return 0;
+}
+
+int consumerFunction(Future<int>* future) {
+    log( "consumerFunction ()" << endl )
+    log( "consumerFunction (result=" << future->get_value() << ")" << endl )
+    log( "consumerFunction (result=" << future->get_value() << ")" << endl )
+    return 0;
+}
+
+int main()
+{
+    log( endl << "Starting main application..." << endl )
+    Future<int>* future = new Future<int>();
+
+    Thread* consumer = new Thread(&consumerFunction, future);
+    Thread* producer = new Thread(&producerFunction, future);
+
+    consumer->join();
+    producer->join();
+
+    log( "Exiting main application..." << endl )
+    return 0;
+}
+{CODE}
+
+::__Listagem 12:__ Resultado da execução de ''/app/future_simple_test.cc''::
+{CODE(colors="c")}
+Starting main application...
+Future(_is_resolved=0, _condition=0) => 0x00097f5c
+consumerFunction ()
+Future::get_value(this=0x00097f5c _is_resolved=0 _condition=0)
+producerFunction ()
+Future::resolve(this=0x00097f5c _is_resolved=0 _condition=1)
+consumerFunction (result=10)
+Future::get_value(this=0x00097f5c _is_resolved=1 _condition=0)
+consumerFunction (result=10)
+producerFunction (resolving future=0x00097f5c to 10)
+Exiting main application...
+{CODE}
+
+A seguir vemos um simples exemplo de uso de futures. Nesse exemplo, evolvemos varias classes to EPOS, fazendo seu uso em conjunto com o algoritmo do guarda.
+::__Listagem XX:__ Arquivo de Teste ''/app/future_guard_test.cc''::
+{CODE(colors="c")}
+// EPOS Synchronizer Component Test Program
+
+#include <thread.h>
+#include <utility/guard.h>
+#include <utility/future.h>
+#include <semaphore.h>
+#include <alarm.h>
+
+using namespace EPOS;
+static volatile int counter = 0;
+
+Guard guard;
+Semaphore display_lock;
+
+// #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
+#define log(argument) db<Synchronizer>(WRN) << argument;
+
+void increment_counter(Future<int>* future) {
+    Delay thinking(1000000);
+    counter = counter + 1;
+    log( "increment_counter (counter=" << counter << ")" << endl )
+    future->resolve(counter);
+}
+
+int functionA() {
+    log( "functionA ()" << endl )
+    Future<int>* future = new Future<int>();
+
+    guard.submit(&increment_counter, future);
+    log( "functionA (result=" << future->get_value() << ")" << endl )    return 0;
+}
+
+int functionB() {
+    log( "functionB ()" << endl )
+    Future<int>* future = new Future<int>();
+
+    guard.submit(&increment_counter, future);
+    log( "functionB (result=" << future->get_value() << ")" << endl )
+    return 0;
+}
+
+int main()
+{
+    log( endl << "Starting main application..." << endl )
+
+    Thread* producer = new Thread(&functionA);
+    Thread* consumer = new Thread(&functionB);
+
+    consumer->join();
+    producer->join();
+
+    log( "Exiting main application..." << endl )
+    return 0;
+}
+{CODE}
+
+::__Listagem 12:__ Resultado da execução de ''/app/future_guard_test.cc''::
+{CODE(colors="c")}
+Starting main application...
+functionA ()
+Future(_is_resolved=0, _condition=0) => 0x0008fef4
+functionB ()
+Future(_is_resolved=0, _condition=0) => 0x0008feb4
+Future::get_value(this=0x0008feb4 _is_resolved=0 _condition=0)
+increment_counter (counter=1)
+Future::resolve(this=0x0008fef4 _is_resolved=0 _condition=0)
+increment_counter (counter=2)
+Future::resolve(this=0x0008feb4 _is_resolved=0 _condition=1)
+functionB (result=2)
+Future::get_value(this=0x0008fef4 _is_resolved=1 _condition=0)
+functionA (result=1)
+Exiting main application...
 {CODE}
 
 !!Testes [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]

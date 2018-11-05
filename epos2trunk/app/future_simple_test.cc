@@ -1,15 +1,12 @@
 // EPOS Synchronizer Component Test Program
 
 #include <thread.h>
-#include <machine.h>
-#include <utility/guard.h>
 #include <utility/future.h>
 #include <semaphore.h>
 #include <alarm.h>
 
 using namespace EPOS;
 
-Guard guard;
 Semaphore display_lock;
 
 // #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
