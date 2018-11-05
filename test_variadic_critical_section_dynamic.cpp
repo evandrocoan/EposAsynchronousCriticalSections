@@ -135,7 +135,7 @@ void test_closure(Tn ... an) {
     printf( "\n" );
 }
 
-// clang++ -Xclang -ast-print -fsyntax-only > test_variadic_critical_section_expanded.cpp
+// clang++ -Xclang -ast-print -fsyntax-only test_variadic_critical_section_dynamic.cpp > test_variadic_critical_section_expanded.cpp
 // https://stackoverflow.com/questions/4448094/can-we-see-the-template-instantiated-code-by-c-compiler
 int main()
 {
