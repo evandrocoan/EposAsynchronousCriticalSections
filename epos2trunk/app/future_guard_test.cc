@@ -27,7 +27,8 @@ int functionA() {
     Future<int>* future = new Future<int>();
 
     guard.submit(&increment_counter, future);
-    log( "functionA (result=" << future->get_value() << ")" << endl )    return 0;
+    log( "functionA (result=" << future->get_value() << ")" << endl )
+    return 0;
 }
 
 int functionB() {
