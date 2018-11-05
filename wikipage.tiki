@@ -452,20 +452,20 @@ O construtor da classe ''Critical_Section'' recebe um objeto representando uma f
 class Critical_Section
 {
 public:
-   friend class Guard;
-   typedef Handler::Function Function;
-   typedef List_Elements::Singly_Linked<Critical_Section> Element;
+    friend class Guard;
+    typedef Handler::Function Function;
+    typedef List_Elements::Singly_Linked<Critical_Section> Element;
 
 public:
-   Critical_Section(Function * h): _handler(h), _link(this) {}
-   ~Critical_Section() {}
+    Critical_Section(Function * h): _handler(h), _link(this) {}
+    ~Critical_Section() {}
 
-   void operator()() { _handler(); }
-   void run()        { _handler(); } // Alias for ()
+    void operator()() { _handler(); }
+    void run()        { _handler(); } // Alias for ()
 
 private:
-   Function * _handler;
-   Element _link; // Inspired by the thread code
+    Function * _handler;
+    Element _link; // Inspired by the thread code
 };
 {CODE}
 Exemplos da utilização da classe ''Critical_Section'' durante a submissão de seções críticas à guarda estão na seção sobre os testes realizados.
@@ -907,27 +907,27 @@ No entanto, foi necessário adicionar uma relação de amizade entre a classe Si
 
 ::__Listagem 16:__ Link contendo a seção crítica::
 {CODE(colors="c")}
-   // Simple List Element
-   template<typename T>
-   class Singly_Linked
-   {
-   public:
-       friend class _UTIL::Guard;
-       typedef T Object_Type;
-       typedef Singly_Linked Element;
+// Simple List Element
+template<typename T>
+class Singly_Linked
+{
+public:
+    friend class _UTIL::Guard;
+    typedef T Object_Type;
+    typedef Singly_Linked Element;
 
-   public:
-       Singly_Linked(const T * o): _object(o), _next(0) {}
+public:
+    Singly_Linked(const T * o): _object(o), _next(0) {}
 
-       T * object() const { return const_cast<T *>(_object); }
+    T * object() const { return const_cast<T *>(_object); }
 
-       Element * next() const { return _next; }
-       void next(Element * e) { _next = e; }
+    Element * next() const { return _next; }
+    void next(Element * e) { _next = e; }
 
-   private:
-       const T * _object;
-       Element * _next;
-   };
+private:
+    const T * _object;
+    Element * _next;
+};
 {CODE}
 
 !!!Guard [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
