@@ -218,10 +218,12 @@ Uma versão equivalente ao uso de guardas, pode ser implementada utilizando vár
 
 A seguir, vê-se resumidamente o fluxo de execução do algoritmo do guarda, já explicado anteriormente. Nele, a ''Thread A'' primeiro empilha um ponteiro de função __job__ na fila de tarefas da variável global __my_guard__ e então verifica se a ''Thread A'', deve ou não se tornar o ''sequencer''. Como a ''Thread A'' é a primeira thread a empilhar uma região crítica, __guard_vouch()__ retorna um valor não nulo, indicando a próxima tarefa a ser executada. Assim, a ''Thread A'' torna-se o ''sequencer''. E logo em seguida, chama o método __do_things()__ que executa a função que contém a região crítica representado por __next_job__. No final da execução, a ''Thread A'' chamará __guard_clear()__, que neste ambiente de exemplo retornará ''NULL'', pois não há outras threads/seções críticas.
 ^::{img fileId="943"}::
+::__Figura 3:__ Resumo do algoritmo do Guarda::
 ::__Fonte:__ Própria::^
 
 Agora, vê-se um equivalente do mesmo exemplo do guarda, mas utilizando um semáforo global inicializado em 1 para todas as threads, pois para garantir exclusão mútua somente pode existir uma thread executando a região crítica. Primeiro, cria-se uma thread com new, passando como parâmetro um __semáforo__ compartilhado e um ponteiro de função __job__. É importante notar que não se faz __join()__ nesta thread, pois se está tratando de uma seção crítica assíncrona, e precisa-se também de uma implementação especial de thread que antes de chamar o ponteiro de função de __job__, dê um ''lock()'' no semáforo, e depois de completar a função, delete a si própria. Comparando este novo código com o algoritmo do guarda, vê-se que ele ficou muito mais simples, entretanto, perde-se muito na eficiência pois para executar uma seção crítica assincronamente, tem-se que criar exclusivamente uma nova thread para cada uma das threads já existentes, tendo a criação do dobro de threads no sistema em um momento de alta competição pela seção crítica.
 ^::{img fileId="946"}::
+::__Figura 4:__ Resumo do funcionamento de um semáforo, equivalente ao algoritmo do Guarda::
 ::__Fonte:__ Própria::^
 
 O leitor mais atento pode perceber que, abordou-se somente uma implementação sem dependência de dados com a seção crítica e, que a versão do algoritmo do guarda apresentado neste exemplo também não executou assincronamente. Somente a segunda versão, que utiliza um semáforo fez uma execução assíncrona da seção crítica. Este é um dos problemas do algoritmo do guarda. A thread que for eleita como ''sequencer'', será impedida de executar sua seção crítica assincronamente, pois ela própria tem que executar a sua seção crítica mais as seções críticas das outras threads que empilharem seus __jobs__. Com isso, pode-se ter como já falado anteriormente, o problema de ''starvation'' do ''sequencer'', que pode infinitamente continuar recebendo novos __jobs__ para executar. Entretanto, ter-se somente uma thread exclusivamente executando todas as seções críticas, traz-se a vantagem de localidade da cache caso o ''sequencer'' execute sempre em um mesmo núcleo do processador.
@@ -235,10 +237,12 @@ Outro problema muito similar do algoritmo do guarda, é que quando a seção cr�
 !!!Futures  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Seguindo as referências bibliográficas, encontrou-se que ''futures'' foram descritas pela primeira vez em 1977 no artigo "The incremental garbage collection of processes”. ''Futures'' facilitam a resolução do problema de bloqueio por dependência de dados. No diagrama de sequência a seguir, como implementar o bloqueio no ''bloco 4'' e sinalizar para o ''bloco 4'' que o ''bloco 2'' já terminou, enquanto o ''bloco 3'' executa?
 ^::{img fileId="969"}::
+::__Figura 5:__ Exemplo de dependência de dados com a seção crítica::
 ::__Fonte:__ Própria::^
 
 O ''bloco 4'' somente pode ser executado quando a sessão crítica no ''bloco 2'' já tiver sido executada. Uma vez que o fluxo de execução chega nesse ponto, a ''Thread 1'' deve bloquear caso o ''bloco 2'' ainda não tenha sido executado pelo ''sequencer''. Isso não seria um problema para o trabalho por que quando existe dependência de dados, o código que é dependente fica encapsulado em uma __closure__ {DIV(type="span")}[{DIV}[#Refer_ncias_|12]] que é chamada quando o resultado do __bloco 2__ fica pronto. A seguir ve-se o fluxo de execução desse caso com o uso de ''futures'':
 ^::{img fileId="950"}::
+::__Figura 6:__ Exemplo de dependência de dados com a seção críticas utilizando ''Future''::
 ::__Fonte:__ Própria::^
 
 Nessa nova versão com ''futures'' vê-se um novo problema não abordado pelo artigo de referência {DIV(type="span")}[{DIV}[#Refer_ncias_|1]]. Nesse fluxo de execução, quem deve executar o ''bloco 4''? A ''Thread A'' não pode mais executar este bloco porque ele foi condicionado a ser executado depois do ''bloco 2'', que é executado assíncronamente pelo ''sequencer''. Entretanto, não pode-se deixar que o ''sequencer'' execute o ''bloco 4'' por que o ''sequencer'' somente é encarregado de executar as seções críticas, e permitir que ele execute outros blocos não críticos, irá atrasar toda pipeline de execução de seções críticas.
@@ -247,6 +251,7 @@ Isso trás uma alternativa implementação de ''futures'' que o artigo {DIV(type
 
 Por isso, a seguir vê-se um diagrama de sequência sobre a implementação de ''future'' descrita no artigo {DIV(type="span")}[{DIV}[#Refer_ncias_|14]] inicial de 1977. Este artigo descreve que, além das tradicionais ''chamadas-por-valor'' e ''chamadas-por-referência'', também existem as ''chamadas-por-future'', onde cada parâmetro da função é ligado a um processo separado (chamado ''future''). Este processo é dedicado a calcular o valor do argumento que a ''future'' representa, o que completamente permite a execução paralela dos argumentos da função, assim aumentado o poder expressivo da linguagem de programação.
 ^::{img fileId="968"}::
+::__Figura 7:__ Exemplo de dependência de dados com um ''Future Thread''::
 ::__Fonte:__ Própria::^
 
 No exemplo anterior, foi simplificado funcionamento do algoritmo do guarda e abstraiu-se quem é o ''sequencer'' fazendo com que a entidade que representa tipo __Guarda__, chame o método ''do_things()'' como se ele fosse o ''sequencer''. A versão estritamente correta da implementação seria fazer com que uma thread como ''Thread A'' fosse o ''sequencer'', e então  a ''Thread A'' deveria fazer a chamada de ''do_things()''. Além dessa simplificação, assume-se que a implementação de Thread utilizada não inicia a execução imediatamente após sua criação. Ela espera até que o método __start()__ seja chamado, e que a thread permita a execução de vários funções, uma após a outra. As funções que esta thread precisa executar são adicionadas através do método ''append()''.
@@ -262,6 +267,7 @@ Um serviço/implementação mais avançado pode automaticamente informar a ''Thr
 !!!!Futures versus Promises  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 A linguagem JavaScript recentemente em 2015, incorporou nativamente a classe ''Promise'' {[https://www.ecma-international.org/ecma-262/6.0/#sec-promise-objects|6]}. Conceitualmente elas são muito similares a ''futures'' {DIV(type="span")}[{DIV}[#Refer_ncias_|14]], mas a implementação de JavaScript é bastante peculiar ao modelo de processamento de JavaScript, que é baseado na existência de uma única thread no sistema {DIV(type="span")}[{DIV}[#Refer_ncias_|16], [#Refer_ncias_|18]]. A seguir vê-se uma breve ilustração da única thread que existe no mundo JavaScript. Essa thread chama-se ''Event loop'', e tudo o que é feito, passa por ela. No caso da implementação das ''promises'', quando uma ''promise'' é resolvida e obtém o seu valor, elas furam {DIV(type="span")}[{DIV}[#Refer_ncias_|16]] a fila de ''callbacks'', para assim serem executadas o mais brevemente possível, preferencialmente mais cedo, ao contrário do modelo usual utilizado para timers, de executar algum tempo depois que o timer expirou, preferencialmente mais tarde pois são adicionados no final da fila.
 ^::{img fileId="945"}::
+::__Figura 8:__ Ilustração do funcionamento programa JavaScript::
 ::__Fonte:__ Referência {DIV(type="span")}[{DIV}[#Refer_ncias_|16]]::^
 
 Assim, ''promises'' em JavaScript funcionam não para fazer computações pesadas, mas sim esperar por eventos assíncronos e que podem demorar muito tempo para acontecer, como por exemplo, esperar pela resposta de uma requisição de rede. A seguir vê-se um exemplo do uso de uma ''promise'' que executa assincronamente. Em JavaScript como somente existe uma thread, então tudo o que se executa é sequencialmente {[https://benjaminhorn.io/code/part-2-cpu-intensive-javascript-computations-without-blocking-the-single-thread/|7]}. Na execução de ''promises'' em JavaScript, refere-se assincronamente para dizer que ao se executar este trecho de código, ele não irá bloquear, e somente algum momento mais tarde (assíncrono, fora de sincronia), a soma será realizada, e novamente sem bloquear a execução da única thread que existe, o ''Event loop''.
@@ -287,6 +293,7 @@ Assuma de os método ''fetchX()'' e ''fetchY()'' returnam alguma ''promise'' dep
 
 Diferente de JavaScript, em C++ e outras linguagens como Java, existem as implementações dos tipos ''Futures'' e ''Promises''. A biblioteca ''std'' do C++ defines as classes template ''std{DIV(type="span")}:{DIV}:promise'' {[https://en.cppreference.com/w/cpp/thread/promise|8]} e ''std{DIV(type="span")}:{DIV}:future'' {[https://en.cppreference.com/w/cpp/thread/future|9]}. A funcionalidade empregada a esses tipos são a transmissão de resultados da computação de uma thread para outra thread que aguarda os resultados. De maneira tradicional, para receber um valor de uma thread precisa-se compartilhar uma variável de condição e um ponteiro comuns a ambas as threads. Uma vez que a outra thread obtém o valor e coloca o mesmo no ponteiro compartilhado, pede-se para a variável de condição liberar a passagem. Então a outra thread que aguardava o resultado desbloqueia e pode seguir com a execução. A desvantagem dessa abordagem é a necessidade de manter e operar diretamente a variável de condição e o ponteiro, e caso queira-se compartilhar mais resultados entre as diferentes threads, a programação fica ainda mais complicada pois precisa-se manter sincronia com mais variáveis de condição. Já com ''std{DIV(type="span")}:{DIV}:promise'' e ''std{DIV(type="span")}:{DIV}:promise'', pode-se abstrair essas operações repetitivas e simplificar a programação. A seguir vê-se um exemplo de utilização destas classes para compartilhamento de dados entre duas threads:
 ^::{img fileId="947"}::
+::__Figura 9:__ Resumo do funcionamento entre os tipos ''Future'' e ''Promise'' em C++::
 ::__Fonte:__ Referência {DIV(type="span")}[{DIV}[#Refer_ncias_|17]]::^
 
 No exemplo anterior, tem-se a ''Thread 1'' criando um objeto do tipo ''std{DIV(type="span")}:{DIV}:promise'', então solicitando que o objeto ''std{DIV(type="span")}:{DIV}:promise'' retorne seu objeto do tipo ''std{DIV(type="span")}:{DIV}:future''. Em seguida, cria-se a ''Thread 2'' passando o objeto ''std{DIV(type="span")}:{DIV}:promise''. Uma vez que a ''Thread 1'' tentar acessar o valor dentro de seu objeto ''std{DIV(type="span")}:{DIV}:future'', ela irá bloquear automaticamente caso esse resultado ainda não tenha sido colocado dentro do ''std{DIV(type="span")}:{DIV}:future'' através de seu objeto ''std{DIV(type="span")}:{DIV}:promise'' correspondente. A seguir vê-se um exemplo de código em C++ que segue o padrão descrito no diagrama anterior:
@@ -324,6 +331,7 @@ A desvantagem de utilizar ''observables'' no lugar de uma ''futures'' seria o en
 !!!Diagrama das Estruturas de Dados Originais  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Para o funcionamento do algoritmo {DIV(type="span")}[{DIV}[#Refer_ncias_|1]], utiliza-se algumas estruturas de dados em "C”. A seguir vê-se as relações entre elas:
 ^::{img fileId="908"}::
+::__Figura 10:__ Diagrama de classes do tipos de dados do algoritmo do Guarda::
 ::__Fonte:__ Própria::^
 
 ^::__Listagem 8:__ Estruturas de dados em C::
@@ -352,6 +360,7 @@ typedef struct
 !!!Diagrama de Sequência - Versão original em C  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Exemplo do fluxo de execução de uma única Thread que se torna o ''sequencer'', e executa sua seção crítica:
 ^::{img fileId="949"}::
+::__Figura 11:__ Exemplo detalhado da execução do algoritmo do Guarda em ''C''::
 ::__Fonte:__ Própria::^
 
 A seguir vê-se a implementação do algoritmo do guarda, como apresentado no artigo {DIV(type="span")}[{DIV}[#Refer_ncias_|1]], utilizando a linguagem "C".
@@ -471,7 +480,7 @@ Assim como ocorre com os algoritmos de sincronização tradicionais, uma das bas
 
 A classe que representa seções críticas  foi criada com base na classe Function_Handler e recebeu o nome de ''Critical_Section''. Essa classe possui apenas dois atributos, _handler e _link. O atributo _handler representa a função relacionada à seção crítica e o atributo _link representa um elemento de lista simples. Além desses dois atributos, a classe ''Critical_Section'' também implementa o método público run(), que é utilizado pelo sequencer para executar uma seção crítica, que na verdade é o mesmo trabalho realizado pelo operator “()”, que deixava o código pouco intuitivo. A Listagem 5 exibe o código da classe ''Critical_Section''.
 
-O construtor da classe ''Critical_Section'' recebe um objeto representando uma função, que deve ser compatível com o tipo Function, definido no arquivo handler.h, como parâmetro. Além disso, o construtor cria o _link relativo à seção crítica sendo construída, que será utilizado para adição e remoção de seções críticas de estruturas de dados, da mesma forma como acontece com objetos da classe Thread. 
+O construtor da classe ''Critical_Section'' recebe um objeto representando uma função, que deve ser compatível com o tipo Function, definido no arquivo ''handler.h'', como parâmetro. Além disso, o construtor cria o _link relativo à seção crítica sendo construída, que será utilizado para adição e remoção de seções críticas de estruturas de dados, da mesma forma como acontece com objetos da classe Thread. 
 ^::__Listagem 13:__ Seção crítica::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
@@ -942,7 +951,7 @@ main: exiting()
 {DIV}^
 
 !!!Element [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
-Como elementos da guarda são elementos de lista simples, com apenas um nível de encadeamento, optou-se por utilizar a classe List_Elements::Singly_Linked, Listagem 6, definida no arquivo list.h, para representá-los. 
+Como elementos da guarda são elementos de lista simples, com apenas um nível de encadeamento, optou-se por utilizar a classe List_Elements::Singly_Linked, Listagem 6, definida no arquivo ''list.h'', para representá-los. 
 
 No entanto, foi necessário adicionar uma relação de amizade entre a classe Singly_Linked e a classe Guard, para que as operações CAS e FAS dos métodos vouch e clear da classe guardam possam acessar diretamente o atributo _next do elemento de lista. Isso porque, não é possível efetuar as operações CAS e FAS utilizando getters.     
 ^::__Listagem 25:__ Link contendo a seção crítica::
@@ -972,8 +981,8 @@ private:
 ~/np~{DIV}
 {DIV}^
 
-!!!Guard [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
-O código onde da classe Guard, definida no arquivo utility/guard.h, é mostrado na Listagem 7. Essa classe implementa a estrutura da guarda descrita no capítulo de fundamentação teórica. 
+!!!Guarda [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+O código onde da classe Guard, definida no arquivo ''utility/guard.h'', é mostrado na Listagem 7. Essa classe implementa a estrutura da guarda descrita no capítulo de fundamentação teórica. 
 ^::__Listagem 26:__ Definição da interface do Guarda::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
@@ -1064,11 +1073,11 @@ Guard::Element * Guard::clear()
 {DIV}^
 
 !!!FAS [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
-A operação FAS, uma das duas primitivas atômicas utilizados no algoritmo das guardas, ainda não havia sido implementada no EPOS, Dessa forma, foi adicionada ao arquivo /include/archtecture/ia_32/cpu.h, onde estão implementadas as primitivas atômicas de sincronização no EPOS, uma nova implementação para FAS.
+A operação FAS, uma das duas primitivas atômicas utilizados no algoritmo das guardas, ainda não havia sido implementada no EPOS, Dessa forma, foi adicionada ao arquivo ''/include/archtecture/ia_32/cpu.h'', onde estão implementadas as primitivas atômicas de sincronização no EPOS, uma nova implementação para FAS.
 
 O código de FAS foi inspirado no código das outras operações atômicas e nas descrições das instruções atômicas nos manuais da Intel.
 
-Além disso, assim como ocorre com as outras operações atômicas, foi adicionada uma implementação em software, independente de arquitetura, no arquivo /include/cpu.h. No entanto, como essa operação não possui suporte de hardware, ela não deve provê garantias de atomicidade.
+Além disso, assim como ocorre com as outras operações atômicas, foi adicionada uma implementação em software, independente de arquitetura, no arquivo ''/include/cpu.h''. No entanto, como essa operação não possui suporte de hardware, ela não deve provê garantias de atomicidade.
 ^::__Listagem 29:__ Implementação do FAS::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
