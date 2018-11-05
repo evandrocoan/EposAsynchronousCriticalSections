@@ -16,7 +16,7 @@ Semaphore display_lock;
 // #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
 #define log(argument) db<Synchronizer>(WRN) << argument;
 
-int increment_counter(Future<int>* future) {
+void increment_counter(Future<int>* future) {
     Delay thinking(1000000);
     counter = counter + 1;
     log( "increment_counter (counter=" << counter << ")" << endl )
