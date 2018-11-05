@@ -68,7 +68,7 @@ __Entregável: D3__
 * Aprimorar o modo como as seções críticas são definidas e permitir que sejam definidas seções críticas a partir de funções com um número arbitrário de parâmetros, assim como ocorre com threads.
 * Substituir os mecanismos de sincronização das aplicações de teste pela nova implementação com uso de guarda.
 __Entregável: D4__
-# As aplicações "synchronizer_test.cc", "scheduler_cpu_affinity_test.cc" e "semaphore_test.cc" utilizando o algoritmo de guarda em vez de mutexes e semáforos.
+# As aplicações ''synchronizer_test.cc'', "scheduler_cpu_affinity_test.cc'' e ''semaphore_test.cc'' utilizando o algoritmo de guarda em vez de mutexes e semáforos.
 
 !!!T5 - Validação  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 * Realização de testes em nível acadêmico, com o objetivo de garantir, na medida do possível, a corretude dos componentes implementados até aqui.
@@ -110,16 +110,20 @@ Algoritmos de sincronização não bloqueantes podem ser classificados de acordo
 A criação de algoritmos de sincronização não bloqueantes pode envolver a utilização de primitivas de sincronização atômicas do tipo ''read-write-modify''. Essas primitivas geralmente leem uma posição de memória e, simultaneamente, escrevem um novo valor em seu lugar. Exemplos de operações atômicas desse tipo são: compare-and-swap (CAS), fetch-and-operation (FAθ), load-link/store-conditional (LL/SC) e test-and-set (TAS). A seguir serão detalhadas duas dessas operações, CAS e FAS (fetch-and-store), uma especialização da operação FAθ. Ambas são utilizadas na implementação de um algoritmo de sincronização não bloqueante que será apresentado mais adiante.
 
 A operação FAS realiza, de maneira atômica, uma leitura e uma escrita em um endereço de memória específico, e pode ser entendida como uma versão atômica do pseudocódigo, apresentado a seguir:
-  {CODE(colors="c")}
+^::__Listagem 1:__ Pseudocódigo da implementação da operação FAS::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 int fas(address * location, int replacement) {
         int old = *location;
         *location = replacement;
         return old;
 }
-{CODE}
+~/np~{DIV}
+{DIV}^
 A operação CAS, cuja implementação lógica em pseudocódigo pode ser vista abaixo, possui um funcionamento similar ao da operação FAS, no entanto, a escrita no endereço de memória sendo acessado ocorre de forma condicional, acontecendo apenas caso o resultado da comparação entre o valor atual desse endereço e o valor de uma determinada variável seja positivo. Na prática, a escrita só acontece caso o valor do endereço sendo acessado já é conhecido por quem está executando o CAS.
-
-{CODE(colors="c")}
+^::__Listagem 2:__ Pseudocódigo da implementação da operação CAS::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 int cas(address location, int compare, int replacement) {
     int old = *location;
     if(*location == compare) {
@@ -127,7 +131,8 @@ int cas(address location, int compare, int replacement) {
     }
     return old;
 }
-{CODE}
+~/np~{DIV}
+{DIV}^
 Um detalhe importante sobre essas operações é o fato de processadores geralmente não suportarem todos os tipos de primitivas ''read-write-modify'' em hardware. A arquitetura RISC-V, por exemplo, implementa apenas as operações FAθ e LL/SC, enquanto a arquitetura x86 não implementa a operação LL/SC, mas implementa a operação CAS.
 
 !!!Sincronização Baseada em Delegação  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
@@ -141,9 +146,9 @@ No entanto, isso nem sempre é possível e, em alguns casos, a sincronização b
 
 !!Guardas  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Todos os conceitos apresentados até aqui convergem em um algoritmo de sincronização, baseado em delegação, para seções críticas assíncronas, que dá origem a uma nova entidade de sincronização: a Guarda. Guardas possuem duas operações básicas, uma para a entrada e uma para a saída de seções críticas, vouch e clear, respectivamente, além de uma convenção de programação, apresentada na Listagem 1, que deve ser utilizada pelas threads do programa para requisitar a execução assíncrona de seções críticas.
-
-::__Listagem 1:__ Protocolo para a requisição de execução de seções críticas.::
-{CODE(colors="c")}
+^::__Listagem 3:__ Protocolo para a requisição de execução de seções críticas::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 Guard guard = ...; // Shared
 ...
 Job * job = ...
@@ -151,24 +156,26 @@ Job * cur;
 if (NULL != (cur = guard.vouch(job))) do {
     run(cur);
 } while (NULL != (cur = guard.clear()));
-{CODE}
-
+~/np~{DIV}
+{DIV}^
 O algoritmo da guarda também introduz o conceito de uma entidade chamada ''sequencer'', que será responsável pela execução das seções críticas do programa. Toda thread, após emitir uma requisição de execução de seção crítica, pode ter que assumir o papel de ''sequencer''. Ao assumir esse papel, a thread deve trabalhar na execução de seções críticas até que não hajam mais requisições pendentes a serem executadas. A convenção de programação definida para submissão de requisições, junto com o modo de funcionamento das operações vouch e clear, impede que mais de um ''sequencer'' esteja ativo ao mesmo tempo, fazendo com que a execução das seções críticas ocorra de forma sequencial, garantindo a propriedade da exclusão mútua.
 
-::{img fileId="931"}::
-::__Figura 1:__ Diagrama demonstrando o funcionamento do protocolo de submissão de seçẽos críticas. Fonte: Própria::
+^::{img fileId="931"}::
+::__Figura 1:__ Diagrama demonstrando o funcionamento do protocolo de submissão de seçẽos críticas::
+::__Fonte:__: Própria::^
 
 Em termos gerais, o funcionamento do protocolo de submissão de requisições de execução de seções críticas à guarda, que pode ser observado no diagrama da Figura 1, se dá da seguinte maneira: seguindo a convenção de programação estipulada, threads devem realizar um vouch para submeter requisições à guarda. Caso já exista um ''sequencer'' ativo, vouch retornará ''NULL'', sinalizando para a thread requerente que ela pode continuar com sua execução. No entanto, caso nenhuma thread esteja atuando como ''sequencer'', vouch retornará um job, sinalizando para a thread que ela deve atuar como ''sequencer'', começando pela execução do job retornado. Após terminar a execução desse job, a thread ''sequencer'' invoca a operação clear repetidamente, e enquanto houverem seções críticas à serem executadas, clear retornará novos jobs, que também serão executados pelo ''sequencer''. Quando não houverem mais seções críticas à serem executadas, clear retornará ''NULL'', sinalizando à thread que ela deve abandonar o papel de ''sequencer'' e continuar com sua execução normal.
 
-::{img fileId="933"}::
-::__Figura 2:__ Atributos da guarda e de seus elementos. Fonte: Própria::
+^::{img fileId="933"}::
+::__Figura 2:__ Atributos da guarda e de seus elementos::
+::__Fonte:__: Própria::^
 
 A partir da descrição geral do funcionamento do algoritmo, percebe-se que guardas comportam-se como filas, onde jobs representando seções críticas são armazenados. A Figura 2 representa a estrutura geral de uma guarda e de seus elementos, que correspondem a elementos de fila simples, com apenas um nível de encadeamento. Além de ser do tipo FIFO, como apenas o ''sequencer'' pode remover elementos, a fila representada pela guarda pode ser considerada uma fila multiple-producer-single-consumer (MPSC), pois, enquanto várias threads podem, simultaneamente, inserir elementos na guarda, apenas o ''sequencer'' pode removê-los. Essa característica diminui muito a complexidade de implementação de operações wait-free para a inserção e remoção de elementos, como poderá ser notado quando o código das operações vouch e clear for apresentado.
 
 Uma implementação para vouch é apresentada na Listagem 2. Essa implementação utiliza as primitivas atômicas CAS e FAS, sinalizadas por V1 e V2 no código, para coordenar acessos a elementos da guarda compartilhados por múltiplas threads, de maneira a evitar a ocorrência de condições de corrida. Mais especificamente, FAS é utilizada, em V1, para coordenar a inserção de novos elementos na guarda por invocações distintas de vouch. Enquanto CAS é utilizada, em V2, para lidar com o caso especial onde a guarda possui apenas um elemento, que pode ser acessado simultaneamente por vouch e clear, e, portanto, deve ser acessado de maneira coordenada.
-
-::__Listagem 2:__ Implementação da operação vouch.::
-{CODE(colors="c")}
+^::__Listagem 4:__ Implementação da operação vouch::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 Element * vouch (Element * item) {
     item->next = NULL ;
     Element * last = FAS(_tail, item ); // V1
@@ -177,14 +184,14 @@ Element * vouch (Element * item) {
     _head = item ; // V3
     return item ;
 }
-{CODE}
-
+~/np~{DIV}
+{DIV}^
 A operação clear é responsável por remover elementos da guarda. Implementações wait-free de operações de remoção de elementos de estruturas de dados tendem a ser extremamentes complexas, no entanto, como destacado previamente, o comportamento MPSC da guarda acaba simplificando muito o código de clear, apresentado na Listagem 3. Assim como no caso de vouch, as operações FAS e CAS são utilizadas para garantir que invocações simultâneas de clear por múltiplas threads nunca resultem em condições de corrida. No trecho de código sinalizado por C1 na Listagem 3, a operação FAS é utilizada para coordenar a definição de qual elemento deve ser a próxima cabeça da guarda, cujo valor é armazenado na variável next, além disso, FAS também marca, simultaneamente, next->_next com o valor mágico DONE, utilizado para controlar a interação entre execuções simultâneas de  vouch e clear, onde pode haver a necessidade de uma transição de ''sequencer''. Caso a variável next tenha recebido o valor ''NULL'', tem-se que a lista possui menos de um elemento, e a semântica de clear indica que não apenas a cabeça da lista deve ser modificada mas também a sua cauda, nesse caso, ambas modificações afetam o mesmo elemento e precisam ser coordenadas, por isso são implementadas por operações CAS.
 
 As implementações de vouch e clear apresentadas são wait-free, pois permitem a invocação dessas operações por múltiplas threads com garantias de progresso para cada uma delas. Dessa forma, caso já exista um ''sequencer'' ativo, o progresso wait-free de todas as threads que submeterem requisições à guarda é garantido, pois esse processo envolve apenas uma invocação à vouch, que também é wait-free. No entanto, as garantias de progresso se tornam mais complexas para o caso de threads que precisam assumir o papel de ''sequencer''. Em sistemas onde threads submetem seções críticas à guarda com muita frequência, uma thread que assume o papel de ''sequencer'' pode ter que executar seções críticas indefinidamente, o que a impedirá de progredir com o resto do seu código. Além disso, seções críticas maliciosas, que executam indefinidamente, também podem impedir o progresso do ''sequencer''. No entanto, esse tipo de seção crítica nunca deve existir, e sua presença pode ser considerada um erro de programação.
-
-::__Listagem 3:__ Implementação da operação clear.::
-{CODE(colors="c")}
+^::__Listagem 5:__ Implementação da operação clear::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 Element * clear() {
     Element * item = _head;
     Element * next = FAS(item->_next, DONE); // C1
@@ -193,8 +200,8 @@ Element * clear() {
     CAS(_head, item, next);  // C3
     return next ;
 } 
-{CODE}
-
+~/np~{DIV}
+{DIV}^
 Até agora, o algoritmo tratou apenas de seções críticas assíncronas, onde o código das threads não depende de dados calculados nas seções críticas, mas esse nem sempre é o caso. Dessa forma, o algoritmo da guarda pode ser estendido para lidar também com seções críticas síncronas. Para isso, são adicionados mecanismos como ''futures'' {DIV(type="span")}[{DIV}[#Refer_ncias_|14]], que permitem a comunicação de dados entre threads e suas seções críticas, de modo a satisfazer dependências unilaterais de dados.
 
 Além dos problemas já citados, várias considerações podem ser feitas em relação à threads de prioridades diferentes compartilhando uma mesma guarda. Nesses casos, inversões de prioridade podem acontecer nos casos onde threads de alta prioridade se tornam ''sequencer'' e são forçadas a executar seções críticas de threads de baixa prioridade, ou em casos onde seções críticas relacionadas à threads de alta prioridade são executadas por threads de baixa prioridade. Para solucionar esses problemas, podem ser desenvolvidas variações do algoritmo, onde o papel de ''sequencer'' pode ser renegociado para que as definições de prioridade do sistema sejam respeitadas.
@@ -210,12 +217,12 @@ Outro detalhe a ser considerado com esse tipo de abordagem é o overhead decorre
 Uma versão equivalente ao uso de guardas, pode ser implementada utilizando várias threads e um semáforo inicializado em 1 para controle da entrada da seção crítica, i.e., exclusão mútua. Na implementação apresentada para o algoritmo de guardas, utiliza-se um ponteiro de função para passar para o ''sequencer'', qual será a seção crítica a ser executada. Enquanto, na versão com threads, teria-se que criar uma nova thread, além da thread atual, passando um ponteiro de função para a seção crítica. E então essa nova thread irá testar o valor do semáforo antes de executar a seção crítica.
 
 A seguir, vê-se resumidamente o fluxo de execução do algoritmo do guarda, já explicado anteriormente. Nele, a ''Thread A'' primeiro empilha um ponteiro de função __job__ na fila de tarefas da variável global __my_guard__ e então verifica se a ''Thread A'', deve ou não se tornar o ''sequencer''. Como a ''Thread A'' é a primeira thread a empilhar uma região crítica, __guard_vouch()__ retorna um valor não nulo, indicando a próxima tarefa a ser executada. Assim, a ''Thread A'' torna-se o ''sequencer''. E logo em seguida, chama o método __do_things()__ que executa a função que contém a região crítica representado por __next_job__. No final da execução, a ''Thread A'' chamará __guard_clear()__, que neste ambiente de exemplo retornará ''NULL'', pois não há outras threads/seções críticas.
-::{img fileId="943"}::
-::__Fonte:__ Própria::
+^::{img fileId="943"}::
+::__Fonte:__ Própria::^
 
 Agora, vê-se um equivalente do mesmo exemplo do guarda, mas utilizando um semáforo global inicializado em 1 para todas as threads, pois para garantir exclusão mútua somente pode existir uma thread executando a região crítica. Primeiro, cria-se uma thread com new, passando como parâmetro um __semáforo__ compartilhado e um ponteiro de função __job__. É importante notar que não se faz __join()__ nesta thread, pois se está tratando de uma seção crítica assíncrona, e precisa-se também de uma implementação especial de thread que antes de chamar o ponteiro de função de __job__, dê um ''lock()'' no semáforo, e depois de completar a função, delete a si própria. Comparando este novo código com o algoritmo do guarda, vê-se que ele ficou muito mais simples, entretanto, perde-se muito na eficiência pois para executar uma seção crítica assincronamente, tem-se que criar exclusivamente uma nova thread para cada uma das threads já existentes, tendo a criação do dobro de threads no sistema em um momento de alta competição pela seção crítica.
-::{img fileId="946"}::
-::__Fonte:__ Própria::
+^::{img fileId="946"}::
+::__Fonte:__ Própria::^
 
 O leitor mais atento pode perceber que, abordou-se somente uma implementação sem dependência de dados com a seção crítica e, que a versão do algoritmo do guarda apresentado neste exemplo também não executou assincronamente. Somente a segunda versão, que utiliza um semáforo fez uma execução assíncrona da seção crítica. Este é um dos problemas do algoritmo do guarda. A thread que for eleita como ''sequencer'', será impedida de executar sua seção crítica assincronamente, pois ela própria tem que executar a sua seção crítica mais as seções críticas das outras threads que empilharem seus __jobs__. Com isso, pode-se ter como já falado anteriormente, o problema de ''starvation'' do ''sequencer'', que pode infinitamente continuar recebendo novos __jobs__ para executar. Entretanto, ter-se somente uma thread exclusivamente executando todas as seções críticas, traz-se a vantagem de localidade da cache caso o ''sequencer'' execute sempre em um mesmo núcleo do processador.
 
@@ -227,20 +234,20 @@ Outro problema muito similar do algoritmo do guarda, é que quando a seção cr�
 
 !!!Futures  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Seguindo as referências bibliográficas, encontrou-se que ''futures'' foram descritas pela primeira vez em 1977 no artigo "The incremental garbage collection of processes”. ''Futures'' facilitam a resolução do problema de bloqueio por dependência de dados. No diagrama de sequência a seguir, como implementar o bloqueio no ''bloco 4'' e sinalizar para o ''bloco 4'' que o ''bloco 2'' já terminou, enquanto o ''bloco 3'' executa?
-::{img fileId="969"}::
-::__Fonte:__ Própria::
+^::{img fileId="969"}::
+::__Fonte:__ Própria::^
 
 O ''bloco 4'' somente pode ser executado quando a sessão crítica no ''bloco 2'' já tiver sido executada. Uma vez que o fluxo de execução chega nesse ponto, a ''Thread 1'' deve bloquear caso o ''bloco 2'' ainda não tenha sido executado pelo ''sequencer''. Isso não seria um problema para o trabalho por que quando existe dependência de dados, o código que é dependente fica encapsulado em uma __closure__ {DIV(type="span")}[{DIV}[#Refer_ncias_|12]] que é chamada quando o resultado do __bloco 2__ fica pronto. A seguir ve-se o fluxo de execução desse caso com o uso de ''futures'':
-::{img fileId="950"}::
-::__Fonte:__ Própria::
+^::{img fileId="950"}::
+::__Fonte:__ Própria::^
 
 Nessa nova versão com ''futures'' vê-se um novo problema não abordado pelo artigo de referência {DIV(type="span")}[{DIV}[#Refer_ncias_|1]]. Nesse fluxo de execução, quem deve executar o ''bloco 4''? A ''Thread A'' não pode mais executar este bloco porque ele foi condicionado a ser executado depois do ''bloco 2'', que é executado assíncronamente pelo ''sequencer''. Entretanto, não pode-se deixar que o ''sequencer'' execute o ''bloco 4'' por que o ''sequencer'' somente é encarregado de executar as seções críticas, e permitir que ele execute outros blocos não críticos, irá atrasar toda pipeline de execução de seções críticas.
 
 Isso trás uma alternativa implementação de ''futures'' que o artigo {DIV(type="span")}[{DIV}[#Refer_ncias_|1]] sugere, onde cada ''future'' possui um semáforo acoplado, e a execução do ''bloco 4'' não é delegada ao ''sequencer'', mas sim a ''Thread A'' que irá bloquear automaticamente quando o fluxo de execução chegar ao ''bloco 4'' e o resultado do ''bloco 2'' ainda não estiver disponível. Caso o resultado do ''bloco 2'' já esteja disponível, a ''Thread A'' não irá bloquear e seguirá executando o ''bloco 4''. Infelizmente, pode-se não querer o programa bloqueie quando existe a dependência de dados explicita como essa alternativa sugere.
 
 Por isso, a seguir vê-se um diagrama de sequência sobre a implementação de ''future'' descrita no artigo {DIV(type="span")}[{DIV}[#Refer_ncias_|14]] inicial de 1977. Este artigo descreve que, além das tradicionais ''chamadas-por-valor'' e ''chamadas-por-referência'', também existem as ''chamadas-por-future'', onde cada parâmetro da função é ligado a um processo separado (chamado ''future''). Este processo é dedicado a calcular o valor do argumento que a ''future'' representa, o que completamente permite a execução paralela dos argumentos da função, assim aumentado o poder expressivo da linguagem de programação.
-::{img fileId="968"}::
-::__Fonte:__ Própria::
+^::{img fileId="968"}::
+::__Fonte:__ Própria::^
 
 No exemplo anterior, foi simplificado funcionamento do algoritmo do guarda e abstraiu-se quem é o ''sequencer'' fazendo com que a entidade que representa tipo __Guarda__, chame o método ''do_things()'' como se ele fosse o ''sequencer''. A versão estritamente correta da implementação seria fazer com que uma thread como ''Thread A'' fosse o ''sequencer'', e então  a ''Thread A'' deveria fazer a chamada de ''do_things()''. Além dessa simplificação, assume-se que a implementação de Thread utilizada não inicia a execução imediatamente após sua criação. Ela espera até que o método __start()__ seja chamado, e que a thread permita a execução de vários funções, uma após a outra. As funções que esta thread precisa executar são adicionadas através do método ''append()''.
 
@@ -254,11 +261,13 @@ Um serviço/implementação mais avançado pode automaticamente informar a ''Thr
 %%%
 !!!!Futures versus Promises  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 A linguagem JavaScript recentemente em 2015, incorporou nativamente a classe ''Promise'' {[https://www.ecma-international.org/ecma-262/6.0/#sec-promise-objects|6]}. Conceitualmente elas são muito similares a ''futures'' {DIV(type="span")}[{DIV}[#Refer_ncias_|14]], mas a implementação de JavaScript é bastante peculiar ao modelo de processamento de JavaScript, que é baseado na existência de uma única thread no sistema {DIV(type="span")}[{DIV}[#Refer_ncias_|16], [#Refer_ncias_|18]]. A seguir vê-se uma breve ilustração da única thread que existe no mundo JavaScript. Essa thread chama-se ''Event loop'', e tudo o que é feito, passa por ela. No caso da implementação das ''promises'', quando uma ''promise'' é resolvida e obtém o seu valor, elas furam {DIV(type="span")}[{DIV}[#Refer_ncias_|16]] a fila de ''callbacks'', para assim serem executadas o mais brevemente possível, preferencialmente mais cedo, ao contrário do modelo usual utilizado para timers, de executar algum tempo depois que o timer expirou, preferencialmente mais tarde pois são adicionados no final da fila.
-::{img fileId="945"}::
-::__Fonte:__ Referência {DIV(type="span")}[{DIV}[#Refer_ncias_|16]]::
+^::{img fileId="945"}::
+::__Fonte:__ Referência {DIV(type="span")}[{DIV}[#Refer_ncias_|16]]::^
 
 Assim, ''promises'' em JavaScript funcionam não para fazer computações pesadas, mas sim esperar por eventos assíncronos e que podem demorar muito tempo para acontecer, como por exemplo, esperar pela resposta de uma requisição de rede. A seguir vê-se um exemplo do uso de uma ''promise'' que executa assincronamente. Em JavaScript como somente existe uma thread, então tudo o que se executa é sequencialmente {[https://benjaminhorn.io/code/part-2-cpu-intensive-javascript-computations-without-blocking-the-single-thread/|7]}. Na execução de ''promises'' em JavaScript, refere-se assincronamente para dizer que ao se executar este trecho de código, ele não irá bloquear, e somente algum momento mais tarde (assíncrono, fora de sincronia), a soma será realizada, e novamente sem bloquear a execução da única thread que existe, o ''Event loop''.
-{CODE(colors="c")}
+^::__Listagem 6:__ Implementação de uma Promise ja<x>vascript::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 function sum(xPromise, yPromise) {
     return Promise.all([xPromise, yPromise])
     .then(function(values) {
@@ -270,17 +279,20 @@ sum(fetchX(), fetchY())
 .then(function(sum) {
     console.log(sum);
 });
-{CODE}
+~/np~{DIV}
 ::__Fonte:__ Referência {DIV(type="span")}[{DIV}[#Refer_ncias_|16]]::
+{DIV}^
 
 Assuma de os método ''fetchX()'' e ''fetchY()'' returnam alguma ''promise'' depois de fazerem alguma computação. A função ''sum()'' mostrada anteriormente, recebe duas ''promises'' como parâmetro, e chama o método estático ''Primise.all()'', que recebe um array de ''promises'' e retorna uma nova ''promise'' que irá chamar o seu correspondente ''callback'' indicado por ''then()'', assim que todas as suas "''sub-promises''” forem resolvidas, i.e., efetivamente conterem um valor ao invés de somente serem uma promessa de conter algum valor.
 
 Diferente de JavaScript, em C++ e outras linguagens como Java, existem as implementações dos tipos ''Futures'' e ''Promises''. A biblioteca ''std'' do C++ defines as classes template ''std{DIV(type="span")}:{DIV}:promise'' {[https://en.cppreference.com/w/cpp/thread/promise|8]} e ''std{DIV(type="span")}:{DIV}:future'' {[https://en.cppreference.com/w/cpp/thread/future|9]}. A funcionalidade empregada a esses tipos são a transmissão de resultados da computação de uma thread para outra thread que aguarda os resultados. De maneira tradicional, para receber um valor de uma thread precisa-se compartilhar uma variável de condição e um ponteiro comuns a ambas as threads. Uma vez que a outra thread obtém o valor e coloca o mesmo no ponteiro compartilhado, pede-se para a variável de condição liberar a passagem. Então a outra thread que aguardava o resultado desbloqueia e pode seguir com a execução. A desvantagem dessa abordagem é a necessidade de manter e operar diretamente a variável de condição e o ponteiro, e caso queira-se compartilhar mais resultados entre as diferentes threads, a programação fica ainda mais complicada pois precisa-se manter sincronia com mais variáveis de condição. Já com ''std{DIV(type="span")}:{DIV}:promise'' e ''std{DIV(type="span")}:{DIV}:promise'', pode-se abstrair essas operações repetitivas e simplificar a programação. A seguir vê-se um exemplo de utilização destas classes para compartilhamento de dados entre duas threads:
-::{img fileId="947"}::
-::__Fonte:__ Referência {DIV(type="span")}[{DIV}[#Refer_ncias_|17]]::
+^::{img fileId="947"}::
+::__Fonte:__ Referência {DIV(type="span")}[{DIV}[#Refer_ncias_|17]]::^
 
 No exemplo anterior, tem-se a ''Thread 1'' criando um objeto do tipo ''std{DIV(type="span")}:{DIV}:promise'', então solicitando que o objeto ''std{DIV(type="span")}:{DIV}:promise'' retorne seu objeto do tipo ''std{DIV(type="span")}:{DIV}:future''. Em seguida, cria-se a ''Thread 2'' passando o objeto ''std{DIV(type="span")}:{DIV}:promise''. Uma vez que a ''Thread 1'' tentar acessar o valor dentro de seu objeto ''std{DIV(type="span")}:{DIV}:future'', ela irá bloquear automaticamente caso esse resultado ainda não tenha sido colocado dentro do ''std{DIV(type="span")}:{DIV}:future'' através de seu objeto ''std{DIV(type="span")}:{DIV}:promise'' correspondente. A seguir vê-se um exemplo de código em C++ que segue o padrão descrito no diagrama anterior:
-{CODE(colors="c")}
+^::__Listagem 7:__ Implementação de uma Promise C++::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 #include <iostream>
 #include <thread>
 #include <future>
@@ -300,8 +312,9 @@ int main()
     thread.join();
     return 0;
 }
-{CODE}
+~/np~{DIV}
 ::__Fonte:__ Referência {DIV(type="span")}[{DIV}[#Refer_ncias_|17]]::
+{DIV}^
 
 !!!!Futures versus Observables  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Não há muito o que dizer sobre a diferença entre ''futures'' {DIV(type="span")}[{DIV}[#Refer_ncias_|14]] e ''observables'' {DIV(type="span")}[{DIV}[#Refer_ncias_|20]]. Cada um deles servem a propósitos bem específicos, entretanto o domínio de soluções de problemas entre ''futures'' e ''observables'' possuí uma intersecção válida quando não utiliza-se ''futures'' que realizam o bloqueio da thread, mas sim ''futures'' que registram uma lista de blocos de execução dependentes para serem chamados assim que o resultado da future estiver completo. Neste contexto, a versão equivalente para ''observables'' seria registrar a lista de blocos dependentes do resultado como observadores.
@@ -310,9 +323,12 @@ A desvantagem de utilizar ''observables'' no lugar de uma ''futures'' seria o en
 
 !!!Diagrama das Estruturas de Dados Originais  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Para o funcionamento do algoritmo {DIV(type="span")}[{DIV}[#Refer_ncias_|1]], utiliza-se algumas estruturas de dados em "C”. A seguir vê-se as relações entre elas:
-{img fileId="908"}
+^::{img fileId="908"}::
+::__Fonte:__ Própria::^
 
-{CODE(colors="c")}
+^::__Listagem 8:__ Estruturas de dados em C::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 typedef struct
 {
     chain_t* next;
@@ -330,14 +346,18 @@ typedef struct
     chain_t* tail;
     sleep_t wait;
 } actor_t;
-{CODE}
+~/np~{DIV}
+{DIV}^
 
 !!!Diagrama de Sequência - Versão original em C  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Exemplo do fluxo de execução de uma única Thread que se torna o ''sequencer'', e executa sua seção crítica:
-{img fileId="949"}
+^::{img fileId="949"}::
+::__Fonte:__ Própria::^
 
 A seguir vê-se a implementação do algoritmo do guarda, como apresentado no artigo {DIV(type="span")}[{DIV}[#Refer_ncias_|1]], utilizando a linguagem "C".
-{CODE(colors="c")}
+^::__Listagem 9:__ Implementação do algoritmo do Guarda em C::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 void guard_setup(guard_t* self)
 {
     self->head = self->tail = NULL;
@@ -367,26 +387,29 @@ chain_t* guard_clear(guard_t* self)
     CAS(&self->head, item, next); // C4
     return next;
 }
-{CODE}
+~/np~{DIV}
+{DIV}^
 
 !!Análise de viabilidade  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 No EPOS x86 não hà uma implementação para a operação FAS, uma das duas primitivas atômicas utilizadas no algoritmo das guards. Uma possível implementação para essa operação é apresentada a seguir:
-
-{CODE(colors="c")}
+^::__Listagem 10:__ Implementação da operação de FAS::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 template<typename T>
 static T fas(volatile T & value, volatile T replacement) {
     ASM("lock xchg %0, %2" : "=a"(replacement) : "a"(replacement), "m"(value) : "memory");
     return replacement;
 }
-{CODE}
+~/np~{DIV}
+{DIV}^
 Mesmo que não consiga-se realizar uma implementação correta para ''FAS()'', pode-se implementar a FAS utilizando CAS. Por exemplo, uma chamada FAS seria ''FAS(entrada, saída)'' e a versão com CAS equivalente seria ''CAS(entrada, entrada, saída)''. Assim, a diferença seria que utilizar um CAS pode ser menos eficiente ao invés de utilizar somente um ''FAS()'' implementado em assembly.
 
 Como ARM não suporta CAS, apenas LC/SC, pretende-se limitar a implementação do algoritmo apenas à versão do EPOS para a arquitetura x86.
 
 A seguir vê-se um simples programa que utiliza a operação ''CAS()'' atualmente implementada no EPOS.
-
-::__Listagem 4:__ cas_test.cc::
-{CODE(colors="c")}
+^::__Listagem 11:__ Arquivo ''/app/cas_test.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS CAS Component Test Program
 
 #include <utility/ostream.h>
@@ -419,10 +442,12 @@ int main()
 
     cout << "The CPU::cas() instruction set ran successfully!" << endl << endl;
 }
-{CODE}
-
-__Resultado da execução de cas_test.cc__
-{CODE()}
+~/np~{DIV}
+{DIV}^
+Resultado da execução:
+^::__Listagem 12:__ Arquivo ''/app/cas_test.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 Welcome to the CPU::cas() instruction test!
 original=5, compare=5, replacement=6, replaced=0
 original=6, compare=5, replacement=6, replaced=5
@@ -430,7 +455,8 @@ The CPU::cas() instruction set ran successfully!
 
 The last thread has exited!
 Rebooting the machine ...
-{CODE}
+~/np~{DIV}
+{DIV}^
 
 !!Implementação  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Código disponível em svn:
@@ -446,9 +472,9 @@ Assim como ocorre com os algoritmos de sincronização tradicionais, uma das bas
 A classe que representa seções críticas  foi criada com base na classe Function_Handler e recebeu o nome de ''Critical_Section''. Essa classe possui apenas dois atributos, _handler e _link. O atributo _handler representa a função relacionada à seção crítica e o atributo _link representa um elemento de lista simples. Além desses dois atributos, a classe ''Critical_Section'' também implementa o método público run(), que é utilizado pelo sequencer para executar uma seção crítica, que na verdade é o mesmo trabalho realizado pelo operator “()”, que deixava o código pouco intuitivo. A Listagem 5 exibe o código da classe ''Critical_Section''.
 
 O construtor da classe ''Critical_Section'' recebe um objeto representando uma função, que deve ser compatível com o tipo Function, definido no arquivo handler.h, como parâmetro. Além disso, o construtor cria o _link relativo à seção crítica sendo construída, que será utilizado para adição e remoção de seções críticas de estruturas de dados, da mesma forma como acontece com objetos da classe Thread. 
-
-::__Listagem 5:__ Seção crítica::
-{CODE(colors="c")}
+^::__Listagem 13:__ Seção crítica::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 class Critical_Section
 {
 public:
@@ -467,15 +493,17 @@ private:
     Function * _handler;
     Element _link; // Inspired by the thread code
 };
-{CODE}
+~/np~{DIV}
+{DIV}^
 Exemplos da utilização da classe ''Critical_Section'' durante a submissão de seções críticas à guarda estão na seção sobre os testes realizados.
 
 !!!Closure Metaprogramada [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 A ''Critical_Section'' inicialmente descrita não apresenta a possibilidade de definir-se/criar-se funções com um número variado de argumentos. Por isso, essa implementação foi substituída por uma ''Critical_Section'' meta programada, que faz uso de templates variádicos do C++ 11.
 
 A seguir ve-sê a implementação da classe base de todas as ''Critical_Section''. Uma classe base é necessária por que o algoritmo do Guarda implementa uma lista encadeada de seções críticas, que em nosso caso são presentados por ''Closures''. Assim, como a implementação de lista, que o algoritmo do Guarda faz uso, não permite que tipos diferentes sejam adicionados na lista, faz-se uso do polimorfismo para criar um lista com diferentes closures meta programadas.
-::__Listagem 6:__ Base de todas ''Closures'' meta programadas, Arquivo: ''/include/utility/critical_section.h''::
-{CODE(colors="c")}
+^::__Listagem 14:__ Base de todas ''Closures'' meta programadas, Arquivo: ''/include/utility/critical_section.h''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 class Critical_Section_Base
 {
     /// The Guard class requires access to our the _link private attribute
@@ -506,11 +534,12 @@ private:
     // Inspired by the thread code
     Element _link;
 };
-{CODE}
-
+~/np~{DIV}
+{DIV}^
 A implementação da ''Critical_Section'' meta programada é simplesmente a herança privada da implementação de ''Closure'', mais a herança da classe base de todas as seções críticas, a ''Critical_Section_Base''. 
-::__Listagem 7:__ Definição da ''Critical_Section'' meta programada baseada na implementação de ''Closures''::
-{CODE(colors="c")}
+^::__Listagem 15:__ Definição da ''Critical_Section'' meta programada baseada na implementação de ''Closures''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 template<typename... Tn>
 class Critical_Section: public Critical_Section_Base, private Closure<void( Tn... )>
 {
@@ -525,11 +554,12 @@ public:
         run();
     }
 };
-{CODE}
-
+~/np~{DIV}
+{DIV}^
 Para poder-se criar Closures com um número variado do parâmetros, fez-se uso de um meta programa que calcula, recursivamente as posições dos parâmetros da closures.
-::__Listagem 8:__ Cálculo do index dos parâmetros da seção crítica dentro da closure::
-{CODE(colors="c")}
+^::__Listagem 16:__ Cálculo do index dos parâmetros da seção crítica dentro da closure::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 template<int ...>
 struct MetaSequenceOfIntegers { };
 
@@ -549,11 +579,12 @@ struct GeneratorOfIntegerSequence<AccumulatedSize, Grouper(), GeneratedSequence.
 {
   typedef MetaSequenceOfIntegers<GeneratedSequence...> type;
 };
-{CODE}
-
+~/np~{DIV}
+{DIV}^
 Este programa é executado em tempo de compilação, e para uma dada entrada, como por exemplo ''GeneratorOfIntegerSequence< 0, int(char, int, char) >::type()'', gera o seguinte código, que calcula o pacote de parâmetros ''<0, 1, 5>'', que significa que o primeiro parâmetro da função, que é o tipo ''char'', está na posição 0, enquanto o segundo parâmetro do tipo ''int'' está na posição 1, que e o último parâmetro, ''char'' está na posição 5. Tais valores devem-se aos respectivos tamanhos de ''char'' e ''int'' serem 1 e 4:
-::__Listagem 9:__ Trecho de código gerado pelo meta programa, obtido com compilador ''LLVM Clang''::
-{CODE(colors="c")}
+^::__Listagem 17:__ Trecho de código gerado pelo meta programa, obtido com compilador ''LLVM Clang''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 $ clang++ -Xclang -ast-print -fsyntax-only parameter_pack_sequencer_size_generator.cpp > expanded.cpp
 template <int AccumulatedSize, typename Tn, int ...GeneratedSequence> struct GeneratorOfIntegerSequence
 template<> struct GeneratorOfIntegerSequence<0, int (char, int, char), <>> {
@@ -568,11 +599,12 @@ template<> struct GeneratorOfIntegerSequence<5, int (char), <0, 1>> {
 template<> struct GeneratorOfIntegerSequence<6, int (), <0, 1, 5>> {
     typedef MetaSequenceOfIntegers<0, 1, 5> type;
 };
-{CODE}
-
+~/np~{DIV}
+{DIV}^
 Segue o meta programa que implementa closures ou functors de parâmetros variádicos:
-::__Listagem 10:__ Implementação da Closure meta programa, arquivo ''/include/utility/closure.h''::
-{CODE(colors="c")}
+^::__Listagem 18:__ Implementação da Closure meta programa, arquivo ''/include/utility/closure.h''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 template<typename Tn>
 class Closure;
 
@@ -647,15 +679,17 @@ public:
 
     static void pack_helper(char* pointer_address) {}
 };
-{CODE}
-
+~/np~{DIV}
+{DIV}^
 Em tempo de compilação, ao detectar a criação de um Objeto closure, o compilador irá criar uma definição específica para a classe Closure de acordo com os argumentos ''(function, arg1, …, argN)''. Algo similar ao exemplo a seguir:
-{CODE(colors="c")}
+^::__Listagem 19:__ Ilustração de um meta programa depois de compilado::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 class Closure<funcReturntype(char, …, int), char, …, int>{
   ...
 }
-{CODE}
-
+~/np~{DIV}
+{DIV}^
 O tipo ''funcReturnType'' é inferido a partir do tipo de retorno de function. Os tipos ''(char, ... , int)'' são inferidos a partir dos tipos dos argumentos ''('a', …, 1)''.
 
 Em tempo de execução, o construtor da classe Closure irá:
@@ -663,8 +697,9 @@ Em tempo de execução, o construtor da classe Closure irá:
 # Utilizar a função ''pack_helper()'' para colocar ''('a', ... , 1)'' no array ''_parameters'', tratando o fato de possuírem de tipos diferentes.
 
 Veja um exemplo completo de teste/uso das closures meta programadas:
-::__Listagem 11:__ Arquivo ''/app/closure_test.cc''::
-{CODE(colors="c")}
+^::__Listagem 20:__ Arquivo ''/app/closure_test.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
 
 #include <utility/closure.h>
@@ -731,11 +766,12 @@ int main()
     log( "main: exiting()" << endl )
     return 0;
 }
-{CODE}
-
+~/np~{DIV}
+{DIV}^
 Resultado da execução:
-::__Listagem 12:__ Arquivo ''/app/closure_test.cc''::
-{CODE(colors="c")}
+^::__Listagem 21:__ Arquivo ''/app/closure_test.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 main: begin()
 Closure::Closure(_entry=0x0009ff78, PARAMETERS_COUNT=3, PARAMETERS_LENGTH=6, sizeof=8) => 0x00097f64
 Closure::pack_helper(Head=1, address=0x00097f54)
@@ -796,10 +832,12 @@ test_function5 Testa 4
 
 Closure::~Closure(this=0x0009fe84_entry=0x0009fe84, PARAMETERS_COUNT=1, PARAMETERS_LENGTH=4, sizeof=8)
 main: exiting()
-{CODE}
+~/np~{DIV}
+{DIV}^
 
-::__Listagem 13:__ Trecho de código gerado pelo meta programa, obtido com compilador ''LLVM Clang''::
-{CODE(colors="c")}
+^::__Listagem 22:__ Trecho de código gerado pelo meta programa, obtido com compilador ''LLVM Clang''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 $ clang++ -Xclang -ast-print -fsyntax-only closure_test.cpp > expanded.cpp
 template<> class Closure<char (const char *, const char *, char)> {
 public:
@@ -857,11 +895,12 @@ public:
     static void pack_helper(char *pointer_address)     {
     }
 }
-{CODE}
-
+~/np~{DIV}
+{DIV}^
 Agora mostra-se um exemplo de uso de closures e do algoritmo do Guarda.
-::__Listagem 14:__ Arquivo ''/app/closure_guard_test.cc''::
-{CODE(colors="c")}
+^::__Listagem 23:__ Arquivo ''/app/closure_guard_test.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
 
 #include <thread.h>
@@ -889,24 +928,26 @@ int main()
     log( "main: exiting()" << endl )
     return 0;
 }
-{CODE}
-
+~/np~{DIV}
+{DIV}^
 Resultado da execução:
-::__Listagem 15:__ Arquivo ''/app/closure_guard_test.cc''::
-{CODE(colors="c")}
+^::__Listagem 24:__ Arquivo ''/app/closure_guard_test.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 main: begin()
 char1=A, text1=Test 1, text2=Test 2, bool1=1, bool2=0, text3=Test 3, int1=10
 char1=B, text1=Test 4, text2=Test 5, bool1=0, bool2=0, text3=Test 6, int1=20
 main: exiting()
-{CODE}
+~/np~{DIV}
+{DIV}^
 
 !!!Element [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Como elementos da guarda são elementos de lista simples, com apenas um nível de encadeamento, optou-se por utilizar a classe List_Elements::Singly_Linked, Listagem 6, definida no arquivo list.h, para representá-los. 
 
 No entanto, foi necessário adicionar uma relação de amizade entre a classe Singly_Linked e a classe Guard, para que as operações CAS e FAS dos métodos vouch e clear da classe guardam possam acessar diretamente o atributo _next do elemento de lista. Isso porque, não é possível efetuar as operações CAS e FAS utilizando getters.     
-
-::__Listagem 16:__ Link contendo a seção crítica::
-{CODE(colors="c")}
+^::__Listagem 25:__ Link contendo a seção crítica::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 // Simple List Element
 template<typename T>
 class Singly_Linked
@@ -928,13 +969,14 @@ private:
     const T * _object;
     Element * _next;
 };
-{CODE}
+~/np~{DIV}
+{DIV}^
 
 !!!Guard [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 O código onde da classe Guard, definida no arquivo utility/guard.h, é mostrado na Listagem 7. Essa classe implementa a estrutura da guarda descrita no capítulo de fundamentação teórica. 
-
-::__Listagem 17:__ Definição da interface do Guarda::
-{CODE(colors="c")}
+^::__Listagem 26:__ Definição da interface do Guarda::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 class Guard
 {
 public:
@@ -956,11 +998,12 @@ private:
    Element * _head;
    Element * _tail;
 };
-{CODE}
+~/np~{DIV}
+{DIV}^
 Além das operações vouch, clear e a operação de criação da guarda (setup), já apresentadas no capítulo de fundamentação teórica, a classe guarda implementa uma nova operação, chamada de submit. Essa operação encapsula o protocolo de submissão de seções críticas à guarda e pode ser utilizada por threads para a delegação da execução de seções críticas. A Listagem 8 apresenta o construtor e destrutor da guarda, assim como a implementação do método submit().
-
-::__Listagem 18:__ Nova convenção para a submissão de requisições de execução de seções críticas::
-{CODE(colors="c")}
+^::__Listagem 27:__ Nova convenção para a submissão de requisições de execução de seções críticas::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 // Object Methods
 Guard::Guard(): _head(0), _tail(0)
 {
@@ -982,13 +1025,14 @@ void Guard::submit(Closure * cs)
        cur = clear();
    } while (cur != NULL);   
 }
-{CODE}
+~/np~{DIV}
+{DIV}^
 A implementação dos métodos vouch(...) e clear são apresentadas na Listagem 8. Essas implementações não diferem muito dos códigos apresentados no capítulo de fundamentação teórica, lembrando que a operação vouch é responsável por adicionar novos elementos à guarda e sinalizar threads quando essas precisarem assumir o papel de sequencer, e a operação clear é responsável pela remoção de elementos da guarda e por sinalizar ao sequencer quando a guarda estiver vazia. 
 
 Uma adição importante foi a deleção de seções críticas que já foram executadas. Essa deleção deve geralmente ocorrer durante a execução do método clear. No entanto, existe uma situação excepcional, que pode ocorrer quando a guarda possui apenas um elementos e operações vouch e clear executam simultaneamente. Nesse caso, a passagem do papel de sequencer da thread executando clear para a thread executando vouch. Quando isso acontecer, o sequencer executando vouch precisará também deletar o elemento da guarda previamente removido da lista pela operação clear.
-
-::__Listagem 19:__ Implementações de vouch() e clear()::
-{CODE(colors="c")}
+^::__Listagem 28:__ Implementações de vouch() e clear()::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 Guard::Element * Guard::vouch(Element * item)
 {
    db<Synchronizer>(TRC) << "Guard::vouch(this=" << this << " head= " << _head << " tail= " << _tail <<  ")" << endl;
@@ -1016,7 +1060,8 @@ Guard::Element * Guard::clear()
        delete item->object();
    return next;   
 }
-{CODE}
+~/np~{DIV}
+{DIV}^
 
 !!!FAS [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 A operação FAS, uma das duas primitivas atômicas utilizados no algoritmo das guardas, ainda não havia sido implementada no EPOS, Dessa forma, foi adicionada ao arquivo /include/archtecture/ia_32/cpu.h, onde estão implementadas as primitivas atômicas de sincronização no EPOS, uma nova implementação para FAS.
@@ -1024,9 +1069,9 @@ A operação FAS, uma das duas primitivas atômicas utilizados no algoritmo das 
 O código de FAS foi inspirado no código das outras operações atômicas e nas descrições das instruções atômicas nos manuais da Intel.
 
 Além disso, assim como ocorre com as outras operações atômicas, foi adicionada uma implementação em software, independente de arquitetura, no arquivo /include/cpu.h. No entanto, como essa operação não possui suporte de hardware, ela não deve provê garantias de atomicidade.
-
-::__Listagem 20:__ Implementação do FAS::
-{CODE(colors="c")}
+^::__Listagem 29:__ Implementação do FAS::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 // /include/archtecture/ia_32/cpu.h
 template<typename T>
 static T fas(volatile T & value, volatile T replacement) 
@@ -1041,14 +1086,16 @@ static int fas(volatile int & value, volatile int & replacement) {
      value = replacement;
      return old;
  }
-{CODE}
+~/np~{DIV}
+{DIV}^
 
 !!!Futures [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Das 2 implementações distintas de futures apresentadas, realiza-se a implementação do modelo de future bloqueante, apresentado no artigo referência {DIV(type="span")}[{DIV}[#Refer_ncias_|2]]. Como a implementação atual do algoritmo do guarda não suporta passagens de parâmetros variádicos, fez-se a implementação dos métodos para que aceitem vários parâmetros com meta programação. Ver a seção [#Closure_Metaprogramada_|Closure Metaprogramada]. 
 
 Uma vez que a future é resolvida, i.e., seu método ''resolve()'' é chamado e seu valor é definido, ele não pode ser mais alterado, e qualquer um que tentar obter o valor da future com ''get_value()'' não precisará mais bloquear, pois o valor não é indefinido. Futures são implementadas totalmente no arquivo header ''.h'' por que são meta classes que são instanciadas pelo compilador e seu código é gerado somente caso alguém crie uma especialização com algum tipo de dado.
-::__Listagem 21:__ Implementação de future em ''/include/utility/future.h''::
-{CODE(colors="c")}
+^::__Listagem 30:__ Implementação de future em ''/include/utility/future.h''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Guard Component Declarations
 
 #ifndef __future_h
@@ -1104,11 +1151,12 @@ private:
 __END_UTIL
 
 #endif
-{CODE}
-
+~/np~{DIV}
+{DIV}^
 Agora ve-sê um simples programa que demonstra o uso de futures:
-::__Listagem 22:__ Arquivo de Teste ''/app/future_simple_test.cc''::
-{CODE(colors="c")}
+^::__Listagem 31:__ Arquivo de Teste ''/app/future_simple_test.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
 
 #include <thread.h>
@@ -1152,11 +1200,12 @@ int main()
     log( "Exiting main application..." << endl )
     return 0;
 }
-{CODE}
-
+~/np~{DIV}
+{DIV}^
 Resultado da execução:
-::__Listagem 23:__ Arquivo ''/app/future_simple_test.cc''::
-{CODE(colors="c")}
+^::__Listagem 32:__ Arquivo ''/app/future_simple_test.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 Starting main application...
 Future(_is_resolved=0, _condition=0) => 0x00097f5c
 consumerFunction ()
@@ -1168,11 +1217,12 @@ Future::get_value(this=0x00097f5c _is_resolved=1 _condition=0)
 consumerFunction (result=10)
 producerFunction (resolving future=0x00097f5c to 10)
 Exiting main application...
-{CODE}
-
+~/np~{DIV}
+{DIV}^
 A seguir vê-se um simples exemplo de uso de futures. Nesse exemplo, evolve-se varias classes to EPOS, fazendo seu uso em conjunto com o algoritmo do guarda.
-::__Listagem 24:__ Arquivo de Teste ''/app/future_guard_test.cc''::
-{CODE(colors="c")}
+^::__Listagem 33:__ Arquivo de Teste ''/app/future_guard_test.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
 
 #include <thread.h>
@@ -1227,11 +1277,12 @@ int main()
     log( "Exiting main application..." << endl )
     return 0;
 }
-{CODE}
-
+~/np~{DIV}
+{DIV}^
 Resultado da execução:
-::__Listagem 25:__ Arquivo ''/app/future_guard_test.cc''::
-{CODE(colors="c")}
+^::__Listagem 34:__ Arquivo ''/app/future_guard_test.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 Starting main application...
 functionA ()
 Future(_is_resolved=0, _condition=0) => 0x0008fef4
@@ -1246,7 +1297,8 @@ functionB (result=2)
 Future::get_value(this=0x0008fef4 _is_resolved=1 _condition=0)
 functionA (result=1)
 Exiting main application...
-{CODE}
+~/np~{DIV}
+{DIV}^
 
 !!Testes [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Cria-se um arquivo de testes baseado no exemplo de http://pages.cs.wisc.edu/~remzi/OSTEP/threads-intro.pdf.
@@ -1257,9 +1309,9 @@ Todos os testes a seguir foram realizados utilizando ''static const unsigned int
 
 !!!fas_test.cc [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Aqui testa-se a implementação nova de FAS feita, repetidamente fazendo a troca de variáveis em duas thread executando em CPUs diferentes.
-
-::__Listagem 26:__ Arquivo de Teste ''/app/fas_test.cc''::
-{CODE(colors="c")}
+^::__Listagem 35:__ Arquivo de Teste ''/app/fas_test.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
 
 #include <utility/ostream.h>
@@ -1329,11 +1381,12 @@ int main()
     check("Thread 0", ", end")
     return 0;
 }
-{CODE}
-
+~/np~{DIV}
+{DIV}^
 Resultado da execução:
-::__Listagem 27:__ Arquivo ''/app/fas_test.cc''::
-{CODE(colors="c")}
+^::__Listagem 36:__ Arquivo ''/app/fas_test.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 <1>: MMU is disabled! :<1>
 <2>: MMU is disabled! :<2>
 <3>: MMU is disabled! :<3>
@@ -1346,13 +1399,14 @@ Resultado da execução:
 <1>: Thread 0, end, old=10, current=10, next=11 :<1>
 <0>: The last thread has exited! :<0>
 <0>: Rebooting the machine ... :<0>
-{CODE}
+~/np~{DIV}
+{DIV}^
 
 !!!count_sync_guard.cc [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Neste teste, utiliza-se a implementação do guarda para controlar o acesso a seção crítica ''increment_counter()'', que simplesmente soma um contador. No final da execução, espera-se que resultado da conta seja precisamente o número de iterações feita.
-
-::__Listagem 28:__ Arquivo de teste ''/app/count_sync_guard.cc''::
-{CODE(colors="c")}
+^::__Listagem 37:__ Arquivo de teste ''/app/count_sync_guard.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
 
 #include <thread.h>
@@ -1413,11 +1467,12 @@ int main()
     log( "main: exiting (counter=" << counter << ")" << endl )
     return 0;
 }
-{CODE}
-
+~/np~{DIV}
+{DIV}^
 Resultado da execução:
-::__Listagem 29:__ Arquivo ''/app/fas_test.cc''::
-{CODE(colors="c")}
+^::__Listagem 38:__ Arquivo ''/app/fas_test.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 <1>: MMU is disabled! :<1>
 <2>: MMU is disabled! :<2>
 <3>: MMU is disabled! :<3>
@@ -1439,13 +1494,14 @@ main: begin (counter=0)
 <0>:  :<0>
 The last thread has exited!
 <0>: Rebooting the machine ... :<0>
-{CODE}
+~/np~{DIV}
+{DIV}^
 
 !!!count_sync_uncoordinated.cc [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 O que se espera deste teste, ao contrário do teste anterior, é que a contagem final de errada, pois nenhuma primitiva de sincronização é utilizada, assim tem-se que a operação de incremento, que não é atômica, seja interrompida pelo metade, e no fim o resultado fique errado.
-
-::__Listagem 30:__ Arquivo de teste ''/app/count_sync_uncoordinated.cc''::
-{CODE(colors="c")}
+^::__Listagem 39:__ Arquivo de teste ''/app/count_sync_uncoordinated.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
 
 #include <semaphore.h>
@@ -1504,11 +1560,12 @@ int main()
     log( "main: done with both (counter = " << counter << ")"<< endl )
     return 0;
 }
-{CODE}
-
+~/np~{DIV}
+{DIV}^
 Resultado da execução:
-::__Listagem 31:__ Arquivo ''/app/count_sync_uncoordinated.cc''::
-{CODE(colors="c")}
+^::__Listagem 40:__ Arquivo ''/app/count_sync_uncoordinated.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 <1>: MMU is disabled! :<1>
 <2>: MMU is disabled! :<2>
 <3>: MMU is disabled! :<3>
@@ -1607,13 +1664,14 @@ Resultado da execução:
 <2>: main: done with both (counter = 1106138) :<2>
 <0>: The last thread has exited! :<0>
 <0>: Rebooting the machine ... :<0>
-{CODE}
+~/np~{DIV}
+{DIV}^
 
 !!!count_sync_semaphore.cc [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Neste teste, utiliza-se os mecanismo de sincronização do semáforo, e ao contrário do teste anterior ''count_sync_uncoordinated.cc'', deste teste espera-se que a contagem seja correta, pois utiliza-se o mecanismo de sincronização do semáforo para garantir a atomicidade da operação de adição.
-
-::__Listagem 32:__ Arquivo de teste ''/app/count_sync_semaphore.cc''::
-{CODE(colors="c")}
+^::__Listagem 41:__ Arquivo de teste ''/app/count_sync_semaphore.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
 
 #include <utility/ostream.h>
@@ -1664,11 +1722,12 @@ int main()
     delete p2;
     return 0;
 }
-{CODE}
-
+~/np~{DIV}
+{DIV}^
 Resultado da execução:
-::__Listagem 33:__ Arquivo ''/app/count_sync_semaphore.cc''::
-{CODE(colors="c")}
+^::__Listagem 42:__ Arquivo ''/app/count_sync_semaphore.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
 <1>: MMU is disabled! :<1>
 <2>: MMU is disabled! :<2>
 <3>: MMU is disabled! :<3>
@@ -1680,14 +1739,15 @@ Resultado da execução:
 <3>: main: done with both (counter = 20000) :<3>
 <0>: The last thread has exited! :<0>
 <0>: Rebooting the machine ... :<0>
-{CODE}
+~/np~{DIV}
+{DIV}^
 
 !!!O que aprendemos com os testes [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 # Executar aplicações com mais de 1 CPU ativa variavelmente gera exceções (GPF). Isso acontece mesmo com a aplicação do jantar dos filósofos, se os delays forem removidos.
 # Quando requisições são enviadas ao sequencer em uma taxa maior do que ele consegue executar, a memória enche e exceções (PF) ocorrem.
 # Com o KVM não funciona o relógio e o escalonador não era chamado.
 # Sem o RR fica difícil gerar erros de sincronização.
-# Após a primeira execução, o qemu fica muito comportado e para de gerar erros de contagem durante a execução do arquivo corrente mais simples: count_sync_uncoordinated.cc
+# Após a primeira execução, o qemu fica muito comportado e para de gerar erros de contagem durante a execução do arquivo corrente mais simples: ''count_sync_uncoordinated.cc''
 # Compilando o EPOS utilizado/entregado no trabalho anterior de 2017.2 com GCC 7.2.0, não executa a aplicação principal. Baixamos o código deles, e compilamos. A seguir tem um log completo no modo histérico da execução, mostrando o problema: https://gist.github.com/evandrocoan/3159d9bf1c53620e2e01169d7a4b8d92
 
 !!Referências de Implementação  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
