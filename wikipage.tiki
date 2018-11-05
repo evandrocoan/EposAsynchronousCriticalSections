@@ -1162,7 +1162,7 @@ int main()
 #https://stackoverflow.com/questions/37628530/how-to-debug-using-stackdump-file-in-cygwin
 #https://stackoverflow.com/questions/8305866/how-to-analyze-a-programs-core-dump-file-with-gdb
 #https://stackoverflow.com/questions/5115613/core-dump-file-analysis
-#https://www.linuxquestions.org/questions/programming-9/cygwin-gcc-compiled-code-generates-a-stackdump-how-to-analyze-with-gdb-874630/
+#https://www.linuxquestions.org/questions/programming-9/cygwin-gcc-compiled-code-generates-a-stackdump-how-to-analyze-with-gdb-874630
 #http://cygwin.1069669.n5.nabble.com/exe-stackdump-and-core-dump-files-questions-td17219.html
 #https://stackoverflow.com/questions/10208233/what-comes-first-template-instantiation-vs-macro-expansion/10208278#10208278
 #https://stackoverflow.com/questions/44050323/class-member-variables-based-on-variadic-template
