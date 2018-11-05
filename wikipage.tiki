@@ -1204,6 +1204,7 @@ main: exiting()
 ~/np~{DIV}
 {DIV}^
 
+Dada a função `function1` do exemplo anterior como tendo a seguinte assinatura, ''char test_function1(char arg1, int arg2, bool arg3)'', teremos o seguinte código meta programado, gerado durante a compilação, para criar a ''Closure'' da ''function1'':
 ^::__Listagem 22:__ Trecho de código gerado pelo meta programa, obtido com compilador ''LLVM Clang''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
@@ -1213,54 +1214,59 @@ public:
     typedef char (*Function)(const char *, const char *, char);
     static const unsigned int PARAMETERS_COUNT = sizeof...(Tn);
     static const unsigned int PARAMETERS_LENGTH = SIZEOF<const char *, const char *, char>::Result;
+
     Closure<char (const char *, const char *, char)>::Function _entry;
     char *_parameters;
+
     Closure(Closure<char (const char *, const char *, char)>::Function _entry, const char *an, const char *an, char an) : _entry(_entry)     {
         this->_parameters = new char [PARAMETERS_LENGTH];
         pack_helper(this->_parameters, an, an, an);
     }
+
     ~Closure<char (const char *, const char *, char)>()     {
         delete this->_parameters;
     }
+
     char operator()()     {
         return this->_run(typename GeneratorOfIntegerSequence<0, int (const char *, const char *, char)>::type());
     }
+
 private:
     template <int ...Sequence> char _run(MetaSequenceOfIntegers<Sequence...>);
     template<> char _run<<0, 8, 16>>(MetaSequenceOfIntegers<0, 8, 16>)     {
         return this->_entry(this->unpack_helper<0, const char *>(), this->unpack_helper<8, const char *>(), this->unpack_helper<16, char>());
     }
-;
+
     template <int position, typename T> T unpack_helper();
     template<> const char *unpack_helper<0, const char *>()     {
         return *reinterpret_cast<const char **>(this->_parameters + 0);
     }
-;
+
     template<> const char *unpack_helper<8, const char *>()     {
         return *reinterpret_cast<const char **>(this->_parameters + 8);
     }
-;
+
     template<> char unpack_helper<16, char>()     {
         return *reinterpret_cast<char *>(this->_parameters + 16);
     }
-;
+
 public:
     template <typename Head, typename ...Tail> static void pack_helper(char *pointer_address, Head head, Tail ...tail);
     template<> static void pack_helper<const char *, <const char *, char>>(char *pointer_address, const char *head, const char *tail, char tail)     {
         *reinterpret_cast<const char **>(pointer_address) = head;
         pack_helper(pointer_address + sizeof(const char *), tail, tail);
     }
-;
+
     template<> static void pack_helper<const char *, <char>>(char *pointer_address, const char *head, char tail)     {
         *reinterpret_cast<const char **>(pointer_address) = head;
         pack_helper(pointer_address + sizeof(const char *), tail);
     }
-;
+
     template<> static void pack_helper<char, <>>(char *pointer_address, char head)     {
         *reinterpret_cast<char *>(pointer_address) = head;
         pack_helper(pointer_address + sizeof(char));
     }
-;
+
     static void pack_helper(char *pointer_address)     {
     }
 }
@@ -1910,4 +1916,3 @@ Resultado da execução:
 #Promise vs Observable https://stackoverflow.com/questions/37364973/promise-vs-observable
 #Promises vs Observables https://medium.com/@mpodlasin/promises-vs-observables-4c123c51fe13
 #When does a thread become idle? https://stackoverflow.com/questions/19784293/when-does-a-thread-become-idle
-
