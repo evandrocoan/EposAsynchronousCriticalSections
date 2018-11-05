@@ -322,7 +322,7 @@ int main()
 ~/np~{DIV}
 ::__Fonte:__ Referência {DIV(type="span")}[{DIV}[#Refer_ncias_|17]]::
 {DIV}^
-
+%%%
 !!!!Futures versus Observables  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Não há muito o que dizer sobre a diferença entre ''futures'' {DIV(type="span")}[{DIV}[#Refer_ncias_|14]] e ''observables'' {DIV(type="span")}[{DIV}[#Refer_ncias_|20]]. Cada um deles servem a propósitos bem específicos, entretanto o domínio de soluções de problemas entre ''futures'' e ''observables'' possuí uma intersecção válida quando não utiliza-se ''futures'' que realizam o bloqueio da thread, mas sim ''futures'' que registram uma lista de blocos de execução dependentes para serem chamados assim que o resultado da future estiver completo. Neste contexto, a versão equivalente para ''observables'' seria registrar a lista de blocos dependentes do resultado como observadores.
 
@@ -704,7 +704,8 @@ O tipo ''funcReturnType'' é inferido a partir do tipo de retorno de function. O
 Em tempo de execução, o construtor da classe Closure irá:
 # Alocar memória para o atributo ''_parameters'', que é do tipo array de char, de acordo com o tamanho dos tipos dos argumentos  ''(char, ... , 1)''
 # Utilizar a função ''pack_helper()'' para colocar ''('a', ... , 1)'' no array ''_parameters'', tratando o fato de possuírem de tipos diferentes.
-
+%%%
+!!!!Exemplo  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Veja um exemplo completo de teste/uso das closures meta programadas:
 ^::__Listagem 20:__ Arquivo ''/app/closure_test.cc''::
 {DIV(type="span")}
@@ -906,6 +907,8 @@ public:
 }
 ~/np~{DIV}
 {DIV}^
+%%%
+!!!!Guarda  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Agora mostra-se um exemplo de uso de closures e do algoritmo do Guarda.
 ^::__Listagem 23:__ Arquivo ''/app/closure_guard_test.cc''::
 {DIV(type="span")}
@@ -923,9 +926,9 @@ using namespace EPOS;
 Guard counter_guard;
 
 void show(char char1, const char* text1, const char* text2, bool bool1, bool bool2, const char* text3, int int1) {
-    log( "char1=" << char1 << ", text1=" << text1 \
-    << ", text2=" << text2 << ", bool1=" << bool1 << ", bool2=" << bool2 \
-    << ", text3=" << text3 << ", int1="  << int1  << endl )
+    log( "    char1=" << char1 << ", text1=" << text1 \
+        << ", text2=" << text2 << ", bool1=" << bool1 << ", bool2=" << bool2 \
+        << ", text3=" << text3 << ", int1="  << int1  << endl << endl )
 }
 
 int main()
@@ -944,8 +947,44 @@ Resultado da execução:
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 main: begin()
-char1=A, text1=Test 1, text2=Test 2, bool1=1, bool2=0, text3=Test 3, int1=10
-char1=B, text1=Test 4, text2=Test 5, bool1=0, bool2=0, text3=Test 6, int1=20
+Closure::Closure(_entry=0x0009ff5c, PARAMETERS_COUNT=7, PARAMETERS_LENGTH=19, sizeof=8) => 0x00097f68
+Closure::pack_helper(Head=1, address=0x00097f45)
+Closure::pack_helper(Head=4, address=0x00097f46)
+Closure::pack_helper(Head=4, address=0x00097f4a)
+Closure::pack_helper(Head=1, address=0x00097f4e)
+Closure::pack_helper(Head=1, address=0x00097f4f)
+Closure::pack_helper(Head=4, address=0x00097f50)
+Closure::pack_helper(Head=4, address=0x00097f54)
+Closure::_unpack_and_run(this=0x00097f68)
+Closure::unpack_helper(Head=4, address=0x00097f54(0x00097f45), position=15)
+Closure::unpack_helper(Head=4, address=0x00097f50(0x00097f45), position=11)
+Closure::unpack_helper(Head=1, address=0x00097f4f(0x00097f45), position=10)
+Closure::unpack_helper(Head=1, address=0x00097f4e(0x00097f45), position=9)
+Closure::unpack_helper(Head=4, address=0x00097f4a(0x00097f45), position=5)
+Closure::unpack_helper(Head=4, address=0x00097f46(0x00097f45), position=1)
+Closure::unpack_helper(Head=1, address=0x00097f45(0x00097f45), position=0)
+    char1=A, text1=Test 1, text2=Test 2, bool1=1, bool2=0, text3=Test 3, int1=10
+
+Closure::~Closure(this=0x00097f68_entry=0x00097f68, PARAMETERS_COUNT=7, PARAMETERS_LENGTH=19, sizeof=8)
+Closure::Closure(_entry=0x0009ff5c, PARAMETERS_COUNT=7, PARAMETERS_LENGTH=19, sizeof=8) => 0x00097f68
+Closure::pack_helper(Head=1, address=0x00097f45)
+Closure::pack_helper(Head=4, address=0x00097f46)
+Closure::pack_helper(Head=4, address=0x00097f4a)
+Closure::pack_helper(Head=1, address=0x00097f4e)
+Closure::pack_helper(Head=1, address=0x00097f4f)
+Closure::pack_helper(Head=4, address=0x00097f50)
+Closure::pack_helper(Head=4, address=0x00097f54)
+Closure::_unpack_and_run(this=0x00097f68)
+Closure::unpack_helper(Head=4, address=0x00097f54(0x00097f45), position=15)
+Closure::unpack_helper(Head=4, address=0x00097f50(0x00097f45), position=11)
+Closure::unpack_helper(Head=1, address=0x00097f4f(0x00097f45), position=10)
+Closure::unpack_helper(Head=1, address=0x00097f4e(0x00097f45), position=9)
+Closure::unpack_helper(Head=4, address=0x00097f4a(0x00097f45), position=5)
+Closure::unpack_helper(Head=4, address=0x00097f46(0x00097f45), position=1)
+Closure::unpack_helper(Head=1, address=0x00097f45(0x00097f45), position=0)
+    char1=B, text1=Test 4, text2=Test 5, bool1=0, bool2=0, text3=Test 6, int1=20
+
+Closure::~Closure(this=0x00097f68_entry=0x00097f68, PARAMETERS_COUNT=7, PARAMETERS_LENGTH=19, sizeof=8)
 main: exiting()
 ~/np~{DIV}
 {DIV}^
