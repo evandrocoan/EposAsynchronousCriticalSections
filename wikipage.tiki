@@ -470,6 +470,82 @@ private:
 {CODE}
 Exemplos da utilização da classe Closure durante a submissão de seções críticas à guarda estão na seção sobre os testes realizados.
 
+!!!Closure Metaprogramada [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+A Closure inicialmente descrita não apresenta a possibilidade de definir-se/criar-se funções com um número variado de argumentos. Por isso, essa implementação foi substituída por uma Closure meta programada, que faz uso de templates variádicos do C++ 11.
+
+A seguir vemos a implementação da classe base de todos as closures. Uma classe base é necessária por que o algoritmo do Guarda implementa uma lista encadeada de seções críticas, que em nosso caso são presentados por Closures. Assim, como a implementação de lista que o algoritmo do Guarda faz uso não permites que tipos diferentes sejam adicionados na lista, fazemos uso do polimorfismo para criar um lista com diferentes closures.
+::__Listagem XX:__ Base de todas Closures meta programadas::
+{CODE(colors="c")}
+class Closure_Base
+{
+    /// The Guard class requires access to our the _link private attribute
+    friend class Guard;
+    typedef List_Elements::Singly_Linked<Closure_Base> Element;
+
+public:
+    Closure_Base(): _link(this) {
+        db<Synchronizer>(TRC) << "Closure_Base(_link=" << &_link << ") => " << this << endl;
+    }
+
+    /// This must to be virtual otherwise the derived classes objects destructor method would not be
+    /// called when accessed by a base class pointer.
+    virtual ~Closure_Base() {
+        db<Synchronizer>(TRC) << "~Closure_Base(this=" << this << " _link=" << &_link << ")" << endl;
+    }
+
+    /// This must to be virtual otherwise the derived classes objects run() method would not be
+    /// called when accessed by a base class pointer.
+    virtual void run() = 0;
+
+private:
+    // Inspired by the thread code
+    Element _link;
+};
+{CODE}
+
+Para poder-se criar Closures com um número variado do parâmetros, fez-se uso de um meta programa que calcula, recursivamente as posições dos parâmetros da closures.
+::__Listagem XX:__ Cálculo do index dos parâmetros da seção crítica dentro da closure::
+{CODE(colors="c")}
+template<int ...>
+struct MetaSequenceOfIntegers { };
+
+template<int AccumulatedSize, typename Tn, int... GeneratedSequence>
+struct GeneratorOfIntegerSequence;
+
+template<int AccumulatedSize, typename Grouper, typename Head, typename... Tail, int... GeneratedSequence>
+struct GeneratorOfIntegerSequence< AccumulatedSize, Grouper( Head, Tail... ), GeneratedSequence... >
+{
+    typedef typename GeneratorOfIntegerSequence
+            < AccumulatedSize + sizeof(Head), Grouper( Tail... ), GeneratedSequence..., AccumulatedSize
+            >::type type;
+};
+
+template<int AccumulatedSize, typename Grouper, int... GeneratedSequence>
+struct GeneratorOfIntegerSequence<AccumulatedSize, Grouper(), GeneratedSequence...>
+{
+  typedef MetaSequenceOfIntegers<GeneratedSequence...> type;
+};
+{CODE}
+
+Este programa é executado em tempo de compilação, e para uma dada entrada, como por exemplo ''GeneratorOfIntegerSequence< 0, int(char, int, char) >::type()'', gera o seguinte código, que calcula o pacote de parâmetros ''<0, 1, 5>'', que significa que o primeiro parâmetro da função, que é o tipo ''char'', está na posição 0, enquanto o segundo parâmetro do tipo ''int'' está na posição 1, que e o último parâmetro, ''char'' está na posição 5. Tais valores devem-se aos respectivos tamanhos de ''char'' e ''int'' serem 1 e 4:
+::__Listagem XX:__ Trecho de código gerado pelo meta programa, obtido com compilador ''LLVM Clang''::
+{CODE(colors="c")}
+$ clang++ -Xclang -ast-print -fsyntax-only parameter_pack_sequencer_size_generator.cpp > expanded.cpp
+template <int AccumulatedSize, typename Tn, int ...GeneratedSequence> struct GeneratorOfIntegerSequence
+template<> struct GeneratorOfIntegerSequence<0, int (char, int, char), <>> {
+    typedef typename GeneratorOfIntegerSequence<0 + sizeof(char), int (int, char), 0>::type type;
+}
+template<> struct GeneratorOfIntegerSequence<1, int (int, char), <0>> {
+    typedef typename GeneratorOfIntegerSequence<1 + sizeof(int), int (char), 0, 1>::type type;
+}
+template<> struct GeneratorOfIntegerSequence<5, int (char), <0, 1>> {
+    typedef typename GeneratorOfIntegerSequence<5 + sizeof(char), int (), 0, 1, 5>::type type;
+}
+template<> struct GeneratorOfIntegerSequence<6, int (), <0, 1, 5>> {
+    typedef MetaSequenceOfIntegers<0, 1, 5> type;
+};
+{CODE}
+
 !!!Element [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Como elementos da guarda são elementos de lista simples, com apenas um nível de encadeamento, optou-se por utilizar a classe List_Elements::Singly_Linked, Listagem 6, definida no arquivo list.h, para representá-los. 
 
@@ -614,7 +690,7 @@ static int fas(volatile int & value, volatile int & replacement) {
 {CODE}
 
 !!!Futures [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
-Das 2 implementações distintas de futures apresentadas, realizamos a implementação do modelo de future bloqueante, apresentado no artigo referência {DIV(type="span")}[{DIV}[#Refer_ncias_|2]]. Como a implementação atual do algoritmo do guarda não suporta passagens de parâmetros variádicos, manualmente fez-se a implementação dos métodos para que aceitem vários parâmetros com meta programação. Ver a seção [#Closure_Metaprogramada|Closure Metaprogramada]. 
+Das 2 implementações distintas de futures apresentadas, realizamos a implementação do modelo de future bloqueante, apresentado no artigo referência {DIV(type="span")}[{DIV}[#Refer_ncias_|2]]. Como a implementação atual do algoritmo do guarda não suporta passagens de parâmetros variádicos, manualmente fez-se a implementação dos métodos para que aceitem vários parâmetros com meta programação. Ver a seção [#Closure_Metaprogramada_|Closure Metaprogramada]. 
 
 Uma vez que a future é resolvida, i.e., seu método ''resolve()'' é chamado e seu valor é definido, ele não pode ser mais alterado, e qualquer um que tentar obter o valor da future com ''get_value()'' não precisará mais bloquear, pois o valor não é indefinido. Futures são implementadas totalmente no arquivo header ''.h'' por que são meta classes que são instanciadas pelo compilador e seu código é gerado somente caso alguém crie uma especialização com algum tipo de dado.
 ::__Listagem XX:__ Implementação de future em ''/include/utility/future.h''::
@@ -1293,86 +1369,86 @@ int main()
 # Compilando o EPOS utilizado/entregado no trabalho anterior de 2017.2 com GCC 7.2.0, não executa a aplicação principal. Baixamos o código deles, e compilamos. A seguir tem um log completo no modo histérico da execução, mostrando o problema: https://gist.github.com/evandrocoan/3159d9bf1c53620e2e01169d7a4b8d92
 
 !!Referências de Implementação  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
-#https://stackoverflow.com/questions/18847424/c-create-custom-function-dispatcher-from-variadic-template
-#https://stackoverflow.com/questions/42047795/order-of-parameter-pack-expansion
-#https://stackoverflow.com/questions/29194858/order-of-function-calls-in-variadic-template-expansion
-#https://stackoverflow.com/questions/43553585/how-to-transform-a-variadic-template-argument-to-another-types-for-calling-anoth
-#https://stackoverflow.com/questions/12030538/calling-a-function-for-each-variadic-template-argument-and-an-array
-#https://stackoverflow.com/questions/687490/how-do-i-expand-a-tuple-into-variadic-template-functions-arguments/12650100#12650100
-#https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer
-#https://en.cppreference.com/w/cpp/language/list_initialization#Notes
-#https://stackoverflow.com/questions/47207621/build-function-parameters-with-variadic-templates
-#https://stackoverflow.com/questions/16868129/how-to-store-variadic-template-arguments
-#https://stackoverflow.com/questions/43026550/how-to-define-a-class-that-can-save-variadic-template-arguments
-#https://stackoverflow.com/questions/17996003/how-to-save-variable-number-of-arguments-using-variadic-template-arguments
-#https://stackoverflow.com/questions/29220248/is-it-possible-to-store-variadic-arguments-into-a-member-variable
-#https://stackoverflow.com/questions/4691657/is-it-possible-to-store-a-template-parameter-pack-without-expanding-it
-#https://arne-mertz.de/2016/11/modern-c-features-variadic-templates/
-#https://gitlab.com/evandro-crr/epos2/tree/master
-#https://stackoverflow.com/questions/13108663/storing-functions-call-and-list-of-parameters-to-invoke-later
-#https://stackoverflow.com/questions/4926433/saving-function-pointerarguments-for-later-use
-#https://appuals.com/fix-cannot-execute-binary-file-exec-format-error-ubuntu/
-#https://stackoverflow.com/questions/30926764/extracting-function-argument-types-as-a-parameter-pack
-#https://stackoverflow.com/questions/24948277/unpacking-arguments-of-a-functional-parameter-to-a-c-template-class
-#https://stackoverflow.com/questions/14783876/c-is-it-possible-to-extract-class-and-argument-types-from-a-member-function
-#https://stackoverflow.com/questions/34836104/how-to-extract-a-selected-set-of-arguments-of-a-variadic-function-and-use-them-t
-#https://stackoverflow.com/questions/28033251/can-you-extract-types-from-template-parameter-function-signature
-#https://stackoverflow.com/questions/11056714/c-type-traits-to-extract-template-parameter-class
-#https://stackoverflow.com/questions/32674839/variadic-member-function-of-template-class
-#https://stackoverflow.com/questions/49217891/class-member-function-in-variadic-template
-#https://stackoverflow.com/questions/50316284/how-to-achieve-variadic-virtual-member-function
-#https://stackoverflow.com/questions/15599679/class-member-function-pointer
-#https://stackoverflow.com/questions/40855835/how-do-you-typedef-a-function-pointer-type-with-parameter-pack-arguments
-#https://stackoverflow.com/questions/8915797/calling-a-function-through-its-address-in-memory-in-c-c
-#https://stackoverflow.com/questions/47005664/call-function-by-known-address-c
-#https://en.cppreference.com/w/cpp/language/parameter_pack
-#https://stackoverflow.com/questions/47037395/forward-types-in-variadic-template-as-values-references-according-to-function-si
-#https://eli.thegreenplace.net/2014/perfect-forwarding-and-universal-references-in-c
-#https://stackoverflow.com/questions/3836648/structure-or-class-with-variable-number-of-members
-#https://stackoverflow.com/questions/43069213/c-class-template-for-automatic-getter-setter-methods-good-bad-practice
-#https://stackoverflow.com/questions/13980157/c-class-with-template-member-variable
-#https://stackoverflow.com/questions/6261375/how-to-declare-data-members-that-are-objects-of-any-type-in-a-class
-#https://stackoverflow.com/questions/1872220/is-it-possible-to-iterate-over-arguments-in-variadic-macros
-#https://stackoverflow.com/questions/11761703/overloading-macro-on-number-of-arguments
-#https://groups.google.com/forum/#!topic/comp.std.c/d-6Mj5Lko_s
-#https://stackoverflow.com/questions/27941661/generating-one-class-member-per-variadic-template-argument
-#https://stackoverflow.com/questions/14919990/c-how-to-template-a-class-attribute-and-not-the-functions-of-the-class
-#https://stackoverflow.com/questions/40204338/template-parameter-pack-attribute
-#https://stackoverflow.com/questions/5723619/is-it-possible-to-create-function-local-closures-pre-c11
-#https://blog.feabhas.com/2014/03/demystifying-c-lambdas/
-#https://stackoverflow.com/questions/1447199/c-closures-and-templates
-#http://matt.might.net/articles/c++-template-meta-programming-with-lambda-calculus/
-#https://www.gnu.org/software/gcc/gcc-4.4/cxx0x_status.html
-#https://stackoverflow.com/questions/25091436/expand-a-parameter-pack-with-a-counter
-#https://stackoverflow.com/questions/41623422/c-expand-variadic-template-arguments-into-a-statement
-#https://stackoverflow.com/questions/8526598/how-does-stdforward-work
-#https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer/7858971
-#https://stackoverflow.com/questions/31204084/is-it-possible-to-call-static-method-form-variadic-template-type-parameter
-#https://stackoverflow.com/questions/25680461/variadic-template-pack-expansion
-#https://stackoverflow.com/questions/21180346/variadic-template-unpacking-arguments-to-typename
-#https://stackoverflow.com/questions/2934904/order-of-evaluation-in-c-function-parameters
-#https://stackoverflow.com/questions/9566187/function-parameter-evaluation-order
-#https://stackoverflow.com/questions/7728478/c-template-class-function-with-arbitrary-container-type-how-to-define-it
-#https://stackoverflow.com/questions/12048221/c11-variadic-template-function-parameter-pack-expansion-execution-order
-#https://stackoverflow.com/questions/34957810/variadic-templates-parameter-pack-and-its-discussed-ambiguity-in-a-parameter-li
-#https://stackoverflow.com/questions/20588191/error-with-variadiac-template-parameter-pack-must-be-expanded
-#https://stackoverflow.com/questions/37200391/multiple-variadic-parameter-pack-for-template-class
-#https://stackoverflow.com/questions/34940875/parameter-pack-must-be-at-the-end-of-the-parameter-list-when-and-why
-#https://stackoverflow.com/questions/15904288/how-to-reverse-the-order-of-arguments-of-a-variadic-template-function
-#https://stackoverflow.com/questions/12906523/how-can-i-interpret-a-stackdump-file
-#https://stackoverflow.com/questions/320001/using-a-stackdump-from-cygwin-executable
-#https://stackoverflow.com/questions/37628530/how-to-debug-using-stackdump-file-in-cygwin
-#https://stackoverflow.com/questions/8305866/how-to-analyze-a-programs-core-dump-file-with-gdb
-#https://stackoverflow.com/questions/5115613/core-dump-file-analysis
-#https://www.linuxquestions.org/questions/programming-9/cygwin-gcc-compiled-code-generates-a-stackdump-how-to-analyze-with-gdb-874630
-#http://cygwin.1069669.n5.nabble.com/exe-stackdump-and-core-dump-files-questions-td17219.html
-#https://stackoverflow.com/questions/10208233/what-comes-first-template-instantiation-vs-macro-expansion/10208278#10208278
-#https://stackoverflow.com/questions/44050323/class-member-variables-based-on-variadic-template
-#https://stackoverflow.com/questions/40356688/c-define-a-class-member-type-according-to-its-template
-#https://stackoverflow.com/questions/11394832/how-to-define-a-template-member-function-of-a-template-class
-#https://stackoverflow.com/questions/29668447/c-independent-static-variable-for-each-object-inside-a-method
-#http://www.cplusplus.com/forum/general/142258/
-#https://stackoverflow.com/questions/3778450/is-local-static-variable-per-instance-or-per-class
+# https://stackoverflow.com/questions/18847424/c-create-custom-function-dispatcher-from-variadic-template
+# https://stackoverflow.com/questions/42047795/order-of-parameter-pack-expansion
+# https://stackoverflow.com/questions/29194858/order-of-function-calls-in-variadic-template-expansion
+# https://stackoverflow.com/questions/43553585/how-to-transform-a-variadic-template-argument-to-another-types-for-calling-anoth
+# https://stackoverflow.com/questions/12030538/calling-a-function-for-each-variadic-template-argument-and-an-array
+# https://stackoverflow.com/questions/687490/how-do-i-expand-a-tuple-into-variadic-template-functions-arguments/12650100#12650100
+# https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer
+# https://en.cppreference.com/w/cpp/language/list_initialization#Notes
+# https://stackoverflow.com/questions/47207621/build-function-parameters-with-variadic-templates
+# https://stackoverflow.com/questions/16868129/how-to-store-variadic-template-arguments
+# https://stackoverflow.com/questions/43026550/how-to-define-a-class-that-can-save-variadic-template-arguments
+# https://stackoverflow.com/questions/17996003/how-to-save-variable-number-of-arguments-using-variadic-template-arguments
+# https://stackoverflow.com/questions/29220248/is-it-possible-to-store-variadic-arguments-into-a-member-variable
+# https://stackoverflow.com/questions/4691657/is-it-possible-to-store-a-template-parameter-pack-without-expanding-it
+# https://arne-mertz.de/2016/11/modern-c-features-variadic-templates/
+# https://gitlab.com/evandro-crr/epos2/tree/master
+# https://stackoverflow.com/questions/13108663/storing-functions-call-and-list-of-parameters-to-invoke-later
+# https://stackoverflow.com/questions/4926433/saving-function-pointerarguments-for-later-use
+# https://appuals.com/fix-cannot-execute-binary-file-exec-format-error-ubuntu/
+# https://stackoverflow.com/questions/30926764/extracting-function-argument-types-as-a-parameter-pack
+# https://stackoverflow.com/questions/24948277/unpacking-arguments-of-a-functional-parameter-to-a-c-template-class
+# https://stackoverflow.com/questions/14783876/c-is-it-possible-to-extract-class-and-argument-types-from-a-member-function
+# https://stackoverflow.com/questions/34836104/how-to-extract-a-selected-set-of-arguments-of-a-variadic-function-and-use-them-t
+# https://stackoverflow.com/questions/28033251/can-you-extract-types-from-template-parameter-function-signature
+# https://stackoverflow.com/questions/11056714/c-type-traits-to-extract-template-parameter-class
+# https://stackoverflow.com/questions/32674839/variadic-member-function-of-template-class
+# https://stackoverflow.com/questions/49217891/class-member-function-in-variadic-template
+# https://stackoverflow.com/questions/50316284/how-to-achieve-variadic-virtual-member-function
+# https://stackoverflow.com/questions/15599679/class-member-function-pointer
+# https://stackoverflow.com/questions/40855835/how-do-you-typedef-a-function-pointer-type-with-parameter-pack-arguments
+# https://stackoverflow.com/questions/8915797/calling-a-function-through-its-address-in-memory-in-c-c
+# https://stackoverflow.com/questions/47005664/call-function-by-known-address-c
+# https://en.cppreference.com/w/cpp/language/parameter_pack
+# https://stackoverflow.com/questions/47037395/forward-types-in-variadic-template-as-values-references-according-to-function-si
+# https://eli.thegreenplace.net/2014/perfect-forwarding-and-universal-references-in-c
+# https://stackoverflow.com/questions/3836648/structure-or-class-with-variable-number-of-members
+# https://stackoverflow.com/questions/43069213/c-class-template-for-automatic-getter-setter-methods-good-bad-practice
+# https://stackoverflow.com/questions/13980157/c-class-with-template-member-variable
+# https://stackoverflow.com/questions/6261375/how-to-declare-data-members-that-are-objects-of-any-type-in-a-class
+# https://stackoverflow.com/questions/1872220/is-it-possible-to-iterate-over-arguments-in-variadic-macros
+# https://stackoverflow.com/questions/11761703/overloading-macro-on-number-of-arguments
+# https://groups.google.com/forum/#!topic/comp.std.c/d-6Mj5Lko_s
+# https://stackoverflow.com/questions/27941661/generating-one-class-member-per-variadic-template-argument
+# https://stackoverflow.com/questions/14919990/c-how-to-template-a-class-attribute-and-not-the-functions-of-the-class
+# https://stackoverflow.com/questions/40204338/template-parameter-pack-attribute
+# https://stackoverflow.com/questions/5723619/is-it-possible-to-create-function-local-closures-pre-c11
+# https://blog.feabhas.com/2014/03/demystifying-c-lambdas/
+# https://stackoverflow.com/questions/1447199/c-closures-and-templates
+# http://matt.might.net/articles/c++-template-meta-programming-with-lambda-calculus/
+# https://www.gnu.org/software/gcc/gcc-4.4/cxx0x_status.html
+# https://stackoverflow.com/questions/25091436/expand-a-parameter-pack-with-a-counter
+# https://stackoverflow.com/questions/41623422/c-expand-variadic-template-arguments-into-a-statement
+# https://stackoverflow.com/questions/8526598/how-does-stdforward-work
+# https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer/7858971
+# https://stackoverflow.com/questions/31204084/is-it-possible-to-call-static-method-form-variadic-template-type-parameter
+# https://stackoverflow.com/questions/25680461/variadic-template-pack-expansion
+# https://stackoverflow.com/questions/21180346/variadic-template-unpacking-arguments-to-typename
+# https://stackoverflow.com/questions/2934904/order-of-evaluation-in-c-function-parameters
+# https://stackoverflow.com/questions/9566187/function-parameter-evaluation-order
+# https://stackoverflow.com/questions/7728478/c-template-class-function-with-arbitrary-container-type-how-to-define-it
+# https://stackoverflow.com/questions/12048221/c11-variadic-template-function-parameter-pack-expansion-execution-order
+# https://stackoverflow.com/questions/34957810/variadic-templates-parameter-pack-and-its-discussed-ambiguity-in-a-parameter-li
+# https://stackoverflow.com/questions/20588191/error-with-variadiac-template-parameter-pack-must-be-expanded
+# https://stackoverflow.com/questions/37200391/multiple-variadic-parameter-pack-for-template-class
+# https://stackoverflow.com/questions/34940875/parameter-pack-must-be-at-the-end-of-the-parameter-list-when-and-why
+# https://stackoverflow.com/questions/15904288/how-to-reverse-the-order-of-arguments-of-a-variadic-template-function
+# https://stackoverflow.com/questions/12906523/how-can-i-interpret-a-stackdump-file
+# https://stackoverflow.com/questions/320001/using-a-stackdump-from-cygwin-executable
+# https://stackoverflow.com/questions/37628530/how-to-debug-using-stackdump-file-in-cygwin
+# https://stackoverflow.com/questions/8305866/how-to-analyze-a-programs-core-dump-file-with-gdb
+# https://stackoverflow.com/questions/5115613/core-dump-file-analysis
+# https://www.linuxquestions.org/questions/programming-9/cygwin-gcc-compiled-code-generates-a-stackdump-how-to-analyze-with-gdb-874630
+# http://cygwin.1069669.n5.nabble.com/exe-stackdump-and-core-dump-files-questions-td17219.html
+# https://stackoverflow.com/questions/10208233/what-comes-first-template-instantiation-vs-macro-expansion/10208278#10208278
+# https://stackoverflow.com/questions/44050323/class-member-variables-based-on-variadic-template
+# https://stackoverflow.com/questions/40356688/c-define-a-class-member-type-according-to-its-template
+# https://stackoverflow.com/questions/11394832/how-to-define-a-template-member-function-of-a-template-class
+# https://stackoverflow.com/questions/29668447/c-independent-static-variable-for-each-object-inside-a-method
+# http://www.cplusplus.com/forum/general/142258/
+# https://stackoverflow.com/questions/3778450/is-local-static-variable-per-instance-or-per-class
 
 !!Referências  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 #Stefan Reif and Wolfgang Schröder-Preikschat, "Predictable Synchronisation Algorithms for Asynchronous Critical Sections,” Friedrich-Alexander-Universität Erlangen-Nürnberg, Dept. of Computer Science, Technical Reports, CS-2018-03, February 2018.

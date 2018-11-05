@@ -8,7 +8,7 @@ template<int AccumulatedSize, typename Grouper, typename Head, typename... Tail,
 struct GeneratorOfIntegerSequence< AccumulatedSize, Grouper( Head, Tail... ), GeneratedSequence... >
 {
     typedef typename GeneratorOfIntegerSequence
-            < AccumulatedSize + sizeof(Head), Grouper( Tail... ), AccumulatedSize, GeneratedSequence...
+            < AccumulatedSize + sizeof(Head), Grouper( Tail... ), GeneratedSequence...,  AccumulatedSize
             >::type type;
 };
 

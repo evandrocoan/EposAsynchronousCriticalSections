@@ -2,6 +2,7 @@
 / svn_global_002dignores=*.sublime-workspace%0A
 /OperatingSystems.sublime-project -text
 /README.md -text
+/parameter_pack_sequencer_size_expanded.cpp eol=lf
 epos2trunk/LICENSE -text
 epos2trunk/app/cas_test.cc eol=lf
 epos2trunk/app/compile_remotely.sh eol=lf
