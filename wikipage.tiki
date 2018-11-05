@@ -924,6 +924,8 @@ public:
 };
 ~/np~{DIV}
 {DIV}^
+%%%
+!!!!Argumentos Variádicos  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Para poder-se criar Closures com um número variado do parâmetros, fez-se uso de um meta programa que calcula, recursivamente as posições dos parâmetros da closures.
 ^::__Listagem 16:__ Cálculo do index dos parâmetros da seção crítica dentro da closure::
 {DIV(type="span")}
@@ -1064,7 +1066,7 @@ Em tempo de execução, o construtor da classe Closure irá:
 # Alocar memória para o atributo ''_parameters'', que é do tipo array de char, de acordo com o tamanho dos tipos dos argumentos  ''(char, ... , 1)''
 # Utilizar a função ''pack_helper()'' para colocar ''('a', ... , 1)'' no array ''_parameters'', tratando o fato de possuírem de tipos diferentes.
 %%%
-!!!!Exemplo  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+!!!!Exemplo de Uso  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Veja um exemplo completo de teste/uso das closures meta programadas:
 ^::__Listagem 20:__ Arquivo ''/app/closure_test.cc''::
 {DIV(type="span")}
@@ -1204,7 +1206,7 @@ main: exiting()
 ~/np~{DIV}
 {DIV}^
 
-Dada a função `function1` do exemplo anterior como tendo a seguinte assinatura, ''char test_function1(char arg1, int arg2, bool arg3)'', teremos o seguinte código meta programado, gerado durante a compilação, para criar a ''Closure'' da ''function1'':
+Dada a função ''test_function2'' do exemplo anterior como tendo a seguinte assinatura, ''char test_function2(const char *, const char *, char)'', tem-se o seguinte código meta programado, gerado durante a compilação, para criar a ''Closure'' da ''test_function2'':
 ^::__Listagem 22:__ Trecho de código gerado pelo meta programa, obtido com compilador ''LLVM Clang''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
@@ -1234,7 +1236,11 @@ public:
 private:
     template <int ...Sequence> char _run(MetaSequenceOfIntegers<Sequence...>);
     template<> char _run<<0, 8, 16>>(MetaSequenceOfIntegers<0, 8, 16>)     {
-        return this->_entry(this->unpack_helper<0, const char *>(), this->unpack_helper<8, const char *>(), this->unpack_helper<16, char>());
+        return this->_entry(
+            this->unpack_helper<0, const char *>(), 
+            this->unpack_helper<8, const char *>(), 
+            this->unpack_helper<16, char>()
+        );
     }
 
     template <int position, typename T> T unpack_helper();
@@ -1273,7 +1279,7 @@ public:
 ~/np~{DIV}
 {DIV}^
 %%%
-!!!!Guarda  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+!!!!Integração com Guarda  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Agora mostra-se um exemplo de uso de closures e do algoritmo do Guarda.
 ^::__Listagem 23:__ Arquivo ''/app/closure_guard_test.cc''::
 {DIV(type="span")}
