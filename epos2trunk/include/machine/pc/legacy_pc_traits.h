@@ -107,7 +107,7 @@ template<> struct Traits<UART>: public Traits<Machine_Common>
 template<> struct Traits<Display>: public Traits<Machine_Common>
 {
     static const bool enabled = !Traits<Serial_Display>::enabled;
-    static const int COLUMNS = 80;
+    static const int COLUMNS = 8000; // our 
     static const int LINES = 25;
     static const int TAB_SIZE = 8;
 };
