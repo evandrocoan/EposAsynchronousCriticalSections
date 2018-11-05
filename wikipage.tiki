@@ -899,7 +899,8 @@ int main()
 }
 {CODE}
 
-::__Listagem 15:__ Resultado da execução de ''/app/closure_guard_test.cc''::
+Resultado da execução:
+::__Listagem 15:__ Arquivo ''/app/closure_guard_test.cc''::
 {CODE(colors="c")}
 main: begin()
 char1=A, text1=Test 1, text2=Test 2, bool1=1, bool2=0, text3=Test 3, int1=10
@@ -1162,7 +1163,8 @@ int main()
 }
 {CODE}
 
-::__Listagem 23:__ Resultado da execução de ''/app/future_simple_test.cc''::
+Resultado da execução:
+::__Listagem 23:__ Arquivo ''/app/future_simple_test.cc''::
 {CODE(colors="c")}
 Starting main application...
 Future(_is_resolved=0, _condition=0) => 0x00097f5c
@@ -1236,7 +1238,8 @@ int main()
 }
 {CODE}
 
-::__Listagem 25:__ Resultado da execução de ''/app/future_guard_test.cc''::
+Resultado da execução:
+::__Listagem 25:__ Arquivo ''/app/future_guard_test.cc''::
 {CODE(colors="c")}
 Starting main application...
 functionA ()
@@ -1337,7 +1340,8 @@ int main()
 }
 {CODE}
 
-::__Listagem 27:__ Resultado da execução de ''/app/fas_test.cc''::
+Resultado da execução:
+::__Listagem 27:__ Arquivo ''/app/fas_test.cc''::
 {CODE(colors="c")}
 <1>: MMU is disabled! :<1>
 <2>: MMU is disabled! :<2>
@@ -1463,7 +1467,8 @@ int main()
 }
 {CODE}
 
-::__Listagem 29:__ Resultado do teste ''/app/fas_test.cc''::
+Resultado da execução:
+::__Listagem 29:__ Arquivo ''/app/fas_test.cc''::
 {CODE(colors="c")}
 <1>: MMU is disabled! :<1>
 <2>: MMU is disabled! :<2>
@@ -1547,7 +1552,8 @@ int main()
 }
 {CODE}
 
-::__Listagem 31:__ Resultado do teste ''/app/count_sync_uncoordinated.cc''::
+Resultado da execução:
+::__Listagem 31:__ Arquivo ''/app/count_sync_uncoordinated.cc''::
 {CODE(colors="c")}
 <1>: MMU is disabled! :<1>
 <2>: MMU is disabled! :<2>
@@ -1706,7 +1712,8 @@ int main()
 }
 {CODE}
 
-::__Listagem 33:__ Resultado do teste ''/app/count_sync_semaphore.cc''::
+Resultado da execução:
+::__Listagem 33:__ Arquivo ''/app/count_sync_semaphore.cc''::
 {CODE(colors="c")}
 <1>: MMU is disabled! :<1>
 <2>: MMU is disabled! :<2>
