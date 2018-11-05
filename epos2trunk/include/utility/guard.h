@@ -4,14 +4,14 @@
 #define __guard_h
 
 #include <architecture/ia32/cpu.h>
-#include <utility/closure.h>
+#include <utility/critical_section.h>
 
 __BEGIN_UTIL
 
 class Guard
 {
 public:
-    typedef Closure_Base::Element Element;
+    typedef Critical_Section_Base::Element Element;
 
 private:
     static const int NULL = 0;
@@ -25,11 +25,11 @@ public:
     void submit( void(*entry)( Tn ... ), Tn ... an )
     {
         // Creates a closure with the critical section parameters
-        Closure<void(Tn ...)>* cs = new (SYSTEM) Closure<void(Tn ...)>(entry, an ...);
+        Critical_Section<Tn ...>* cs = new (SYSTEM) Critical_Section<Tn ...>(entry, an ...);
 
         Element * cur = vouch(&(cs->_link));
         if (cur != reinterpret_cast<Element *>(NULL)) do {
-            cur->object()->run();
+            cur->object()->start();
             cur = clear();
         } while (cur != reinterpret_cast<Element *>(NULL));
     }

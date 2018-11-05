@@ -3,35 +3,7 @@
 #ifndef __closure_h
 #define __closure_h
 
-#include <utility/list.h>
-
 __BEGIN_UTIL
-
-class Closure_Base
-{
-    /// The Guard class requires access to our the _link private attribute
-    friend class Guard;
-    typedef List_Elements::Singly_Linked<Closure_Base> Element;
-
-public:
-    Closure_Base(): _link(this) {
-        db<Synchronizer>(TRC) << "Closure_Base(_link=" << &_link << ") => " << this << endl;
-    }
-
-    /// This must to be virtual otherwise the derived classes objects destructor method would not be
-    /// called when accessed by a base class pointer.
-    virtual ~Closure_Base() {
-        db<Synchronizer>(TRC) << "~Closure_Base(this=" << this << " _link=" << &_link << ")" << endl;
-    }
-
-    /// This must to be virtual otherwise the derived classes objects run() method would not be
-    /// called when accessed by a base class pointer.
-    virtual void run() = 0;
-
-private:
-    // Inspired by the thread code
-    Element _link;
-};
 
 // https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer/7858971
 template<int ...>
@@ -59,7 +31,7 @@ template<typename Tn>
 class Closure;
 
 template<typename ReturnType, typename... Tn>
-class Closure<ReturnType( Tn... )>: public Closure_Base
+class Closure<ReturnType( Tn... )>
 {
 public:
     typedef ReturnType(*Function)(Tn ...);
@@ -89,24 +61,24 @@ public:
             delete _parameters;
     }
 
-    void operator()() {
-        run();
+    inline ReturnType run() {
+        return operator()();
     }
 
-    void run() {
-        _run( typename GeneratorOfIntegerSequence< 0, int(Tn...) >::type() );
+    inline ReturnType operator()() {
+        return _unpack_and_run( typename GeneratorOfIntegerSequence< 0, int(Tn...) >::type() );
     }
 
 private:
     template<int ...Sequence>
-    ReturnType _run(MetaSequenceOfIntegers<Sequence...>)
+    inline ReturnType _unpack_and_run(MetaSequenceOfIntegers<Sequence...>)
     {
-        db<Synchronizer>(TRC) << "Closure::_run(this=" << this << ")" << endl;
+        db<Synchronizer>(TRC) << "Closure::_unpack_and_run(this=" << this << ")" << endl;
         return _entry( unpack_helper<Sequence, Tn>()... );
     }
 
     template<const int position, typename T>
-    T unpack_helper()
+    inline T unpack_helper()
     {
         db<Synchronizer>(TRC) << "Closure::unpack_helper(Head=" << sizeof( T )
                 << ", address=" << reinterpret_cast<int *>(_parameters + position)
