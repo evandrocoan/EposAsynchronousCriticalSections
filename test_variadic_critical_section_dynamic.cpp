@@ -52,7 +52,7 @@ public:
         printf( "Closure::Closure(_entry=%d, PARAMETERS_COUNT=%d, PARAMETERS_LENGTH=%d, sizeof=%d) => %d\n",
                 &_entry, PARAMETERS_COUNT, PARAMETERS_LENGTH, sizeof(*this), this );
 
-        _parameters = new char[PARAMETERS_LENGTH];
+        if(PARAMETERS_LENGTH) _parameters = new char[PARAMETERS_LENGTH];
         pack_helper( _parameters, an ... );
     }
 
@@ -60,7 +60,7 @@ public:
         printf( "Closure::~Closure(this=%d, _entry=%d, PARAMETERS_COUNT=%d, PARAMETERS_LENGTH=%d, sizeof=%d)\n",
                 this, &_entry, PARAMETERS_COUNT, PARAMETERS_LENGTH, sizeof(*this) );
 
-        delete _parameters;
+        if(PARAMETERS_LENGTH) delete _parameters;
     }
 
     ReturnType operator()() {
