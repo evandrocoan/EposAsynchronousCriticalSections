@@ -506,6 +506,365 @@ private:
 {DIV}^
 Exemplos da utilização da classe ''Critical_Section'' durante a submissão de seções críticas à guarda estão na seção sobre os testes realizados.
 
+!!!Element [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+Como elementos da guarda são elementos de lista simples, com apenas um nível de encadeamento, optou-se por utilizar a classe List_Elements::Singly_Linked, Listagem 6, definida no arquivo ''list.h'', para representá-los. 
+
+No entanto, foi necessário adicionar uma relação de amizade entre a classe Singly_Linked e a classe Guard, para que as operações CAS e FAS dos métodos vouch e clear da classe guardam possam acessar diretamente o atributo _next do elemento de lista. Isso porque, não é possível efetuar as operações CAS e FAS utilizando getters.     
+^::__Listagem 25:__ Link contendo a seção crítica::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+// Simple List Element
+template<typename T>
+class Singly_Linked
+{
+public:
+    friend class _UTIL::Guard;
+    typedef T Object_Type;
+    typedef Singly_Linked Element;
+
+public:
+    Singly_Linked(const T * o): _object(o), _next(0) {}
+
+    T * object() const { return const_cast<T *>(_object); }
+
+    Element * next() const { return _next; }
+    void next(Element * e) { _next = e; }
+
+private:
+    const T * _object;
+    Element * _next;
+};
+~/np~{DIV}
+{DIV}^
+
+!!!Guarda [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+O código onde da classe Guard, definida no arquivo ''utility/guard.h'', é mostrado na Listagem 7. Essa classe implementa a estrutura da guarda descrita no capítulo de fundamentação teórica. 
+^::__Listagem 26:__ Definição da interface do Guarda::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+class Guard
+{
+public:
+   typedef Closure::Element Element;
+
+private:
+   static const int NULL = 0;
+   static const int DONE = 1;
+
+public:
+   Guard();
+   ~Guard();
+
+   void submit(Closure * cs);
+   Element * vouch(Element * item);
+   Element * clear();
+
+private:
+   Element * _head;
+   Element * _tail;
+};
+~/np~{DIV}
+{DIV}^
+Além das operações vouch, clear e a operação de criação da guarda (setup), já apresentadas no capítulo de fundamentação teórica, a classe guarda implementa uma nova operação, chamada de submit. Essa operação encapsula o protocolo de submissão de seções críticas à guarda e pode ser utilizada por threads para a delegação da execução de seções críticas. A Listagem 8 apresenta o construtor e destrutor da guarda, assim como a implementação do método submit().
+^::__Listagem 27:__ Nova convenção para a submissão de requisições de execução de seções críticas::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+// Object Methods
+Guard::Guard(): _head(0), _tail(0)
+{
+   db<Synchronizer>(TRC)   << "Guard(head=" << _head
+                           << ", tail=" << _tail
+                           << ") => " << this << endl;
+}
+
+Guard::~Guard()
+{
+   db<Synchronizer>(TRC) << "~Guard(this=" << this << ")" << endl;
+}
+
+void Guard::submit(Closure * cs)
+{
+   Element * cur = vouch(&(cs->_link));
+   if (cur != NULL) do {
+       cur->object()->run();
+       cur = clear();
+   } while (cur != NULL);   
+}
+~/np~{DIV}
+{DIV}^
+A implementação dos métodos vouch(...) e clear são apresentadas na Listagem 8. Essas implementações não diferem muito dos códigos apresentados no capítulo de fundamentação teórica, lembrando que a operação vouch é responsável por adicionar novos elementos à guarda e sinalizar threads quando essas precisarem assumir o papel de sequencer, e a operação clear é responsável pela remoção de elementos da guarda e por sinalizar ao sequencer quando a guarda estiver vazia. 
+
+Uma adição importante foi a deleção de seções críticas que já foram executadas. Essa deleção deve geralmente ocorrer durante a execução do método clear. No entanto, existe uma situação excepcional, que pode ocorrer quando a guarda possui apenas um elementos e operações vouch e clear executam simultaneamente. Nesse caso, a passagem do papel de sequencer da thread executando clear para a thread executando vouch. Quando isso acontecer, o sequencer executando vouch precisará também deletar o elemento da guarda previamente removido da lista pela operação clear.
+^::__Listagem 28:__ Implementações de vouch() e clear()::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+Guard::Element * Guard::vouch(Element * item)
+{
+   db<Synchronizer>(TRC) << "Guard::vouch(this=" << this << " head= " << _head << " tail= " << _tail <<  ")" << endl;
+   item->next(NULL);
+   Element * last = CPU::fas(_tail, item);
+   if (last){
+       if (CPU::cas(last->_next, reinterpret_cast<Element *>(NULL), item) == NULL)
+           return NULL;
+       delete item->object();
+   }
+   _head = item;       
+   return item;
+}
+
+Guard::Element * Guard::clear()
+{
+   db<Synchronizer>(TRC) << "Guard::clear(this=" << this << " head= " << _head << " tail= " << _tail <<  ")" << endl;
+   Element * item = _head;
+   Element * next = CPU::fas(item->_next, reinterpret_cast<Element *>(DONE));
+   bool mine = true;
+   if (!next)
+       mine = CPU::cas(_tail, item, reinterpret_cast<Element *> (NULL)) == item;
+   CPU::cas(_head, item, next);
+   if (mine)
+       delete item->object();
+   return next;   
+}
+~/np~{DIV}
+{DIV}^
+
+!!!FAS [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+A operação FAS, uma das duas primitivas atômicas utilizados no algoritmo das guardas, ainda não havia sido implementada no EPOS, Dessa forma, foi adicionada ao arquivo ''/include/archtecture/ia_32/cpu.h'', onde estão implementadas as primitivas atômicas de sincronização no EPOS, uma nova implementação para FAS.
+
+O código de FAS foi inspirado no código das outras operações atômicas e nas descrições das instruções atômicas nos manuais da Intel.
+
+Além disso, assim como ocorre com as outras operações atômicas, foi adicionada uma implementação em software, independente de arquitetura, no arquivo ''/include/cpu.h''. No entanto, como essa operação não possui suporte de hardware, ela não deve provê garantias de atomicidade.
+^::__Listagem 29:__ Implementação do FAS::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+// /include/archtecture/ia_32/cpu.h
+template<typename T>
+static T fas(volatile T & value, volatile T replacement) 
+{
+    ASM("lock xchg %0, %2" : "=a"(replacement) : "a"(replacement), "m"(value) : "memory");
+    return replacement;
+}
+
+// /include/cpu.h
+static int fas(volatile int & value, volatile int & replacement) {
+     int old = value;
+     value = replacement;
+     return old;
+ }
+~/np~{DIV}
+{DIV}^
+
+!!!Futures [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+Das 2 implementações distintas de futures apresentadas, realiza-se a implementação do modelo de future bloqueante, apresentado no artigo referência {DIV(type="span")}[{DIV}[#Refer_ncias_|2]]. Como a implementação atual do algoritmo do guarda não suporta passagens de parâmetros variádicos, fez-se a implementação dos métodos para que aceitem vários parâmetros com meta programação. Ver a seção [#Closure_Metaprogramada_|Closure Metaprogramada]. 
+
+Uma vez que a future é resolvida, i.e., seu método ''resolve()'' é chamado e seu valor é definido, ele não pode ser mais alterado, e qualquer um que tentar obter o valor da future com ''get_value()'' não precisará mais bloquear, pois o valor não é indefinido. Futures são implementadas totalmente no arquivo header ''.h'' por que são meta classes que são instanciadas pelo compilador e seu código é gerado somente caso alguém crie uma especialização com algum tipo de dado.
+^::__Listagem 30:__ Implementação de future em ''/include/utility/future.h''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+// EPOS Guard Component Declarations
+
+#ifndef __future_h
+#define __future_h
+
+#include <condition.h>
+
+__BEGIN_UTIL
+
+template<typename FutureType>
+class Future 
+{
+public:
+    Future(): _condition(), _is_resolved() {
+        db<Synchronizer>(WRN)   << "Future(_is_resolved=" << _is_resolved 
+                                << ", _condition=" << _condition.size()
+                                << ") => " << this << endl;
+    }
+
+    ~Future() {
+        db<Synchronizer>(WRN) << "~Future(this=" << this << ")" << endl;
+    }
+
+    FutureType get_value() {
+        db<Synchronizer>(WRN) << "Future::get_value(this=" << this 
+                              << " _is_resolved=" << _is_resolved 
+                              << " _condition=" << _condition.size()
+                              <<  ")" << endl;
+        if(!_is_resolved) _condition.wait();
+        return _value;
+    }
+
+    void resolve(FutureType value) { 
+        db<Synchronizer>(WRN) << "Future::resolve(this=" << this 
+                              << " _is_resolved=" << _is_resolved 
+                              << " _condition=" << _condition.size()
+                              <<  ")" << endl;
+        assert(!_is_resolved);
+        // If `resolve()` was called and the instruction pointer got until here, and the thread
+        // is unscheduled, and another thread call `resolve()`, then, the `assert` above will 
+        // not work.
+        _value = value;
+        _is_resolved = true;
+        _condition.broadcast();
+    }
+
+private:
+    bool _is_resolved;
+    FutureType _value;
+    Condition _condition;
+};
+
+__END_UTIL
+
+#endif
+~/np~{DIV}
+{DIV}^
+Agora ve-sê um simples programa que demonstra o uso de futures:
+^::__Listagem 31:__ Arquivo de Teste ''/app/future_simple_test.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+// EPOS Synchronizer Component Test Program
+
+#include <thread.h>
+#include <utility/future.h>
+#include <semaphore.h>
+#include <alarm.h>
+
+using namespace EPOS;
+Semaphore display_lock;
+
+// #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
+#define log(argument) db<Synchronizer>(WRN) << argument;
+
+int producerFunction(Future<int>* future) {
+    log( "producerFunction ()" << endl )
+    Delay thinking(1000000);
+    future->resolve(10);
+
+    log( "producerFunction (resolving future=" << future << " to 10)" << endl )
+    return 0;
+}
+
+int consumerFunction(Future<int>* future) {
+    log( "consumerFunction ()" << endl )
+    log( "consumerFunction (result=" << future->get_value() << ")" << endl )
+    log( "consumerFunction (result=" << future->get_value() << ")" << endl )
+    return 0;
+}
+
+int main()
+{
+    log( endl << "Starting main application..." << endl )
+    Future<int>* future = new Future<int>();
+
+    Thread* consumer = new Thread(&consumerFunction, future);
+    Thread* producer = new Thread(&producerFunction, future);
+
+    consumer->join();
+    producer->join();
+
+    log( "Exiting main application..." << endl )
+    return 0;
+}
+~/np~{DIV}
+{DIV}^
+Resultado da execução:
+^::__Listagem 32:__ Arquivo ''/app/future_simple_test.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+Starting main application...
+Future(_is_resolved=0, _condition=0) => 0x00097f5c
+consumerFunction ()
+Future::get_value(this=0x00097f5c _is_resolved=0 _condition=0)
+producerFunction ()
+Future::resolve(this=0x00097f5c _is_resolved=0 _condition=1)
+consumerFunction (result=10)
+Future::get_value(this=0x00097f5c _is_resolved=1 _condition=0)
+consumerFunction (result=10)
+producerFunction (resolving future=0x00097f5c to 10)
+Exiting main application...
+~/np~{DIV}
+{DIV}^
+A seguir vê-se um simples exemplo de uso de futures. Nesse exemplo, evolve-se varias classes to EPOS, fazendo seu uso em conjunto com o algoritmo do guarda.
+^::__Listagem 33:__ Arquivo de Teste ''/app/future_guard_test.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+// EPOS Synchronizer Component Test Program
+
+#include <thread.h>
+#include <utility/guard.h>
+#include <utility/future.h>
+#include <semaphore.h>
+#include <alarm.h>
+
+using namespace EPOS;
+static volatile int counter = 0;
+
+Guard guard;
+Semaphore display_lock;
+
+// #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
+#define log(argument) db<Synchronizer>(WRN) << argument;
+
+void increment_counter(Future<int>* future) {
+    Delay thinking(1000000);
+    counter = counter + 1;
+    log( "increment_counter (counter=" << counter << ")" << endl )
+    future->resolve(counter);
+}
+
+int functionA() {
+    log( "functionA ()" << endl )
+    Future<int>* future = new Future<int>();
+
+    guard.submit(&increment_counter, future);
+    log( "functionA (result=" << future->get_value() << ")" << endl )    return 0;
+}
+
+int functionB() {
+    log( "functionB ()" << endl )
+    Future<int>* future = new Future<int>();
+
+    guard.submit(&increment_counter, future);
+    log( "functionB (result=" << future->get_value() << ")" << endl )
+    return 0;
+}
+
+int main()
+{
+    log( endl << "Starting main application..." << endl )
+
+    Thread* producer = new Thread(&functionA);
+    Thread* consumer = new Thread(&functionB);
+
+    consumer->join();
+    producer->join();
+
+    log( "Exiting main application..." << endl )
+    return 0;
+}
+~/np~{DIV}
+{DIV}^
+Resultado da execução:
+^::__Listagem 34:__ Arquivo ''/app/future_guard_test.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+Starting main application...
+functionA ()
+Future(_is_resolved=0, _condition=0) => 0x0008fef4
+functionB ()
+Future(_is_resolved=0, _condition=0) => 0x0008feb4
+Future::get_value(this=0x0008feb4 _is_resolved=0 _condition=0)
+increment_counter (counter=1)
+Future::resolve(this=0x0008fef4 _is_resolved=0 _condition=0)
+increment_counter (counter=2)
+Future::resolve(this=0x0008feb4 _is_resolved=0 _condition=1)
+functionB (result=2)
+Future::get_value(this=0x0008fef4 _is_resolved=1 _condition=0)
+functionA (result=1)
+Exiting main application...
+~/np~{DIV}
+{DIV}^
+
 !!!Closure Metaprogramada [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 A ''Critical_Section'' inicialmente descrita não apresenta a possibilidade de definir-se/criar-se funções com um número variado de argumentos. Por isso, essa implementação foi substituída por uma ''Critical_Section'' meta programada, que faz uso de templates variádicos do C++ 11.
 
@@ -986,365 +1345,6 @@ Closure::unpack_helper(Head=1, address=0x00097f45(0x00097f45), position=0)
 
 Closure::~Closure(this=0x00097f68_entry=0x00097f68, PARAMETERS_COUNT=7, PARAMETERS_LENGTH=19, sizeof=8)
 main: exiting()
-~/np~{DIV}
-{DIV}^
-
-!!!Element [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
-Como elementos da guarda são elementos de lista simples, com apenas um nível de encadeamento, optou-se por utilizar a classe List_Elements::Singly_Linked, Listagem 6, definida no arquivo ''list.h'', para representá-los. 
-
-No entanto, foi necessário adicionar uma relação de amizade entre a classe Singly_Linked e a classe Guard, para que as operações CAS e FAS dos métodos vouch e clear da classe guardam possam acessar diretamente o atributo _next do elemento de lista. Isso porque, não é possível efetuar as operações CAS e FAS utilizando getters.     
-^::__Listagem 25:__ Link contendo a seção crítica::
-{DIV(type="span")}
-{DIV(type="pre" bg="#CCFFFF")}~np~
-// Simple List Element
-template<typename T>
-class Singly_Linked
-{
-public:
-    friend class _UTIL::Guard;
-    typedef T Object_Type;
-    typedef Singly_Linked Element;
-
-public:
-    Singly_Linked(const T * o): _object(o), _next(0) {}
-
-    T * object() const { return const_cast<T *>(_object); }
-
-    Element * next() const { return _next; }
-    void next(Element * e) { _next = e; }
-
-private:
-    const T * _object;
-    Element * _next;
-};
-~/np~{DIV}
-{DIV}^
-
-!!!Guarda [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
-O código onde da classe Guard, definida no arquivo ''utility/guard.h'', é mostrado na Listagem 7. Essa classe implementa a estrutura da guarda descrita no capítulo de fundamentação teórica. 
-^::__Listagem 26:__ Definição da interface do Guarda::
-{DIV(type="span")}
-{DIV(type="pre" bg="#CCFFFF")}~np~
-class Guard
-{
-public:
-   typedef Closure::Element Element;
-
-private:
-   static const int NULL = 0;
-   static const int DONE = 1;
-
-public:
-   Guard();
-   ~Guard();
-
-   void submit(Closure * cs);
-   Element * vouch(Element * item);
-   Element * clear();
-
-private:
-   Element * _head;
-   Element * _tail;
-};
-~/np~{DIV}
-{DIV}^
-Além das operações vouch, clear e a operação de criação da guarda (setup), já apresentadas no capítulo de fundamentação teórica, a classe guarda implementa uma nova operação, chamada de submit. Essa operação encapsula o protocolo de submissão de seções críticas à guarda e pode ser utilizada por threads para a delegação da execução de seções críticas. A Listagem 8 apresenta o construtor e destrutor da guarda, assim como a implementação do método submit().
-^::__Listagem 27:__ Nova convenção para a submissão de requisições de execução de seções críticas::
-{DIV(type="span")}
-{DIV(type="pre" bg="#CCFFFF")}~np~
-// Object Methods
-Guard::Guard(): _head(0), _tail(0)
-{
-   db<Synchronizer>(TRC)   << "Guard(head=" << _head
-                           << ", tail=" << _tail
-                           << ") => " << this << endl;
-}
-
-Guard::~Guard()
-{
-   db<Synchronizer>(TRC) << "~Guard(this=" << this << ")" << endl;
-}
-
-void Guard::submit(Closure * cs)
-{
-   Element * cur = vouch(&(cs->_link));
-   if (cur != NULL) do {
-       cur->object()->run();
-       cur = clear();
-   } while (cur != NULL);   
-}
-~/np~{DIV}
-{DIV}^
-A implementação dos métodos vouch(...) e clear são apresentadas na Listagem 8. Essas implementações não diferem muito dos códigos apresentados no capítulo de fundamentação teórica, lembrando que a operação vouch é responsável por adicionar novos elementos à guarda e sinalizar threads quando essas precisarem assumir o papel de sequencer, e a operação clear é responsável pela remoção de elementos da guarda e por sinalizar ao sequencer quando a guarda estiver vazia. 
-
-Uma adição importante foi a deleção de seções críticas que já foram executadas. Essa deleção deve geralmente ocorrer durante a execução do método clear. No entanto, existe uma situação excepcional, que pode ocorrer quando a guarda possui apenas um elementos e operações vouch e clear executam simultaneamente. Nesse caso, a passagem do papel de sequencer da thread executando clear para a thread executando vouch. Quando isso acontecer, o sequencer executando vouch precisará também deletar o elemento da guarda previamente removido da lista pela operação clear.
-^::__Listagem 28:__ Implementações de vouch() e clear()::
-{DIV(type="span")}
-{DIV(type="pre" bg="#CCFFFF")}~np~
-Guard::Element * Guard::vouch(Element * item)
-{
-   db<Synchronizer>(TRC) << "Guard::vouch(this=" << this << " head= " << _head << " tail= " << _tail <<  ")" << endl;
-   item->next(NULL);
-   Element * last = CPU::fas(_tail, item);
-   if (last){
-       if (CPU::cas(last->_next, reinterpret_cast<Element *>(NULL), item) == NULL)
-           return NULL;
-       delete item->object();
-   }
-   _head = item;       
-   return item;
-}
-
-Guard::Element * Guard::clear()
-{
-   db<Synchronizer>(TRC) << "Guard::clear(this=" << this << " head= " << _head << " tail= " << _tail <<  ")" << endl;
-   Element * item = _head;
-   Element * next = CPU::fas(item->_next, reinterpret_cast<Element *>(DONE));
-   bool mine = true;
-   if (!next)
-       mine = CPU::cas(_tail, item, reinterpret_cast<Element *> (NULL)) == item;
-   CPU::cas(_head, item, next);
-   if (mine)
-       delete item->object();
-   return next;   
-}
-~/np~{DIV}
-{DIV}^
-
-!!!FAS [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
-A operação FAS, uma das duas primitivas atômicas utilizados no algoritmo das guardas, ainda não havia sido implementada no EPOS, Dessa forma, foi adicionada ao arquivo ''/include/archtecture/ia_32/cpu.h'', onde estão implementadas as primitivas atômicas de sincronização no EPOS, uma nova implementação para FAS.
-
-O código de FAS foi inspirado no código das outras operações atômicas e nas descrições das instruções atômicas nos manuais da Intel.
-
-Além disso, assim como ocorre com as outras operações atômicas, foi adicionada uma implementação em software, independente de arquitetura, no arquivo ''/include/cpu.h''. No entanto, como essa operação não possui suporte de hardware, ela não deve provê garantias de atomicidade.
-^::__Listagem 29:__ Implementação do FAS::
-{DIV(type="span")}
-{DIV(type="pre" bg="#CCFFFF")}~np~
-// /include/archtecture/ia_32/cpu.h
-template<typename T>
-static T fas(volatile T & value, volatile T replacement) 
-{
-    ASM("lock xchg %0, %2" : "=a"(replacement) : "a"(replacement), "m"(value) : "memory");
-    return replacement;
-}
-
-// /include/cpu.h
-static int fas(volatile int & value, volatile int & replacement) {
-     int old = value;
-     value = replacement;
-     return old;
- }
-~/np~{DIV}
-{DIV}^
-
-!!!Futures [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
-Das 2 implementações distintas de futures apresentadas, realiza-se a implementação do modelo de future bloqueante, apresentado no artigo referência {DIV(type="span")}[{DIV}[#Refer_ncias_|2]]. Como a implementação atual do algoritmo do guarda não suporta passagens de parâmetros variádicos, fez-se a implementação dos métodos para que aceitem vários parâmetros com meta programação. Ver a seção [#Closure_Metaprogramada_|Closure Metaprogramada]. 
-
-Uma vez que a future é resolvida, i.e., seu método ''resolve()'' é chamado e seu valor é definido, ele não pode ser mais alterado, e qualquer um que tentar obter o valor da future com ''get_value()'' não precisará mais bloquear, pois o valor não é indefinido. Futures são implementadas totalmente no arquivo header ''.h'' por que são meta classes que são instanciadas pelo compilador e seu código é gerado somente caso alguém crie uma especialização com algum tipo de dado.
-^::__Listagem 30:__ Implementação de future em ''/include/utility/future.h''::
-{DIV(type="span")}
-{DIV(type="pre" bg="#CCFFFF")}~np~
-// EPOS Guard Component Declarations
-
-#ifndef __future_h
-#define __future_h
-
-#include <condition.h>
-
-__BEGIN_UTIL
-
-template<typename FutureType>
-class Future 
-{
-public:
-    Future(): _condition(), _is_resolved() {
-        db<Synchronizer>(WRN)   << "Future(_is_resolved=" << _is_resolved 
-                                << ", _condition=" << _condition.size()
-                                << ") => " << this << endl;
-    }
-
-    ~Future() {
-        db<Synchronizer>(WRN) << "~Future(this=" << this << ")" << endl;
-    }
-
-    FutureType get_value() {
-        db<Synchronizer>(WRN) << "Future::get_value(this=" << this 
-                              << " _is_resolved=" << _is_resolved 
-                              << " _condition=" << _condition.size()
-                              <<  ")" << endl;
-        if(!_is_resolved) _condition.wait();
-        return _value;
-    }
-
-    void resolve(FutureType value) { 
-        db<Synchronizer>(WRN) << "Future::resolve(this=" << this 
-                              << " _is_resolved=" << _is_resolved 
-                              << " _condition=" << _condition.size()
-                              <<  ")" << endl;
-        assert(!_is_resolved);
-        // If `resolve()` was called and the instruction pointer got until here, and the thread
-        // is unscheduled, and another thread call `resolve()`, then, the `assert` above will 
-        // not work.
-        _value = value;
-        _is_resolved = true;
-        _condition.broadcast();
-    }
-
-private:
-    bool _is_resolved;
-    FutureType _value;
-    Condition _condition;
-};
-
-__END_UTIL
-
-#endif
-~/np~{DIV}
-{DIV}^
-Agora ve-sê um simples programa que demonstra o uso de futures:
-^::__Listagem 31:__ Arquivo de Teste ''/app/future_simple_test.cc''::
-{DIV(type="span")}
-{DIV(type="pre" bg="#CCFFFF")}~np~
-// EPOS Synchronizer Component Test Program
-
-#include <thread.h>
-#include <utility/future.h>
-#include <semaphore.h>
-#include <alarm.h>
-
-using namespace EPOS;
-Semaphore display_lock;
-
-// #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
-#define log(argument) db<Synchronizer>(WRN) << argument;
-
-int producerFunction(Future<int>* future) {
-    log( "producerFunction ()" << endl )
-    Delay thinking(1000000);
-    future->resolve(10);
-
-    log( "producerFunction (resolving future=" << future << " to 10)" << endl )
-    return 0;
-}
-
-int consumerFunction(Future<int>* future) {
-    log( "consumerFunction ()" << endl )
-    log( "consumerFunction (result=" << future->get_value() << ")" << endl )
-    log( "consumerFunction (result=" << future->get_value() << ")" << endl )
-    return 0;
-}
-
-int main()
-{
-    log( endl << "Starting main application..." << endl )
-    Future<int>* future = new Future<int>();
-
-    Thread* consumer = new Thread(&consumerFunction, future);
-    Thread* producer = new Thread(&producerFunction, future);
-
-    consumer->join();
-    producer->join();
-
-    log( "Exiting main application..." << endl )
-    return 0;
-}
-~/np~{DIV}
-{DIV}^
-Resultado da execução:
-^::__Listagem 32:__ Arquivo ''/app/future_simple_test.cc''::
-{DIV(type="span")}
-{DIV(type="pre" bg="#CCFFFF")}~np~
-Starting main application...
-Future(_is_resolved=0, _condition=0) => 0x00097f5c
-consumerFunction ()
-Future::get_value(this=0x00097f5c _is_resolved=0 _condition=0)
-producerFunction ()
-Future::resolve(this=0x00097f5c _is_resolved=0 _condition=1)
-consumerFunction (result=10)
-Future::get_value(this=0x00097f5c _is_resolved=1 _condition=0)
-consumerFunction (result=10)
-producerFunction (resolving future=0x00097f5c to 10)
-Exiting main application...
-~/np~{DIV}
-{DIV}^
-A seguir vê-se um simples exemplo de uso de futures. Nesse exemplo, evolve-se varias classes to EPOS, fazendo seu uso em conjunto com o algoritmo do guarda.
-^::__Listagem 33:__ Arquivo de Teste ''/app/future_guard_test.cc''::
-{DIV(type="span")}
-{DIV(type="pre" bg="#CCFFFF")}~np~
-// EPOS Synchronizer Component Test Program
-
-#include <thread.h>
-#include <utility/guard.h>
-#include <utility/future.h>
-#include <semaphore.h>
-#include <alarm.h>
-
-using namespace EPOS;
-static volatile int counter = 0;
-
-Guard guard;
-Semaphore display_lock;
-
-// #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
-#define log(argument) db<Synchronizer>(WRN) << argument;
-
-void increment_counter(Future<int>* future) {
-    Delay thinking(1000000);
-    counter = counter + 1;
-    log( "increment_counter (counter=" << counter << ")" << endl )
-    future->resolve(counter);
-}
-
-int functionA() {
-    log( "functionA ()" << endl )
-    Future<int>* future = new Future<int>();
-
-    guard.submit(&increment_counter, future);
-    log( "functionA (result=" << future->get_value() << ")" << endl )    return 0;
-}
-
-int functionB() {
-    log( "functionB ()" << endl )
-    Future<int>* future = new Future<int>();
-
-    guard.submit(&increment_counter, future);
-    log( "functionB (result=" << future->get_value() << ")" << endl )
-    return 0;
-}
-
-int main()
-{
-    log( endl << "Starting main application..." << endl )
-
-    Thread* producer = new Thread(&functionA);
-    Thread* consumer = new Thread(&functionB);
-
-    consumer->join();
-    producer->join();
-
-    log( "Exiting main application..." << endl )
-    return 0;
-}
-~/np~{DIV}
-{DIV}^
-Resultado da execução:
-^::__Listagem 34:__ Arquivo ''/app/future_guard_test.cc''::
-{DIV(type="span")}
-{DIV(type="pre" bg="#CCFFFF")}~np~
-Starting main application...
-functionA ()
-Future(_is_resolved=0, _condition=0) => 0x0008fef4
-functionB ()
-Future(_is_resolved=0, _condition=0) => 0x0008feb4
-Future::get_value(this=0x0008feb4 _is_resolved=0 _condition=0)
-increment_counter (counter=1)
-Future::resolve(this=0x0008fef4 _is_resolved=0 _condition=0)
-increment_counter (counter=2)
-Future::resolve(this=0x0008feb4 _is_resolved=0 _condition=1)
-functionB (result=2)
-Future::get_value(this=0x0008fef4 _is_resolved=1 _condition=0)
-functionA (result=1)
-Exiting main application...
 ~/np~{DIV}
 {DIV}^
 
