@@ -440,25 +440,25 @@ Para a implementação do algoritmo das guardas no EPOS foram definidas três no
 
 Neste capítulo será descrito como ocorreu o processo de implementação das novas classes que implementam o algoritmo das guardas, assim como os testes realizados para validação da implementação.
 
-!!!Closure [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+!!!Critical_Section [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Assim como ocorre com os algoritmos de sincronização tradicionais, uma das bases dos algoritmos de sincronização baseados em delegação é o conceito de seções críticas. Dessa forma, foi definida uma nova classe para representar essas entidades. 
 
-A classe que representa seções críticas  foi criada com base na classe Function_Handler e recebeu o nome de Closure. Essa classe possui apenas dois atributos, _handler e _link. O atributo _handler representa a função relacionada à seção crítica e o atributo _link representa um elemento de lista simples. Além desses dois atributos, a classe Closure também implementa o método público run(), que é utilizado pelo sequencer para executar uma seção crítica, que na verdade é o mesmo trabalho realizado pelo operator “()”, que deixava o código pouco intuitivo. A Listagem 5 exibe o código da classe Closure.
+A classe que representa seções críticas  foi criada com base na classe Function_Handler e recebeu o nome de ''Critical_Section''. Essa classe possui apenas dois atributos, _handler e _link. O atributo _handler representa a função relacionada à seção crítica e o atributo _link representa um elemento de lista simples. Além desses dois atributos, a classe ''Critical_Section'' também implementa o método público run(), que é utilizado pelo sequencer para executar uma seção crítica, que na verdade é o mesmo trabalho realizado pelo operator “()”, que deixava o código pouco intuitivo. A Listagem 5 exibe o código da classe ''Critical_Section''.
 
-O construtor da classe Closure recebe um objeto representando uma função, que deve ser compatível com o tipo Function, definido no arquivo handler.h, como parâmetro. Além disso, o construtor cria o _link relativo à seção crítica sendo construída, que será utilizado para adição e remoção de seções críticas de estruturas de dados, da mesma forma como acontece com objetos da classe Thread. 
+O construtor da classe ''Critical_Section'' recebe um objeto representando uma função, que deve ser compatível com o tipo Function, definido no arquivo handler.h, como parâmetro. Além disso, o construtor cria o _link relativo à seção crítica sendo construída, que será utilizado para adição e remoção de seções críticas de estruturas de dados, da mesma forma como acontece com objetos da classe Thread. 
 
 ::__Listagem 5:__ Seção crítica::
 {CODE(colors="c")}
-class Closure
+class Critical_Section
 {
 public:
    friend class Guard;
    typedef Handler::Function Function;
-   typedef List_Elements::Singly_Linked<Closure> Element;
+   typedef List_Elements::Singly_Linked<Critical_Section> Element;
 
 public:
-   Closure(Function * h): _handler(h), _link(this) {}
-   ~Closure() {}
+   Critical_Section(Function * h): _handler(h), _link(this) {}
+   ~Critical_Section() {}
 
    void operator()() { _handler(); }
    void run()        { _handler(); } // Alias for ()
@@ -468,34 +468,39 @@ private:
    Element _link; // Inspired by the thread code
 };
 {CODE}
-Exemplos da utilização da classe Closure durante a submissão de seções críticas à guarda estão na seção sobre os testes realizados.
+Exemplos da utilização da classe ''Critical_Section'' durante a submissão de seções críticas à guarda estão na seção sobre os testes realizados.
 
 !!!Closure Metaprogramada [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
-A Closure inicialmente descrita não apresenta a possibilidade de definir-se/criar-se funções com um número variado de argumentos. Por isso, essa implementação foi substituída por uma Closure meta programada, que faz uso de templates variádicos do C++ 11.
+A ''Critical_Section'' inicialmente descrita não apresenta a possibilidade de definir-se/criar-se funções com um número variado de argumentos. Por isso, essa implementação foi substituída por uma ''Critical_Section'' meta programada, que faz uso de templates variádicos do C++ 11.
 
-A seguir ve-sê a implementação da classe base de todos as closures. Uma classe base é necessária por que o algoritmo do Guarda implementa uma lista encadeada de seções críticas, que em nosso caso são presentados por Closures. Assim, como a implementação de lista que o algoritmo do Guarda faz uso não permite que tipos diferentes sejam adicionados na lista, faz-se uso do polimorfismo para criar um lista com diferentes closures.
-::__Listagem 6:__ Base de todas Closures meta programadas::
+A seguir ve-sê a implementação da classe base de todas as ''Critical_Section''. Uma classe base é necessária por que o algoritmo do Guarda implementa uma lista encadeada de seções críticas, que em nosso caso são presentados por ''Closures''. Assim, como a implementação de lista, que o algoritmo do Guarda faz uso, não permite que tipos diferentes sejam adicionados na lista, faz-se uso do polimorfismo para criar um lista com diferentes closures meta programadas.
+::__Listagem 6:__ Base de todas ''Closures'' meta programadas, Arquivo: ''/include/utility/critical_section.h''::
 {CODE(colors="c")}
-class Closure_Base
+class Critical_Section_Base
 {
     /// The Guard class requires access to our the _link private attribute
     friend class Guard;
-    typedef List_Elements::Singly_Linked<Closure_Base> Element;
+    typedef List_Elements::Singly_Linked<Critical_Section_Base> Element;
 
 public:
-    Closure_Base(): _link(this) {
-        db<Synchronizer>(TRC) << "Closure_Base(_link=" << &_link << ") => " << this << endl;
+    Critical_Section_Base(): _link(this) {
+        db<Synchronizer>(TRC) << "Critical_Section_Base(_link=" << &_link << ") => " << this << endl;
     }
 
     /// This must to be virtual otherwise the derived classes objects destructor method would not be
     /// called when accessed by a base class pointer.
-    virtual ~Closure_Base() {
-        db<Synchronizer>(TRC) << "~Closure_Base(this=" << this << " _link=" << &_link << ")" << endl;
+    virtual ~Critical_Section_Base() {
+        db<Synchronizer>(TRC) << "~Critical_Section_Base(this=" << this << " _link=" << &_link << ")" << endl;
     }
 
+    /// Returns void because the base class Critical_Section_Base() cannot be a template class, as
+    /// it is general interface for all Closures used on the Guard algorithm. Also, it does not make
+    /// sense to return something from the closure when in its code is ran by the sequencer on
+    /// another thread, detached from the original code.
+    ///
     /// This must to be virtual otherwise the derived classes objects run() method would not be
     /// called when accessed by a base class pointer.
-    virtual void run() = 0;
+    virtual void start() = 0;
 
 private:
     // Inspired by the thread code
@@ -503,8 +508,27 @@ private:
 };
 {CODE}
 
+A implementação da ''Critical_Section'' meta programada é simplesmente a herança privada da implementação de ''Closure'', mais a herança da classe base de todas as seções críticas, a ''Critical_Section_Base''. 
+::__Listagem 7:__ Definição da ''Critical_Section'' meta programada baseada na implementação de ''Closures''::
+{CODE(colors="c")}
+template<typename... Tn>
+class Critical_Section: public Critical_Section_Base, private Closure<void( Tn... )>
+{
+    using Closure<void( Tn... )>::run;
+
+public:
+    Critical_Section(void(*_entry)(Tn ...), Tn ... an) : Closure<void( Tn... )>::Closure( _entry, an ... )
+    {
+    }
+
+    inline void start() {
+        run();
+    }
+};
+{CODE}
+
 Para poder-se criar Closures com um número variado do parâmetros, fez-se uso de um meta programa que calcula, recursivamente as posições dos parâmetros da closures.
-::__Listagem 7:__ Cálculo do index dos parâmetros da seção crítica dentro da closure::
+::__Listagem 8:__ Cálculo do index dos parâmetros da seção crítica dentro da closure::
 {CODE(colors="c")}
 template<int ...>
 struct MetaSequenceOfIntegers { };
@@ -528,7 +552,7 @@ struct GeneratorOfIntegerSequence<AccumulatedSize, Grouper(), GeneratedSequence.
 {CODE}
 
 Este programa é executado em tempo de compilação, e para uma dada entrada, como por exemplo ''GeneratorOfIntegerSequence< 0, int(char, int, char) >::type()'', gera o seguinte código, que calcula o pacote de parâmetros ''<0, 1, 5>'', que significa que o primeiro parâmetro da função, que é o tipo ''char'', está na posição 0, enquanto o segundo parâmetro do tipo ''int'' está na posição 1, que e o último parâmetro, ''char'' está na posição 5. Tais valores devem-se aos respectivos tamanhos de ''char'' e ''int'' serem 1 e 4:
-::__Listagem 8:__ Trecho de código gerado pelo meta programa, obtido com compilador ''LLVM Clang''::
+::__Listagem 9:__ Trecho de código gerado pelo meta programa, obtido com compilador ''LLVM Clang''::
 {CODE(colors="c")}
 $ clang++ -Xclang -ast-print -fsyntax-only parameter_pack_sequencer_size_generator.cpp > expanded.cpp
 template <int AccumulatedSize, typename Tn, int ...GeneratedSequence> struct GeneratorOfIntegerSequence
@@ -547,13 +571,13 @@ template<> struct GeneratorOfIntegerSequence<6, int (), <0, 1, 5>> {
 {CODE}
 
 Segue o meta programa que implementa closures ou functors de parâmetros variádicos:
-::__Listagem 9:__ Implementação da Closure meta programa, arquivo ''/include/utility/closure.h''::
+::__Listagem 10:__ Implementação da Closure meta programa, arquivo ''/include/utility/closure.h''::
 {CODE(colors="c")}
 template<typename Tn>
 class Closure;
 
 template<typename ReturnType, typename... Tn>
-class Closure<ReturnType( Tn... )>: public Closure_Base
+class Closure<ReturnType( Tn... )>
 {
 public:
     typedef ReturnType(*Function)(Tn ...);
@@ -567,7 +591,7 @@ private:
 public:
     Closure(Function _entry, Tn ... an): _entry(_entry)
     {
-        db<Synchronizer>(TRC) << "Closure::Closure(_entry=" << &_entry << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
+        db<Synchronizer>(WRN) << "Closure::Closure(_entry=" << &_entry << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
                 << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH << ", sizeof=" << sizeof(*this) << ") => " << this << endl;
 
         if(PARAMETERS_LENGTH) 
@@ -576,33 +600,33 @@ public:
     }
 
     ~Closure() {
-        db<Synchronizer>(TRC) << "Closure::~Closure(this=" << this << "_entry=" << &_entry << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
+        db<Synchronizer>(WRN) << "Closure::~Closure(this=" << this << "_entry=" << &_entry << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
                 << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH << ", sizeof=" << sizeof(*this) << ")" << endl;
 
         if(PARAMETERS_LENGTH)
             delete _parameters;
     }
 
-    void operator()() {
-        run();
+    inline ReturnType run() {
+        return operator()();
     }
 
-    void run() {
-        _run( typename GeneratorOfIntegerSequence< 0, int(Tn...) >::type() );
+    inline ReturnType operator()() {
+        return _unpack_and_run( typename GeneratorOfIntegerSequence< 0, int(Tn...) >::type() );
     }
 
 private:
     template<int ...Sequence>
-    ReturnType _run(MetaSequenceOfIntegers<Sequence...>)
+    inline ReturnType _unpack_and_run(MetaSequenceOfIntegers<Sequence...>)
     {
-        db<Synchronizer>(TRC) << "Closure::_run(this=" << this << ")" << endl;
+        db<Synchronizer>(WRN) << "Closure::_unpack_and_run(this=" << this << ")" << endl;
         return _entry( unpack_helper<Sequence, Tn>()... );
     }
 
     template<const int position, typename T>
-    T unpack_helper()
+    inline T unpack_helper()
     {
-        db<Synchronizer>(TRC) << "Closure::unpack_helper(Head=" << sizeof( T )
+        db<Synchronizer>(WRN) << "Closure::unpack_helper(Head=" << sizeof( T )
                 << ", address=" << reinterpret_cast<int *>(_parameters + position)
                 << "(" << reinterpret_cast<int *>(_parameters) << ")" 
                 << ", position=" << position << ")" << endl;
@@ -614,7 +638,7 @@ public:
     template<typename Head, typename ... Tail>
     static void pack_helper(char* pointer_address, Head head, Tail ... tail)
     {
-        db<Synchronizer>(TRC) << "Closure::pack_helper(Head=" << sizeof( Head )
+        db<Synchronizer>(WRN) << "Closure::pack_helper(Head=" << sizeof( Head )
                 << ", address=" << reinterpret_cast<int *>(pointer_address) << ")" << endl;
 
         *reinterpret_cast<Head *>(pointer_address) = head;
@@ -638,8 +662,8 @@ Em tempo de execução, o construtor da classe Closure irá:
 # Alocar memória para o atributo ''_parameters'', que é do tipo array de char, de acordo com o tamanho dos tipos dos argumentos  ''(char, ... , 1)''
 # Utilizar a função ''pack_helper()'' para colocar ''('a', ... , 1)'' no array ''_parameters'', tratando o fato de possuírem de tipos diferentes.
 
-Veja um exemplo completo e simples de teste/uso das closures meta programadas:
-::__Listagem 10:__ Arquivo ''/app/closure_test.cc''::
+Veja um exemplo completo de teste/uso das closures meta programadas:
+::__Listagem 11:__ Arquivo ''/app/closure_test.cc''::
 {CODE(colors="c")}
 // EPOS Synchronizer Component Test Program
 
@@ -664,19 +688,28 @@ template<typename ... Tn>
 void test_closure(Tn ... an) {
     auto closure = create_closure(an ...);
     closure();
-    log( endl )
+    log( "    void" << endl << endl )
 }
 
-void test_function1(char arg1, int arg2, bool arg3) {
+template<typename ... Tn>
+void test_closure_with_return(Tn ... an) {
+    auto closure = create_closure(an ...);
+    log( "    " << closure() << endl << endl )
+}
+
+char test_function1(char arg1, int arg2, bool arg3) {
     log( "test_function1 " << arg1 << ", " <<  arg2 << ", " << arg3 << endl )
+    return 'A';
 }
 
-void test_function2(const char* arg1, const char* arg2, char arg3) {
+char test_function2(const char* arg1, const char* arg2, char arg3) {
     log( "test_function2 " << arg1 << ", " <<  arg2 << ", " << arg3 << endl )
+    return 'B';
 }
 
-void test_function3() {
+char test_function3() {
     log( "test_function3 " << endl )
+    return 'C';
 }
 
 void test_function4() {
@@ -691,9 +724,10 @@ int main()
 {
     log( endl << "main: begin()" << endl )
 
-    test_closure( &test_function1, 'a', 10, false );
-    test_closure( &test_function2, "test1", "test2", 'b' );
-    test_closure( &test_function3 );
+    test_closure_with_return( &test_function1, 'a', 10, false );
+    test_closure_with_return( &test_function2, "test1", "test2", 'b' );
+    test_closure_with_return( &test_function3 );
+
     test_closure( &test_function4 );
     test_closure( &test_function5, "Testa 3" );
     test_closure( &test_function5, "Testa 4" );
@@ -703,31 +737,72 @@ int main()
 }
 {CODE}
 
-::__Listagem 11:__ Resultado da execução de ''/app/closure_test.cc''::
+Resultado da execução:
+::__Listagem 12:__ Arquivo ''/app/closure_test.cc''::
 {CODE(colors="c")}
 main: begin()
-create_closure 0x00097f5c
+Closure::Closure(_entry=0x0009ff78, PARAMETERS_COUNT=3, PARAMETERS_LENGTH=6, sizeof=8) => 0x00097f64
+Closure::pack_helper(Head=1, address=0x00097f54)
+Closure::pack_helper(Head=4, address=0x00097f55)
+Closure::pack_helper(Head=1, address=0x00097f59)
+create_closure 0x00097f64
+Closure::_unpack_and_run(this=0x0009fef4)
+Closure::unpack_helper(Head=1, address=0x00097f59(0x00097f54), position=5)
+Closure::unpack_helper(Head=4, address=0x00097f55(0x00097f54), position=1)
+Closure::unpack_helper(Head=1, address=0x00097f54(0x00097f54), position=0)
 test_function1 a, 10, 0
+    A
 
-create_closure 0x00097f44
+Closure::~Closure(this=0x0009fef4_entry=0x0009fef4, PARAMETERS_COUNT=3, PARAMETERS_LENGTH=6, sizeof=8)
+Closure::Closure(_entry=0x0009ff74, PARAMETERS_COUNT=3, PARAMETERS_LENGTH=9, sizeof=8) => 0x00097f54
+Closure::pack_helper(Head=4, address=0x00097f44)
+Closure::pack_helper(Head=4, address=0x00097f48)
+Closure::pack_helper(Head=1, address=0x00097f4c)
+create_closure 0x00097f54
+Closure::_unpack_and_run(this=0x0009ff34)
+Closure::unpack_helper(Head=1, address=0x00097f4c(0x00097f44), position=8)
+Closure::unpack_helper(Head=4, address=0x00097f48(0x00097f44), position=4)
+Closure::unpack_helper(Head=4, address=0x00097f44(0x00097f44), position=0)
 test_function2 test1, test2, b
+    B
 
-create_closure 0x00097f2c
+Closure::~Closure(this=0x0009ff34_entry=0x0009ff34, PARAMETERS_COUNT=3, PARAMETERS_LENGTH=9, sizeof=8)
+Closure::Closure(_entry=0x0009fe8c, PARAMETERS_COUNT=0, PARAMETERS_LENGTH=0, sizeof=8) => 0x00097f44
+create_closure 0x00097f44
+Closure::_unpack_and_run(this=0x0009fe84)
 test_function3 
+    C
 
-create_closure 0x00097f14
+Closure::~Closure(this=0x0009fe84_entry=0x0009fe84, PARAMETERS_COUNT=0, PARAMETERS_LENGTH=0, sizeof=8)
+Closure::Closure(_entry=0x0009fe8c, PARAMETERS_COUNT=0, PARAMETERS_LENGTH=0, sizeof=8) => 0x00097f34
+create_closure 0x00097f34
+Closure::_unpack_and_run(this=0x0009fe84)
 test_function4 
+    void
 
-create_closure 0x00097efc
+Closure::~Closure(this=0x0009fe84_entry=0x0009fe84, PARAMETERS_COUNT=0, PARAMETERS_LENGTH=0, sizeof=8)
+Closure::Closure(_entry=0x0009fe8c, PARAMETERS_COUNT=1, PARAMETERS_LENGTH=4, sizeof=8) => 0x00097f24
+Closure::pack_helper(Head=4, address=0x00097f14)
+create_closure 0x00097f24
+Closure::_unpack_and_run(this=0x0009fe84)
+Closure::unpack_helper(Head=4, address=0x00097f14(0x00097f14), position=0)
 test_function5 Testa 3
+    void
 
-create_closure 0x00097ee4
+Closure::~Closure(this=0x0009fe84_entry=0x0009fe84, PARAMETERS_COUNT=1, PARAMETERS_LENGTH=4, sizeof=8)
+Closure::Closure(_entry=0x0009fe8c, PARAMETERS_COUNT=1, PARAMETERS_LENGTH=4, sizeof=8) => 0x00097f14
+Closure::pack_helper(Head=4, address=0x00097f04)
+create_closure 0x00097f14
+Closure::_unpack_and_run(this=0x0009fe84)
+Closure::unpack_helper(Head=4, address=0x00097f04(0x00097f04), position=0)
 test_function5 Testa 4
+    void
 
+Closure::~Closure(this=0x0009fe84_entry=0x0009fe84, PARAMETERS_COUNT=1, PARAMETERS_LENGTH=4, sizeof=8)
 main: exiting()
 {CODE}
 
-::__Listagem 12:__ Trecho de código gerado pelo meta programa, obtido com compilador ''LLVM Clang''::
+::__Listagem 13:__ Trecho de código gerado pelo meta programa, obtido com compilador ''LLVM Clang''::
 {CODE(colors="c")}
 $ clang++ -Xclang -ast-print -fsyntax-only closure_test.cpp > expanded.cpp
 template<> class Closure<char (const char *, const char *, char)> {
@@ -789,7 +864,7 @@ public:
 {CODE}
 
 Agora mostra-se um exemplo de uso de closures e do algoritmo do Guarda.
-::__Listagem 13:__ Arquivo ''/app/closure_guard_test.cc''::
+::__Listagem 14:__ Arquivo ''/app/closure_guard_test.cc''::
 {CODE(colors="c")}
 // EPOS Synchronizer Component Test Program
 
@@ -824,7 +899,7 @@ int main()
 }
 {CODE}
 
-::__Listagem 14:__ Resultado da execução de ''/app/closure_guard_test.cc''::
+::__Listagem 15:__ Resultado da execução de ''/app/closure_guard_test.cc''::
 {CODE(colors="c")}
 main: begin()
 char1=A, text1=Test 1, text2=Test 2, bool1=1, bool2=0, text3=Test 3, int1=10
@@ -837,7 +912,7 @@ Como elementos da guarda são elementos de lista simples, com apenas um nível d
 
 No entanto, foi necessário adicionar uma relação de amizade entre a classe Singly_Linked e a classe Guard, para que as operações CAS e FAS dos métodos vouch e clear da classe guardam possam acessar diretamente o atributo _next do elemento de lista. Isso porque, não é possível efetuar as operações CAS e FAS utilizando getters.     
 
-::__Listagem 15:__ Link contendo a seção crítica::
+::__Listagem 16:__ Link contendo a seção crítica::
 {CODE(colors="c")}
    // Simple List Element
    template<typename T>
@@ -865,7 +940,7 @@ No entanto, foi necessário adicionar uma relação de amizade entre a classe Si
 !!!Guard [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 O código onde da classe Guard, definida no arquivo utility/guard.h, é mostrado na Listagem 7. Essa classe implementa a estrutura da guarda descrita no capítulo de fundamentação teórica. 
 
-::__Listagem 16:__ Definição da interface do Guarda::
+::__Listagem 17:__ Definição da interface do Guarda::
 {CODE(colors="c")}
 class Guard
 {
@@ -891,7 +966,7 @@ private:
 {CODE}
 Além das operações vouch, clear e a operação de criação da guarda (setup), já apresentadas no capítulo de fundamentação teórica, a classe guarda implementa uma nova operação, chamada de submit. Essa operação encapsula o protocolo de submissão de seções críticas à guarda e pode ser utilizada por threads para a delegação da execução de seções críticas. A Listagem 8 apresenta o construtor e destrutor da guarda, assim como a implementação do método submit().
 
-::__Listagem 17:__ Nova convenção para a submissão de requisições de execução de seções críticas::
+::__Listagem 18:__ Nova convenção para a submissão de requisições de execução de seções críticas::
 {CODE(colors="c")}
 // Object Methods
 Guard::Guard(): _head(0), _tail(0)
@@ -919,7 +994,7 @@ A implementação dos métodos vouch(...) e clear são apresentadas na Listagem 
 
 Uma adição importante foi a deleção de seções críticas que já foram executadas. Essa deleção deve geralmente ocorrer durante a execução do método clear. No entanto, existe uma situação excepcional, que pode ocorrer quando a guarda possui apenas um elementos e operações vouch e clear executam simultaneamente. Nesse caso, a passagem do papel de sequencer da thread executando clear para a thread executando vouch. Quando isso acontecer, o sequencer executando vouch precisará também deletar o elemento da guarda previamente removido da lista pela operação clear.
 
-::__Listagem 18:__ Implementações de vouch() e clear()::
+::__Listagem 19:__ Implementações de vouch() e clear()::
 {CODE(colors="c")}
 Guard::Element * Guard::vouch(Element * item)
 {
@@ -957,7 +1032,7 @@ O código de FAS foi inspirado no código das outras operações atômicas e nas
 
 Além disso, assim como ocorre com as outras operações atômicas, foi adicionada uma implementação em software, independente de arquitetura, no arquivo /include/cpu.h. No entanto, como essa operação não possui suporte de hardware, ela não deve provê garantias de atomicidade.
 
-::__Listagem 19:__ Implementação do FAS::
+::__Listagem 20:__ Implementação do FAS::
 {CODE(colors="c")}
 // /include/archtecture/ia_32/cpu.h
 template<typename T>
@@ -976,10 +1051,10 @@ static int fas(volatile int & value, volatile int & replacement) {
 {CODE}
 
 !!!Futures [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
-Das 2 implementações distintas de futures apresentadas, realiza-se a implementação do modelo de future bloqueante, apresentado no artigo referência {DIV(type="span")}[{DIV}[#Refer_ncias_|2]]. Como a implementação atual do algoritmo do guarda não suporta passagens de parâmetros variádicos, manualmente fez-se a implementação dos métodos para que aceitem vários parâmetros com meta programação. Ver a seção [#Closure_Metaprogramada_|Closure Metaprogramada]. 
+Das 2 implementações distintas de futures apresentadas, realiza-se a implementação do modelo de future bloqueante, apresentado no artigo referência {DIV(type="span")}[{DIV}[#Refer_ncias_|2]]. Como a implementação atual do algoritmo do guarda não suporta passagens de parâmetros variádicos, fez-se a implementação dos métodos para que aceitem vários parâmetros com meta programação. Ver a seção [#Closure_Metaprogramada_|Closure Metaprogramada]. 
 
 Uma vez que a future é resolvida, i.e., seu método ''resolve()'' é chamado e seu valor é definido, ele não pode ser mais alterado, e qualquer um que tentar obter o valor da future com ''get_value()'' não precisará mais bloquear, pois o valor não é indefinido. Futures são implementadas totalmente no arquivo header ''.h'' por que são meta classes que são instanciadas pelo compilador e seu código é gerado somente caso alguém crie uma especialização com algum tipo de dado.
-::__Listagem 20:__ Implementação de future em ''/include/utility/future.h''::
+::__Listagem 21:__ Implementação de future em ''/include/utility/future.h''::
 {CODE(colors="c")}
 // EPOS Guard Component Declarations
 
@@ -1039,7 +1114,7 @@ __END_UTIL
 {CODE}
 
 Agora ve-sê um simples programa que demonstra o uso de futures:
-::__Listagem 21:__ Arquivo de Teste ''/app/future_simple_test.cc''::
+::__Listagem 22:__ Arquivo de Teste ''/app/future_simple_test.cc''::
 {CODE(colors="c")}
 // EPOS Synchronizer Component Test Program
 
@@ -1087,7 +1162,7 @@ int main()
 }
 {CODE}
 
-::__Listagem 22:__ Resultado da execução de ''/app/future_simple_test.cc''::
+::__Listagem 23:__ Resultado da execução de ''/app/future_simple_test.cc''::
 {CODE(colors="c")}
 Starting main application...
 Future(_is_resolved=0, _condition=0) => 0x00097f5c
@@ -1103,7 +1178,7 @@ Exiting main application...
 {CODE}
 
 A seguir vê-se um simples exemplo de uso de futures. Nesse exemplo, evolve-se varias classes to EPOS, fazendo seu uso em conjunto com o algoritmo do guarda.
-::__Listagem 23:__ Arquivo de Teste ''/app/future_guard_test.cc''::
+::__Listagem 24:__ Arquivo de Teste ''/app/future_guard_test.cc''::
 {CODE(colors="c")}
 // EPOS Synchronizer Component Test Program
 
@@ -1161,7 +1236,7 @@ int main()
 }
 {CODE}
 
-::__Listagem 23:__ Resultado da execução de ''/app/future_guard_test.cc''::
+::__Listagem 25:__ Resultado da execução de ''/app/future_guard_test.cc''::
 {CODE(colors="c")}
 Starting main application...
 functionA ()
@@ -1189,7 +1264,7 @@ Todos os testes a seguir foram realizados utilizando ''static const unsigned int
 !!!fas_test.cc [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Aqui testa-se a implementação nova de FAS feita, repetidamente fazendo a troca de variáveis em duas thread executando em CPUs diferentes.
 
-::__Listagem 24:__ Arquivo de Teste ''/app/fas_test.cc''::
+::__Listagem 26:__ Arquivo de Teste ''/app/fas_test.cc''::
 {CODE(colors="c")}
 // EPOS Synchronizer Component Test Program
 
@@ -1262,7 +1337,7 @@ int main()
 }
 {CODE}
 
-::__Listagem 25:__ Resultado da execução de ''/app/fas_test.cc''::
+::__Listagem 27:__ Resultado da execução de ''/app/fas_test.cc''::
 {CODE(colors="c")}
 <1>: MMU is disabled! :<1>
 <2>: MMU is disabled! :<2>
@@ -1281,7 +1356,7 @@ int main()
 !!!count_sync_guard.cc [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Neste teste, utiliza-se a implementação do guarda para controlar o acesso a seção crítica ''increment_counter()'', que simplesmente soma um contador. No final da execução, espera-se que resultado da conta seja precisamente o número de iterações feita.
 
-::__Listagem 26:__ Arquivo de teste ''/app/count_sync_guard.cc''::
+::__Listagem 28:__ Arquivo de teste ''/app/count_sync_guard.cc''::
 {CODE(colors="c")}
 // EPOS Synchronizer Component Test Program
 
@@ -1388,7 +1463,7 @@ int main()
 }
 {CODE}
 
-::__Listagem 127:__ Resultado do teste ''/app/fas_test.cc''::
+::__Listagem 29:__ Resultado do teste ''/app/fas_test.cc''::
 {CODE(colors="c")}
 <1>: MMU is disabled! :<1>
 <2>: MMU is disabled! :<2>
@@ -1409,7 +1484,7 @@ int main()
 !!!count_sync_uncoordinated.cc [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 O que se espera deste teste, ao contrário do teste anterior, é que a contagem final de errada, pois nenhuma primitiva de sincronização é utilizada, assim tem-se que a operação de incremento, que não é atômica, seja interrompida pelo metade, e no fim o resultado fique errado.
 
-::__Listagem 128:__ Arquivo de teste ''/app/count_sync_uncoordinated.cc''::
+::__Listagem 30:__ Arquivo de teste ''/app/count_sync_uncoordinated.cc''::
 {CODE(colors="c")}
 // EPOS Synchronizer Component Test Program
 
@@ -1472,7 +1547,7 @@ int main()
 }
 {CODE}
 
-::__Listagem 29:__ Resultado do teste ''/app/count_sync_uncoordinated.cc''::
+::__Listagem 31:__ Resultado do teste ''/app/count_sync_uncoordinated.cc''::
 {CODE(colors="c")}
 <1>: MMU is disabled! :<1>
 <2>: MMU is disabled! :<2>
@@ -1577,7 +1652,7 @@ int main()
 !!!count_sync_semaphore.cc [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Neste teste, utiliza-se os mecanismo de sincronização do semáforo, e ao contrário do teste anterior ''count_sync_uncoordinated.cc'', deste teste espera-se que a contagem seja correta, pois utiliza-se o mecanismo de sincronização do semáforo para garantir a atomicidade da operação de adição.
 
-::__Listagem 130:__ Arquivo de teste ''/app/count_sync_semaphore.cc''::
+::__Listagem 32:__ Arquivo de teste ''/app/count_sync_semaphore.cc''::
 {CODE(colors="c")}
 // EPOS Synchronizer Component Test Program
 
@@ -1631,7 +1706,7 @@ int main()
 }
 {CODE}
 
-::__Listagem 31:__ Resultado do teste ''/app/count_sync_semaphore.cc''::
+::__Listagem 33:__ Resultado do teste ''/app/count_sync_semaphore.cc''::
 {CODE(colors="c")}
 <1>: MMU is disabled! :<1>
 <2>: MMU is disabled! :<2>
@@ -1735,6 +1810,14 @@ int main()
 # https://stackoverflow.com/questions/29668447/c-independent-static-variable-for-each-object-inside-a-method
 # http://www.cplusplus.com/forum/general/142258/
 # https://stackoverflow.com/questions/3778450/is-local-static-variable-per-instance-or-per-class
+# https://stackoverflow.com/questions/347358/inheriting-constructors
+# https://stackoverflow.com/questions/8887864/template-base-constructor-call-in-member-initialization-list-error
+# https://stackoverflow.com/questions/25064515/how-to-call-constructor-of-a-template-base-class-in-a-template-derived-class
+# https://stackoverflow.com/questions/10282787/calling-the-base-class-constructor-from-the-derived-class-constructor
+# https://stackoverflow.com/questions/120876/what-are-the-rules-for-calling-the-superclass-constructor
+# https://stackoverflow.com/questions/12464633/is-it-safe-to-privately-inherit-from-a-class-with-a-non-virtual-destructor
+# https://stackoverflow.com/questions/2004820/inherit-interfaces-which-share-a-method-name
+# https://stackoverflow.com/questions/10535667/does-it-make-any-sense-to-use-inline-keyword-with-templates
 
 !!Referências  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 #Stefan Reif and Wolfgang Schröder-Preikschat, "Predictable Synchronisation Algorithms for Asynchronous Critical Sections,” Friedrich-Alexander-Universität Erlangen-Nürnberg, Dept. of Computer Science, Technical Reports, CS-2018-03, February 2018.
