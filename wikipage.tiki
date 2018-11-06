@@ -976,8 +976,7 @@ Este programa é executado em tempo de compilação, e para uma dada entrada, co
 {DIV(type="pre" bg="#CCFFFF")}~np~
 $ clang++ -Xclang -ast-print -fsyntax-only \
   parameter_pack_sequencer_size_generator.cpp > expanded.cpp
-template <int AccumulatedSize, typename Tn, int ...GeneratedSequence>
-struct GeneratorOfIntegerSequence
+
 template<> struct GeneratorOfIntegerSequence<
             0, int (char, int, char), <>>
 {
@@ -1260,6 +1259,7 @@ Dada a função ''test_function2'' do exemplo anterior como tendo a seguinte ass
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 $ clang++ -Xclang -ast-print -fsyntax-only closure_test.cpp > expanded.cpp
+
 template<> class Closure<char (const char *, const char *, char)>
 {
 public:
@@ -1291,7 +1291,6 @@ public:
     }
 
 private:
-    template <int ...Sequence> char _run(MetaSequenceOfIntegers<Sequence...>);
     template<> char _run<<0, 8, 16>>(MetaSequenceOfIntegers<0, 8, 16>)
     {
         return this->_entry(
@@ -1301,7 +1300,6 @@ private:
         );
     }
 
-    template <int position, typename T> T unpack_helper();
     template<> const char *unpack_helper<0, const char *>()
     {
         return *reinterpret_cast<const char **>(this->_parameters + 0);
@@ -1318,8 +1316,6 @@ private:
     }
 
 public:
-    template <typename Head, typename ...Tail> static void pack_helper(
-            char *pointer_address, Head head, Tail ...tail);
     template<> static void pack_helper<const char *, <const char *, char>>(
                 char *pointer_address, const char *head, const char *tail, char tail)
     {
