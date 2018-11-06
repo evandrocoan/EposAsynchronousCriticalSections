@@ -797,6 +797,7 @@ void IC::int_not(const Interrupt_Id & i)
 }
 
 // Exception and fault handlers
+// https://wiki.osdev.org/Exceptions
 void IC::exc_not(Reg32 eip, Reg32 cs, Reg32 eflags, Reg32 error)
 {
     db<IC,Machine>(WRN) << "IC::exc_not(cs=" << hex << cs << ",ip=" << reinterpret_cast<void *>(eip) << ",fl=" << eflags << ")" << endl;
@@ -804,6 +805,41 @@ void IC::exc_not(Reg32 eip, Reg32 cs, Reg32 eflags, Reg32 error)
     _exit(-1);
 }
 
+/**
+ * Page Fault - https://wiki.osdev.org/Exceptions#Page_Fault
+ *
+ * A Page Fault occurs when:
+ * 1. A page directory or table entry is not present in physical memory.
+ * 2. Attempting to load the instruction TLB with a translation for a non-executable page.
+ * 3. A protection check (privileges, read/write) failed.
+ * 4. A reserved bit in the page directory or table entries is set to 1.
+ * 5. The saved instruction pointer points to the instruction which caused the exception.
+ *
+ * Error code
+ * The Page Fault sets an error code:
+ *  31              4               0
+ * +---+--  --+---+---+---+---+---+---+
+ * |   Reserved   | I | R | U | W | P |
+ * +---+--  --+---+---+---+---+---+---+
+ *
+ *    Length  Name              Description
+ *
+ * P  1 bit  Present            When set, the page fault was caused by a page-protection violation.
+ *                              When not set, it was caused by a non-present page.
+ *
+ * W  1 bit  Write              When set, the page fault was caused by a page write. When not set,
+ *                              it was caused by a page read.
+ *
+ * U  1 bit  User               When set, the page fault was caused while CPL = 3. This does not
+ *                              necessarily mean that the page fault was a privilege violation.
+ *
+ * R  1 bit  Reserved write     When set, the page fault was caused by writing a 1 in a reserved field.
+ *
+ * I  1 bit  Instruction Fetch  When set, the page fault was caused by an instruction fetch.
+ *
+ * In addition, it sets the value of the CR2 register to the virtual address which caused the Page
+ * Fault.
+ */
 void IC::exc_pf(Reg32 eip, Reg32 cs, Reg32 eflags, Reg32 error)
 {
     register Reg32 fr = CPU::fr();
@@ -828,6 +864,7 @@ void IC::exc_pf(Reg32 eip, Reg32 cs, Reg32 eflags, Reg32 error)
     _exit(-1);
 }
 
+// https://wiki.osdev.org/Exceptions
 void IC::exc_gpf(Reg32 eip, Reg32 cs, Reg32 eflags, Reg32 error)
 {
     db<IC,Machine>(WRN) << "IC::exc_gpf(cs=" << hex << cs << ",ip=" << reinterpret_cast<void *>(eip) << ",fl=" << eflags << ")" << endl;
@@ -835,6 +872,7 @@ void IC::exc_gpf(Reg32 eip, Reg32 cs, Reg32 eflags, Reg32 error)
     _exit(-1);
 }
 
+// https://wiki.osdev.org/Exceptions
 void IC::exc_fpu(Reg32 eip, Reg32 cs, Reg32 eflags, Reg32 error)
 {
     db<IC,Machine>(WRN) << "IC::exc_fpu(cs=" << hex << cs << ",ip=" << reinterpret_cast<void *>(eip) << ",fl=" << eflags << ")" << endl;
