@@ -13,13 +13,13 @@ template<int AccumulatedSize, typename Tn, int... GeneratedSequence>
 struct GeneratorOfIntegerSequence;
 
 template<
-            int AccumulatedSize, 
-            typename Grouper, 
-            typename Head, 
-            typename... Tail, 
+            int AccumulatedSize,
+            typename Grouper,
+            typename Head,
+            typename... Tail,
             int... GeneratedSequence
         >
-struct GeneratorOfIntegerSequence< 
+struct GeneratorOfIntegerSequence<
         AccumulatedSize, Grouper( Head, Tail... ), GeneratedSequence... >
 {
     typedef typename GeneratorOfIntegerSequence
