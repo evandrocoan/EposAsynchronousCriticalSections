@@ -8,11 +8,11 @@
 __BEGIN_UTIL
 
 template<typename FutureType>
-class Future 
+class Future
 {
 public:
     Future(): _condition(), _is_resolved() {
-        db<Synchronizer>(WRN)   << "Future(_is_resolved=" << _is_resolved 
+        db<Synchronizer>(WRN)   << "Future(_is_resolved=" << _is_resolved
                                 << ", _condition=" << _condition.size()
                                 << ") => " << this << endl;
     }
@@ -22,22 +22,23 @@ public:
     }
 
     FutureType get_value() {
-        db<Synchronizer>(WRN) << "Future::get_value(this=" << this 
-                              << " _is_resolved=" << _is_resolved 
+        db<Synchronizer>(WRN) << "Future::get_value(this=" << this
+                              << " _is_resolved=" << _is_resolved
                               << " _condition=" << _condition.size()
                               <<  ")" << endl;
         if(!_is_resolved) _condition.wait();
         return _value;
     }
 
-    void resolve(FutureType value) { 
-        db<Synchronizer>(WRN) << "Future::resolve(this=" << this 
-                              << " _is_resolved=" << _is_resolved 
+    void resolve(FutureType value) {
+        db<Synchronizer>(WRN) << "Future::resolve(this=" << this
+                              << " _is_resolved=" << _is_resolved
                               << " _condition=" << _condition.size()
                               <<  ")" << endl;
         assert(!_is_resolved);
-        // If `resolve()` was called and the instruction pointer got until here, and the thread is
-        // unscheduled, and another thread call `resolve()`, then, the `assert` above will not work.
+        // If `resolve()` was called and the instruction pointer got until here,
+        // and the thread is unscheduled, and another thread call `resolve()`,
+        // then, the `assert` above will not work.
         _value = value;
         _is_resolved = true;
         _condition.broadcast();

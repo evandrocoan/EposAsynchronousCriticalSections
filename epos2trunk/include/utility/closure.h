@@ -12,11 +12,22 @@ struct MetaSequenceOfIntegers { };
 template<int AccumulatedSize, typename Tn, int... GeneratedSequence>
 struct GeneratorOfIntegerSequence;
 
-template<int AccumulatedSize, typename Grouper, typename Head, typename... Tail, int... GeneratedSequence>
-struct GeneratorOfIntegerSequence< AccumulatedSize, Grouper( Head, Tail... ), GeneratedSequence... >
+template<
+            int AccumulatedSize, 
+            typename Grouper, 
+            typename Head, 
+            typename... Tail, 
+            int... GeneratedSequence
+        >
+struct GeneratorOfIntegerSequence< 
+        AccumulatedSize, Grouper( Head, Tail... ), GeneratedSequence... >
 {
     typedef typename GeneratorOfIntegerSequence
-            < AccumulatedSize + sizeof(Head), Grouper( Tail... ), GeneratedSequence..., AccumulatedSize
+            <
+                AccumulatedSize + sizeof(Head),
+                Grouper( Tail... ),
+                GeneratedSequence...,
+                AccumulatedSize
             >::type type;
 };
 
@@ -45,17 +56,21 @@ private:
 public:
     Closure(Function _entry, Tn ... an): _entry(_entry)
     {
-        db<Synchronizer>(TRC) << "Closure::Closure(_entry=" << &_entry << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
-                << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH << ", sizeof=" << sizeof(*this) << ") => " << this << endl;
+        db<Synchronizer>(TRC) << "Closure::Closure(_entry=" << &_entry
+                << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
+                << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH
+                << ", sizeof=" << sizeof(*this) << ") => " << this << endl;
 
-        if(PARAMETERS_LENGTH) 
+        if(PARAMETERS_LENGTH)
             _parameters = new char[PARAMETERS_LENGTH];
         pack_helper( _parameters, an ... );
     }
 
     ~Closure() {
-        db<Synchronizer>(TRC) << "Closure::~Closure(this=" << this << "_entry=" << &_entry << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
-                << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH << ", sizeof=" << sizeof(*this) << ")" << endl;
+        db<Synchronizer>(TRC) << "Closure::~Closure(this=" << this
+                << ", _entry=" << &_entry << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
+                << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH
+                << ", sizeof=" << sizeof(*this) << ")" << endl;
 
         if(PARAMETERS_LENGTH)
             delete _parameters;
@@ -82,7 +97,7 @@ private:
     {
         db<Synchronizer>(TRC) << "Closure::unpack_helper(Head=" << sizeof( T )
                 << ", address=" << reinterpret_cast<int *>(_parameters + position)
-                << "(" << reinterpret_cast<int *>(_parameters) << ")" 
+                << "(" << reinterpret_cast<int *>(_parameters) << ")"
                 << ", position=" << position << ")" << endl;
 
         return *reinterpret_cast<T *>( _parameters + position );

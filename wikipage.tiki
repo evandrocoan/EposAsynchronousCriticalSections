@@ -199,7 +199,7 @@ Element * clear() {
         CAS(_tail , item, NULL); // C2
     CAS(_head, item, next);  // C3
     return next ;
-} 
+}
 ~/np~{DIV}
 {DIV}^
 Até agora, o algoritmo tratou apenas de seções críticas assíncronas, onde o código das threads não depende de dados calculados nas seções críticas, mas esse nem sempre é o caso. Dessa forma, o algoritmo da guarda pode ser estendido para lidar também com seções críticas síncronas. Para isso, são adicionados mecanismos como ''futures'' {DIV(type="span")}[{DIV}[#Refer_ncias_|14]], que permitem a comunicação de dados entre threads e suas seções críticas, de modo a satisfazer dependências unilaterais de dados.
@@ -471,16 +471,16 @@ Rebooting the machine ...
 Código disponível em svn:
 # https://github.com/evandrocoan/predictable_synchronisation_algorithms_for_asynchronous_critical_sections
 # https://epos.lisha.ufsc.br/svn/makers/predictable_synchronisation_algorithms_for_asynchronous_critical_sections
-Para a implementação do algoritmo das guardas no EPOS foram definidas três novas classes, que representam as principais abstrações envolvidas na versão básica do algoritmo, seções críticas, elementos de guarda e a guarda em si. Essas classes encapsulam toda a lógica do algoritmo e fornecem interfaces para a delegação da execução de seções críticas por threads arbitrárias. 
+Para a implementação do algoritmo das guardas no EPOS foram definidas três novas classes, que representam as principais abstrações envolvidas na versão básica do algoritmo, seções críticas, elementos de guarda e a guarda em si. Essas classes encapsulam toda a lógica do algoritmo e fornecem interfaces para a delegação da execução de seções críticas por threads arbitrárias.
 
 Neste capítulo será descrito como ocorreu o processo de implementação das novas classes que implementam o algoritmo das guardas, assim como os testes realizados para validação da implementação.
 
 !!!Critical_Section [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
-Assim como ocorre com os algoritmos de sincronização tradicionais, uma das bases dos algoritmos de sincronização baseados em delegação é o conceito de seções críticas. Dessa forma, foi definida uma nova classe para representar essas entidades. 
+Assim como ocorre com os algoritmos de sincronização tradicionais, uma das bases dos algoritmos de sincronização baseados em delegação é o conceito de seções críticas. Dessa forma, foi definida uma nova classe para representar essas entidades.
 
 A classe que representa seções críticas  foi criada com base na classe Function_Handler e recebeu o nome de ''Critical_Section''. Essa classe possui apenas dois atributos, _handler e _link. O atributo _handler representa a função relacionada à seção crítica e o atributo _link representa um elemento de lista simples. Além desses dois atributos, a classe ''Critical_Section'' também implementa o método público run(), que é utilizado pelo sequencer para executar uma seção crítica, que na verdade é o mesmo trabalho realizado pelo operator “()”, que deixava o código pouco intuitivo. A Listagem 5 exibe o código da classe ''Critical_Section''.
 
-O construtor da classe ''Critical_Section'' recebe um objeto representando uma função, que deve ser compatível com o tipo Function, definido no arquivo ''handler.h'', como parâmetro. Além disso, o construtor cria o _link relativo à seção crítica sendo construída, que será utilizado para adição e remoção de seções críticas de estruturas de dados, da mesma forma como acontece com objetos da classe Thread. 
+O construtor da classe ''Critical_Section'' recebe um objeto representando uma função, que deve ser compatível com o tipo Function, definido no arquivo ''handler.h'', como parâmetro. Além disso, o construtor cria o _link relativo à seção crítica sendo construída, que será utilizado para adição e remoção de seções críticas de estruturas de dados, da mesma forma como acontece com objetos da classe Thread.
 ^::__Listagem 13:__ Seção crítica::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
@@ -507,9 +507,9 @@ private:
 Exemplos da utilização da classe ''Critical_Section'' durante a submissão de seções críticas à guarda estão na seção sobre os testes realizados.
 
 !!!Element [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
-Como elementos da guarda são elementos de lista simples, com apenas um nível de encadeamento, optou-se por utilizar a classe List_Elements::Singly_Linked, Listagem 6, definida no arquivo ''list.h'', para representá-los. 
+Como elementos da guarda são elementos de lista simples, com apenas um nível de encadeamento, optou-se por utilizar a classe List_Elements::Singly_Linked, Listagem 6, definida no arquivo ''list.h'', para representá-los.
 
-No entanto, foi necessário adicionar uma relação de amizade entre a classe Singly_Linked e a classe Guard, para que as operações CAS e FAS dos métodos vouch e clear da classe guardam possam acessar diretamente o atributo _next do elemento de lista. Isso porque, não é possível efetuar as operações CAS e FAS utilizando getters.     
+No entanto, foi necessário adicionar uma relação de amizade entre a classe Singly_Linked e a classe Guard, para que as operações CAS e FAS dos métodos vouch e clear da classe guardam possam acessar diretamente o atributo _next do elemento de lista. Isso porque, não é possível efetuar as operações CAS e FAS utilizando getters.
 ^::__Listagem 14:__ Link contendo a seção crítica::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
@@ -538,7 +538,7 @@ private:
 {DIV}^
 
 !!!Guarda [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
-O código onde da classe Guard, definida no arquivo ''utility/guard.h'', é mostrado na Listagem 7. Essa classe implementa a estrutura da guarda descrita no capítulo de fundamentação teórica. 
+O código onde da classe Guard, definida no arquivo ''utility/guard.h'', é mostrado na Listagem 7. Essa classe implementa a estrutura da guarda descrita no capítulo de fundamentação teórica.
 ^::__Listagem 15:__ Definição da interface do Guarda::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
@@ -588,11 +588,11 @@ void Guard::submit(Closure * cs)
    if (cur != NULL) do {
        cur->object()->run();
        cur = clear();
-   } while (cur != NULL);   
+   } while (cur != NULL);
 }
 ~/np~{DIV}
 {DIV}^
-A implementação dos métodos vouch(...) e clear são apresentadas na Listagem 8. Essas implementações não diferem muito dos códigos apresentados no capítulo de fundamentação teórica, lembrando que a operação vouch é responsável por adicionar novos elementos à guarda e sinalizar threads quando essas precisarem assumir o papel de sequencer, e a operação clear é responsável pela remoção de elementos da guarda e por sinalizar ao sequencer quando a guarda estiver vazia. 
+A implementação dos métodos vouch(...) e clear são apresentadas na Listagem 8. Essas implementações não diferem muito dos códigos apresentados no capítulo de fundamentação teórica, lembrando que a operação vouch é responsável por adicionar novos elementos à guarda e sinalizar threads quando essas precisarem assumir o papel de sequencer, e a operação clear é responsável pela remoção de elementos da guarda e por sinalizar ao sequencer quando a guarda estiver vazia.
 
 Uma adição importante foi a deleção de seções críticas que já foram executadas. Essa deleção deve geralmente ocorrer durante a execução do método clear. No entanto, existe uma situação excepcional, que pode ocorrer quando a guarda possui apenas um elementos e operações vouch e clear executam simultaneamente. Nesse caso, a passagem do papel de sequencer da thread executando clear para a thread executando vouch. Quando isso acontecer, o sequencer executando vouch precisará também deletar o elemento da guarda previamente removido da lista pela operação clear.
 ^::__Listagem 17:__ Implementações de vouch() e clear()::
@@ -600,7 +600,9 @@ Uma adição importante foi a deleção de seções críticas que já foram exec
 {DIV(type="pre" bg="#CCFFFF")}~np~
 Guard::Element * Guard::vouch(Element * item)
 {
-   db<Synchronizer>(TRC) << "Guard::vouch(this=" << this << " head= " << _head << " tail= " << _tail <<  ")" << endl;
+   db<Synchronizer>(TRC) << "Guard::vouch(this=" << this << " head= " << _head
+            << " tail= " << _tail <<  ")" << endl;
+
    item->next(NULL);
    Element * last = CPU::fas(_tail, item);
    if (last){
@@ -608,13 +610,15 @@ Guard::Element * Guard::vouch(Element * item)
            return NULL;
        delete item->object();
    }
-   _head = item;       
+   _head = item;
    return item;
 }
 
 Guard::Element * Guard::clear()
 {
-   db<Synchronizer>(TRC) << "Guard::clear(this=" << this << " head= " << _head << " tail= " << _tail <<  ")" << endl;
+   db<Synchronizer>(TRC) << "Guard::clear(this=" << this << " head= " << _head
+            << " tail= " << _tail <<  ")" << endl;
+
    Element * item = _head;
    Element * next = CPU::fas(item->_next, reinterpret_cast<Element *>(DONE));
    bool mine = true;
@@ -623,7 +627,7 @@ Guard::Element * Guard::clear()
    CPU::cas(_head, item, next);
    if (mine)
        delete item->object();
-   return next;   
+   return next;
 }
 ~/np~{DIV}
 {DIV}^
@@ -639,7 +643,7 @@ Além disso, assim como ocorre com as outras operações atômicas, foi adiciona
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // /include/archtecture/ia_32/cpu.h
 template<typename T>
-static T fas(volatile T & value, volatile T replacement) 
+static T fas(volatile T & value, volatile T replacement)
 {
     ASM("lock xchg %0, %2" : "=a"(replacement) : "a"(replacement), "m"(value) : "memory");
     return replacement;
@@ -655,7 +659,7 @@ static int fas(volatile int & value, volatile int & replacement) {
 {DIV}^
 
 !!!Futures [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
-Das 2 implementações distintas de futures apresentadas, realiza-se a implementação do modelo de future bloqueante, apresentado no artigo referência {DIV(type="span")}[{DIV}[#Refer_ncias_|2]]. Como a implementação atual do algoritmo do guarda não suporta passagens de parâmetros variádicos, fez-se a implementação dos métodos para que aceitem vários parâmetros com meta programação. Ver a seção [#Closure_Metaprogramada_|Closure Metaprogramada]. 
+Das 2 implementações distintas de futures apresentadas, realiza-se a implementação do modelo de future bloqueante, apresentado no artigo referência {DIV(type="span")}[{DIV}[#Refer_ncias_|2]]. Como a implementação atual do algoritmo do guarda não suporta passagens de parâmetros variádicos, fez-se a implementação dos métodos para que aceitem vários parâmetros com meta programação. Ver a seção [#Closure_Metaprogramada_|Closure Metaprogramada].
 
 Uma vez que a future é resolvida, i.e., seu método ''resolve()'' é chamado e seu valor é definido, ele não pode ser mais alterado, e qualquer um que tentar obter o valor da future com ''get_value()'' não precisará mais bloquear, pois o valor não é indefinido. Futures são implementadas totalmente no arquivo header ''.h'' por que são meta classes que são instanciadas pelo compilador e seu código é gerado somente caso alguém crie uma especialização com algum tipo de dado.
 ^::__Listagem 19:__ Implementação de future em ''/include/utility/future.h''::
@@ -671,11 +675,11 @@ Uma vez que a future é resolvida, i.e., seu método ''resolve()'' é chamado e 
 __BEGIN_UTIL
 
 template<typename FutureType>
-class Future 
+class Future
 {
 public:
     Future(): _condition(), _is_resolved() {
-        db<Synchronizer>(WRN)   << "Future(_is_resolved=" << _is_resolved 
+        db<Synchronizer>(WRN)   << "Future(_is_resolved=" << _is_resolved
                                 << ", _condition=" << _condition.size()
                                 << ") => " << this << endl;
     }
@@ -685,23 +689,23 @@ public:
     }
 
     FutureType get_value() {
-        db<Synchronizer>(WRN) << "Future::get_value(this=" << this 
-                              << " _is_resolved=" << _is_resolved 
+        db<Synchronizer>(WRN) << "Future::get_value(this=" << this
+                              << " _is_resolved=" << _is_resolved
                               << " _condition=" << _condition.size()
                               <<  ")" << endl;
         if(!_is_resolved) _condition.wait();
         return _value;
     }
 
-    void resolve(FutureType value) { 
-        db<Synchronizer>(WRN) << "Future::resolve(this=" << this 
-                              << " _is_resolved=" << _is_resolved 
+    void resolve(FutureType value) {
+        db<Synchronizer>(WRN) << "Future::resolve(this=" << this
+                              << " _is_resolved=" << _is_resolved
                               << " _condition=" << _condition.size()
                               <<  ")" << endl;
         assert(!_is_resolved);
-        // If `resolve()` was called and the instruction pointer got until here, and the thread
-        // is unscheduled, and another thread call `resolve()`, then, the `assert` above will 
-        // not work.
+        // If `resolve()` was called and the instruction pointer got until here,
+        // and the thread is unscheduled, and another thread call `resolve()`,
+        // then, the `assert` above will not work.
         _value = value;
         _is_resolved = true;
         _condition.broadcast();
@@ -732,7 +736,7 @@ Agora ve-sê um simples programa que demonstra o uso de futures:
 using namespace EPOS;
 Semaphore display_lock;
 
-// #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
+// #define log(arg) display_lock.p(); db<Synchronizer>(WRN) << arg; display_lock.v();
 #define log(argument) db<Synchronizer>(WRN) << argument;
 
 int producerFunction(Future<int>* future) {
@@ -802,7 +806,7 @@ static volatile int counter = 0;
 Guard guard;
 Semaphore display_lock;
 
-// #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
+// #define log(arg) display_lock.p(); db<Synchronizer>(WRN) << arg; display_lock.v();
 #define log(argument) db<Synchronizer>(WRN) << argument;
 
 void increment_counter(Future<int>* future) {
@@ -880,22 +884,25 @@ class Critical_Section_Base
 
 public:
     Critical_Section_Base(): _link(this) {
-        db<Synchronizer>(TRC) << "Critical_Section_Base(_link=" << &_link << ") => " << this << endl;
+        db<Synchronizer>(TRC) << "Critical_Section_Base(_link=" << &_link
+                << ") => " << this << endl;
     }
 
-    /// This must to be virtual otherwise the derived classes objects destructor method would not be
-    /// called when accessed by a base class pointer.
+    /// This must to be virtual otherwise the derived classes objects destructor
+    /// method would not be called when accessed by a base class pointer.
     virtual ~Critical_Section_Base() {
-        db<Synchronizer>(TRC) << "~Critical_Section_Base(this=" << this << " _link=" << &_link << ")" << endl;
+        db<Synchronizer>(TRC) << "~Critical_Section_Base(this=" << this
+                << " _link=" << &_link << ")" << endl;
     }
 
-    /// Returns void because the base class Critical_Section_Base() cannot be a template class, as
-    /// it is general interface for all Closures used on the Guard algorithm. Also, it does not make
-    /// sense to return something from the closure when in its code is ran by the sequencer on
-    /// another thread, detached from the original code.
+    /// Returns void because the base class Critical_Section_Base() cannot be a
+    /// template class, as it is general interface for all Closures used on the
+    /// Guard algorithm. Also, it does not make sense to return something from
+    /// the closure when in its code is ran by the sequencer on another thread,
+    /// detached from the original code.
     ///
-    /// This must to be virtual otherwise the derived classes objects run() method would not be
-    /// called when accessed by a base class pointer.
+    /// This must to be virtual otherwise the derived classes objects run()
+    /// method would not be called when accessed by a base class pointer.
     virtual void start() = 0;
 
 private:
@@ -904,7 +911,7 @@ private:
 };
 ~/np~{DIV}
 {DIV}^
-A implementação da ''Critical_Section'' meta programada é simplesmente a herança privada da implementação de ''Closure'', mais a herança da classe base de todas as seções críticas, a ''Critical_Section_Base''. 
+A implementação da ''Critical_Section'' meta programada é simplesmente a herança privada da implementação de ''Closure'', mais a herança da classe base de todas as seções críticas, a ''Critical_Section_Base''.
 ^::__Listagem 25:__ Definição da ''Critical_Section'' meta programada baseada na implementação de ''Closures''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
@@ -914,7 +921,8 @@ class Critical_Section: public Critical_Section_Base, private Closure<void( Tn..
     using Closure<void( Tn... )>::run;
 
 public:
-    Critical_Section(void(*_entry)(Tn ...), Tn ... an) : Closure<void( Tn... )>::Closure( _entry, an ... )
+    Critical_Section(void(*_entry)(Tn ...), Tn ... an)
+            : Closure<void( Tn... )>::Closure( _entry, an ... )
     {
     }
 
@@ -936,11 +944,22 @@ struct MetaSequenceOfIntegers { };
 template<int AccumulatedSize, typename Tn, int... GeneratedSequence>
 struct GeneratorOfIntegerSequence;
 
-template<int AccumulatedSize, typename Grouper, typename Head, typename... Tail, int... GeneratedSequence>
-struct GeneratorOfIntegerSequence< AccumulatedSize, Grouper( Head, Tail... ), GeneratedSequence... >
+template<
+            int AccumulatedSize,
+            typename Grouper,
+            typename Head,
+            typename... Tail,
+            int... GeneratedSequence
+        >
+struct GeneratorOfIntegerSequence<
+        AccumulatedSize, Grouper( Head, Tail... ), GeneratedSequence... >
 {
     typedef typename GeneratorOfIntegerSequence
-            < AccumulatedSize + sizeof(Head), Grouper( Tail... ), GeneratedSequence..., AccumulatedSize
+            <
+                AccumulatedSize + sizeof(Head),
+                Grouper( Tail... ),
+                GeneratedSequence...,
+                AccumulatedSize
             >::type type;
 };
 
@@ -955,18 +974,31 @@ Este programa é executado em tempo de compilação, e para uma dada entrada, co
 ^::__Listagem 27:__ Trecho de código gerado pelo meta programa, obtido com compilador ''LLVM Clang''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
-$ clang++ -Xclang -ast-print -fsyntax-only parameter_pack_sequencer_size_generator.cpp > expanded.cpp
-template <int AccumulatedSize, typename Tn, int ...GeneratedSequence> struct GeneratorOfIntegerSequence
-template<> struct GeneratorOfIntegerSequence<0, int (char, int, char), <>> {
-    typedef typename GeneratorOfIntegerSequence<0 + sizeof(char), int (int, char), 0>::type type;
-}
-template<> struct GeneratorOfIntegerSequence<1, int (int, char), <0>> {
-    typedef typename GeneratorOfIntegerSequence<1 + sizeof(int), int (char), 0, 1>::type type;
-}
-template<> struct GeneratorOfIntegerSequence<5, int (char), <0, 1>> {
-    typedef typename GeneratorOfIntegerSequence<5 + sizeof(char), int (), 0, 1, 5>::type type;
-}
-template<> struct GeneratorOfIntegerSequence<6, int (), <0, 1, 5>> {
+$ clang++ -Xclang -ast-print -fsyntax-only \
+  parameter_pack_sequencer_size_generator.cpp > expanded.cpp
+template <int AccumulatedSize, typename Tn, int ...GeneratedSequence>
+struct GeneratorOfIntegerSequence
+template<> struct GeneratorOfIntegerSequence<
+            0, int (char, int, char), <>>
+{
+    typedef typename GeneratorOfIntegerSequence<
+            0 + sizeof(char), int (int, char), 0>::type type;
+};
+
+template<> struct GeneratorOfIntegerSequence<1, int (int, char), <0>>
+{
+    typedef typename GeneratorOfIntegerSequence<
+            1 + sizeof(int), int (char), 0, 1>::type type;
+};
+
+template<> struct GeneratorOfIntegerSequence<5, int (char), <0, 1>>
+{
+    typedef typename GeneratorOfIntegerSequence<
+            5 + sizeof(char), int (), 0, 1, 5>::type type;
+};
+
+template<> struct GeneratorOfIntegerSequence<6, int (), <0, 1, 5>>
+{
     typedef MetaSequenceOfIntegers<0, 1, 5> type;
 };
 ~/np~{DIV}
@@ -993,17 +1025,21 @@ private:
 public:
     Closure(Function _entry, Tn ... an): _entry(_entry)
     {
-        db<Synchronizer>(WRN) << "Closure::Closure(_entry=" << &_entry << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
-                << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH << ", sizeof=" << sizeof(*this) << ") => " << this << endl;
+        db<Synchronizer>(WRN) << "Closure::Closure(_entry=" << &_entry
+                << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
+                << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH
+                << ", sizeof=" << sizeof(*this) << ") => " << this << endl;
 
-        if(PARAMETERS_LENGTH) 
+        if(PARAMETERS_LENGTH)
             _parameters = new char[PARAMETERS_LENGTH];
         pack_helper( _parameters, an ... );
     }
 
     ~Closure() {
-        db<Synchronizer>(WRN) << "Closure::~Closure(this=" << this << "_entry=" << &_entry << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
-                << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH << ", sizeof=" << sizeof(*this) << ")" << endl;
+        db<Synchronizer>(WRN) << "Closure::~Closure(this=" << this
+                << ", _entry=" << &_entry << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
+                << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH
+                << ", sizeof=" << sizeof(*this) << ")" << endl;
 
         if(PARAMETERS_LENGTH)
             delete _parameters;
@@ -1014,7 +1050,8 @@ public:
     }
 
     inline ReturnType operator()() {
-        return _unpack_and_run( typename GeneratorOfIntegerSequence< 0, int(Tn...) >::type() );
+        return _unpack_and_run(
+                typename GeneratorOfIntegerSequence< 0, int(Tn...) >::type() );
     }
 
 private:
@@ -1030,7 +1067,7 @@ private:
     {
         db<Synchronizer>(WRN) << "Closure::unpack_helper(Head=" << sizeof( T )
                 << ", address=" << reinterpret_cast<int *>(_parameters + position)
-                << "(" << reinterpret_cast<int *>(_parameters) << ")" 
+                << "(" << reinterpret_cast<int *>(_parameters) << ")"
                 << ", position=" << position << ")" << endl;
 
         return *reinterpret_cast<T *>( _parameters + position );
@@ -1144,7 +1181,8 @@ Resultado da execução:
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 main: begin()
-Closure::Closure(_entry=0x0009ff78, PARAMETERS_COUNT=3, PARAMETERS_LENGTH=6, sizeof=8) => 0x00097f64
+Closure::Closure(_entry=0x0009ff78,
+        PARAMETERS_COUNT=3, PARAMETERS_LENGTH=6, sizeof=8) => 0x00097f64
 Closure::pack_helper(Head=1, address=0x00097f54)
 Closure::pack_helper(Head=4, address=0x00097f55)
 Closure::pack_helper(Head=1, address=0x00097f59)
@@ -1156,8 +1194,10 @@ Closure::unpack_helper(Head=1, address=0x00097f54(0x00097f54), position=0)
 test_function1 a, 10, 0
     A
 
-Closure::~Closure(this=0x0009fef4_entry=0x0009fef4, PARAMETERS_COUNT=3, PARAMETERS_LENGTH=6, sizeof=8)
-Closure::Closure(_entry=0x0009ff74, PARAMETERS_COUNT=3, PARAMETERS_LENGTH=9, sizeof=8) => 0x00097f54
+Closure::~Closure(this=0x0009fef4,
+        _entry=0x0009fef4, PARAMETERS_COUNT=3, PARAMETERS_LENGTH=6, sizeof=8)
+Closure::Closure(_entry=0x0009ff74,
+        PARAMETERS_COUNT=3, PARAMETERS_LENGTH=9, sizeof=8) => 0x00097f54
 Closure::pack_helper(Head=4, address=0x00097f44)
 Closure::pack_helper(Head=4, address=0x00097f48)
 Closure::pack_helper(Head=1, address=0x00097f4c)
@@ -1169,22 +1209,28 @@ Closure::unpack_helper(Head=4, address=0x00097f44(0x00097f44), position=0)
 test_function2 test1, test2, b
     B
 
-Closure::~Closure(this=0x0009ff34_entry=0x0009ff34, PARAMETERS_COUNT=3, PARAMETERS_LENGTH=9, sizeof=8)
-Closure::Closure(_entry=0x0009fe8c, PARAMETERS_COUNT=0, PARAMETERS_LENGTH=0, sizeof=8) => 0x00097f44
+Closure::~Closure(this=0x0009ff34,
+        _entry=0x0009ff34, PARAMETERS_COUNT=3, PARAMETERS_LENGTH=9, sizeof=8)
+Closure::Closure(_entry=0x0009fe8c,
+        PARAMETERS_COUNT=0, PARAMETERS_LENGTH=0, sizeof=8) => 0x00097f44
 create_closure 0x00097f44
 Closure::_unpack_and_run(this=0x0009fe84)
-test_function3 
+test_function3
     C
 
-Closure::~Closure(this=0x0009fe84_entry=0x0009fe84, PARAMETERS_COUNT=0, PARAMETERS_LENGTH=0, sizeof=8)
-Closure::Closure(_entry=0x0009fe8c, PARAMETERS_COUNT=0, PARAMETERS_LENGTH=0, sizeof=8) => 0x00097f34
+Closure::~Closure(this=0x0009fe84,
+        _entry=0x0009fe84, PARAMETERS_COUNT=0, PARAMETERS_LENGTH=0, sizeof=8)
+Closure::Closure(_entry=0x0009fe8c,
+        PARAMETERS_COUNT=0, PARAMETERS_LENGTH=0, sizeof=8) => 0x00097f34
 create_closure 0x00097f34
 Closure::_unpack_and_run(this=0x0009fe84)
-test_function4 
+test_function4
     void
 
-Closure::~Closure(this=0x0009fe84_entry=0x0009fe84, PARAMETERS_COUNT=0, PARAMETERS_LENGTH=0, sizeof=8)
-Closure::Closure(_entry=0x0009fe8c, PARAMETERS_COUNT=1, PARAMETERS_LENGTH=4, sizeof=8) => 0x00097f24
+Closure::~Closure(this=0x0009fe84,
+        _entry=0x0009fe84, PARAMETERS_COUNT=0, PARAMETERS_LENGTH=0, sizeof=8)
+Closure::Closure(_entry=0x0009fe8c,
+        PARAMETERS_COUNT=1, PARAMETERS_LENGTH=4, sizeof=8) => 0x00097f24
 Closure::pack_helper(Head=4, address=0x00097f14)
 create_closure 0x00097f24
 Closure::_unpack_and_run(this=0x0009fe84)
@@ -1192,8 +1238,10 @@ Closure::unpack_helper(Head=4, address=0x00097f14(0x00097f14), position=0)
 test_function5 Testa 3
     void
 
-Closure::~Closure(this=0x0009fe84_entry=0x0009fe84, PARAMETERS_COUNT=1, PARAMETERS_LENGTH=4, sizeof=8)
-Closure::Closure(_entry=0x0009fe8c, PARAMETERS_COUNT=1, PARAMETERS_LENGTH=4, sizeof=8) => 0x00097f14
+Closure::~Closure(this=0x0009fe84,
+        _entry=0x0009fe84, PARAMETERS_COUNT=1, PARAMETERS_LENGTH=4, sizeof=8)
+Closure::Closure(_entry=0x0009fe8c,
+        PARAMETERS_COUNT=1, PARAMETERS_LENGTH=4, sizeof=8) => 0x00097f14
 Closure::pack_helper(Head=4, address=0x00097f04)
 create_closure 0x00097f14
 Closure::_unpack_and_run(this=0x0009fe84)
@@ -1201,7 +1249,8 @@ Closure::unpack_helper(Head=4, address=0x00097f04(0x00097f04), position=0)
 test_function5 Testa 4
     void
 
-Closure::~Closure(this=0x0009fe84_entry=0x0009fe84, PARAMETERS_COUNT=1, PARAMETERS_LENGTH=4, sizeof=8)
+Closure::~Closure(this=0x0009fe84,
+        _entry=0x0009fe84, PARAMETERS_COUNT=1, PARAMETERS_LENGTH=4, sizeof=8)
 main: exiting()
 ~/np~{DIV}
 {DIV}^
@@ -1211,7 +1260,8 @@ Dada a função ''test_function2'' do exemplo anterior como tendo a seguinte ass
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 $ clang++ -Xclang -ast-print -fsyntax-only closure_test.cpp > expanded.cpp
-template<> class Closure<char (const char *, const char *, char)> {
+template<> class Closure<char (const char *, const char *, char)>
+{
 public:
     typedef char (*Function)(const char *, const char *, char);
 
@@ -1223,40 +1273,47 @@ public:
     char *_parameters;
 
     Closure(Closure<char (const char *, const char *, char)>::
-                Function _entry, const char *an, const char *an, char an) : _entry(_entry) {
+                Function _entry, const char *an, const char *an, char an) : _entry(_entry)
+    {
         this->_parameters = new char [PARAMETERS_LENGTH];
         pack_helper(this->_parameters, an, an, an);
     }
 
-    ~Closure<char (const char *, const char *, char)>() {
+    ~Closure<char (const char *, const char *, char)>()
+    {
         delete this->_parameters;
     }
 
-    char operator()() {
+    char operator()()
+    {
         return this->_run(typename GeneratorOfIntegerSequence<
                 0, int (const char *, const char *, char)>::type());
     }
 
 private:
     template <int ...Sequence> char _run(MetaSequenceOfIntegers<Sequence...>);
-    template<> char _run<<0, 8, 16>>(MetaSequenceOfIntegers<0, 8, 16>) {
+    template<> char _run<<0, 8, 16>>(MetaSequenceOfIntegers<0, 8, 16>)
+    {
         return this->_entry(
-            this->unpack_helper<0, const char *>(), 
-            this->unpack_helper<8, const char *>(), 
+            this->unpack_helper<0, const char *>(),
+            this->unpack_helper<8, const char *>(),
             this->unpack_helper<16, char>()
         );
     }
 
     template <int position, typename T> T unpack_helper();
-    template<> const char *unpack_helper<0, const char *>() {
+    template<> const char *unpack_helper<0, const char *>()
+    {
         return *reinterpret_cast<const char **>(this->_parameters + 0);
     }
 
-    template<> const char *unpack_helper<8, const char *>() {
+    template<> const char *unpack_helper<8, const char *>()
+    {
         return *reinterpret_cast<const char **>(this->_parameters + 8);
     }
 
-    template<> char unpack_helper<16, char>() {
+    template<> char unpack_helper<16, char>()
+    {
         return *reinterpret_cast<char *>(this->_parameters + 16);
     }
 
@@ -1264,23 +1321,27 @@ public:
     template <typename Head, typename ...Tail> static void pack_helper(
             char *pointer_address, Head head, Tail ...tail);
     template<> static void pack_helper<const char *, <const char *, char>>(
-                char *pointer_address, const char *head, const char *tail, char tail) {
+                char *pointer_address, const char *head, const char *tail, char tail)
+    {
         *reinterpret_cast<const char **>(pointer_address) = head;
         pack_helper(pointer_address + sizeof(const char *), tail, tail);
     }
 
-    template<> static void pack_helper<const char *, <char>>(char *pointer_address, 
-                const char *head, char tail) {
+    template<> static void pack_helper<const char *, <char>>(char *pointer_address,
+                const char *head, char tail)
+    {
         *reinterpret_cast<const char **>(pointer_address) = head;
         pack_helper(pointer_address + sizeof(const char *), tail);
     }
 
-    template<> static void pack_helper<char, <>>(char *pointer_address, char head) {
+    template<> static void pack_helper<char, <>>(char *pointer_address, char head)
+    {
         *reinterpret_cast<char *>(pointer_address) = head;
         pack_helper(pointer_address + sizeof(char));
     }
 
-    static void pack_helper(char *pointer_address) {
+    static void pack_helper(char *pointer_address)
+    {
     }
 }
 ~/np~{DIV}
@@ -1323,7 +1384,8 @@ using namespace EPOS;
 
 Guard counter_guard;
 
-void show(char char1, const char* text1, const char* text2, bool bool1, bool bool2, const char* text3, int int1) {
+void show(char char1, const char* text1, const char* text2,
+            bool bool1, bool bool2, const char* text3, int int1) {
     log( "    char1=" << char1 << ", text1=" << text1 \
         << ", text2=" << text2 << ", bool1=" << bool1 << ", bool2=" << bool2 \
         << ", text3=" << text3 << ", int1="  << int1  << endl << endl )
@@ -1345,7 +1407,8 @@ Resultado da execução:
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 main: begin()
-Closure::Closure(_entry=0x0009ff5c, PARAMETERS_COUNT=7, PARAMETERS_LENGTH=19, sizeof=8) => 0x00097f68
+Closure::Closure(_entry=0x0009ff5c,
+        PARAMETERS_COUNT=7, PARAMETERS_LENGTH=19, sizeof=8) => 0x00097f68
 Closure::pack_helper(Head=1, address=0x00097f45)
 Closure::pack_helper(Head=4, address=0x00097f46)
 Closure::pack_helper(Head=4, address=0x00097f4a)
@@ -1363,8 +1426,10 @@ Closure::unpack_helper(Head=4, address=0x00097f46(0x00097f45), position=1)
 Closure::unpack_helper(Head=1, address=0x00097f45(0x00097f45), position=0)
     char1=A, text1=Test 1, text2=Test 2, bool1=1, bool2=0, text3=Test 3, int1=10
 
-Closure::~Closure(this=0x00097f68_entry=0x00097f68, PARAMETERS_COUNT=7, PARAMETERS_LENGTH=19, sizeof=8)
-Closure::Closure(_entry=0x0009ff5c, PARAMETERS_COUNT=7, PARAMETERS_LENGTH=19, sizeof=8) => 0x00097f68
+Closure::~Closure(this=0x00097f68,
+        _entry=0x00097f68, PARAMETERS_COUNT=7, PARAMETERS_LENGTH=19, sizeof=8)
+Closure::Closure(_entry=0x0009ff5c,
+        PARAMETERS_COUNT=7, PARAMETERS_LENGTH=19, sizeof=8) => 0x00097f68
 Closure::pack_helper(Head=1, address=0x00097f45)
 Closure::pack_helper(Head=4, address=0x00097f46)
 Closure::pack_helper(Head=4, address=0x00097f4a)
@@ -1382,7 +1447,8 @@ Closure::unpack_helper(Head=4, address=0x00097f46(0x00097f45), position=1)
 Closure::unpack_helper(Head=1, address=0x00097f45(0x00097f45), position=0)
     char1=B, text1=Test 4, text2=Test 5, bool1=0, bool2=0, text3=Test 6, int1=20
 
-Closure::~Closure(this=0x00097f68_entry=0x00097f68, PARAMETERS_COUNT=7, PARAMETERS_LENGTH=19, sizeof=8)
+Closure::~Closure(this=0x00097f68,
+        _entry=0x00097f68, PARAMETERS_COUNT=7, PARAMETERS_LENGTH=19, sizeof=8)
 main: exiting()
 ~/np~{DIV}
 {DIV}^
@@ -1410,7 +1476,7 @@ Aqui testa-se a implementação nova de FAS feita, repetidamente fazendo a troca
 using namespace EPOS;
 Semaphore display_lock;
 
-// #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
+// #define log(arg) display_lock.p(); db<Synchronizer>(WRN) << arg; display_lock.v();
 #define log(argument) db<Synchronizer>(WRN) << argument;
 
 static const int iterations = 1e5;
@@ -1428,8 +1494,8 @@ int next = 11;
 
 int myThread1() {
     check("Thread 1", ", begin")
-    
-    for (int i = 0; i < iterations; i++) 
+
+    for (int i = 0; i < iterations; i++)
     {
         old = CPU::fas(current, next);
         current = CPU::fas(next, old);
@@ -1600,8 +1666,8 @@ using namespace EPOS;
 int counter = 0;
 
 Semaphore display_lock;
-Semaphore counter_lock; 
-#define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
+Semaphore counter_lock;
+#define log(arg) display_lock.p(); db<Synchronizer>(WRN) << arg; display_lock.v();
 
 // mythread()
 // Simply adds 1 to counter repeatedly, in a loop
@@ -1771,8 +1837,8 @@ using namespace EPOS;
 int counter = 0;
 
 Semaphore display_lock;
-Semaphore counter_lock; 
-#define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
+Semaphore counter_lock;
+#define log(arg) display_lock.p(); db<Synchronizer>(WRN) << arg; display_lock.v();
 
 // mythread()
 // Simply adds 1 to counter repeatedly, in a loop
