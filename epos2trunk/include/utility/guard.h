@@ -25,7 +25,7 @@ public:
     void submit( void(*entry)( Tn ... ), Tn ... an )
     {
         // Creates a closure with the critical section parameters
-        Critical_Section<Tn ...>* cs = new (SYSTEM) Critical_Section<Tn ...>(entry, an ...);
+        Critical_Section<Tn ...>* cs = new Critical_Section<Tn ...>(entry, an ...);
 
         Element * cur = vouch(&(cs->_link));
         if (cur != reinterpret_cast<Element *>(NULL)) do {
