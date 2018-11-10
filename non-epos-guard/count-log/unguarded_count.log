@@ -1,0 +1,11 @@
+Main begin!
+[A] : begin (0)
+[B] : begin (2057)
+[D] : begin (6537)
+[C] : begin (8602)
+[C] : end   (7136179)
+[A] : end   (7228326)
+[B] : end   (10492217)
+[D] : end   (10799799)
+[counter]= 10799799
+The end!
