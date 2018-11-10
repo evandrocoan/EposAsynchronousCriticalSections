@@ -9,7 +9,7 @@ using namespace EPOS;
 #define log(argument) db<Synchronizer>(WRN) << argument;
 
 static volatile int counter = 0;
-static const int iterations = 1e3;
+static const int iterations = 5e0;
 
 Guard counter_guard;
 Guard display_guard;
@@ -21,7 +21,7 @@ void show(char arg, const char * type) {
 
 void increment_counter() {
     counter = counter + 1;
-    // log( "increment_counter (counter=" << counter << ")" << endl )
+    log( "increment_counter (counter=" << counter << ")" << endl )
 }
 
 int mythread(char arg) {
@@ -47,13 +47,18 @@ int main()
     pool[4] = new Thread(&mythread, 'E');
 
     log( "main: start joining the threads (counter=" << counter << ")" << endl )
-    for(int i = 0; i < 5; i++) {
-        pool[i]->join();
-    }
+    pool[0]->join();
+    pool[1]->join();
+    pool[2]->join();
+    pool[3]->join();
+    pool[4]->join();
 
     log( "main: done with both (counter=" << counter << ")" << endl )
-    for(int i = 0; i < 5; i++)
-        delete pool[i];
+    delete pool[0];
+    delete pool[1];
+    delete pool[2];
+    delete pool[3];
+    delete pool[4];
 
     log( "main: exiting (counter=" << counter << ")" << endl )
     return 0;
