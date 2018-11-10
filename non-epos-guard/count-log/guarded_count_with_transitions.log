@@ -1,0 +1,13 @@
+Main begin!
+[A] : begin 0
+[B] : begin 7
+[value= 0x1, compare = 0, replacement= 0xf5f005f0]
+[D] : begin 189
+[C] : begin 212
+[B] : end 27589009
+[value= 0x1, compare = 0, replacement= 0xec1dbff0]
+[A] : end 30698007
+[C] : end 30790684
+[D] : end 40000000
+[counter]= 40000000
+The end!
