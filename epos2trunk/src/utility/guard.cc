@@ -24,7 +24,6 @@ Guard::Element * Guard::vouch(Element * item)
     if (last) {
         if (CPU::cas(last->_next, reinterpret_cast<Element *>(NULL), item)
                     == reinterpret_cast<Element *>(NULL))
-
             return reinterpret_cast<Element *>(NULL);
         delete item->object();
     }
