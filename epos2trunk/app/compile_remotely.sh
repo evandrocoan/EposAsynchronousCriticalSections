@@ -22,6 +22,10 @@ TARGET_DIRECTORY='~/OperatingSystems/Epos2x86'
 # Just ensures the directory is created
 sshpass -p $EPOS_COMPILER_MACHINE_PASS ssh $EPOS_COMPILER_MACHINE_ADDRESS mkdir -p $TARGET_DIRECTORY
 
+# Get the application name
+APPLICATION=$1
+APPLICATION_TO_RUN=$(echo $APPLICATION | cut -d'.' -f 1)
+
 IS_VERYCLEAN=$2
 
 if [ -z $IS_VERYCLEAN ];
@@ -40,10 +44,6 @@ SYNCHRONIZER_COMMAND="sshpass -p $EPOS_COMPILER_MACHINE_PASS rsync -rvu $DELETE_
 # Send the initial files
 eval $SYNCHRONIZER_COMMAND
 
-# Get the application name
-APPLICATION_TO_RUN=$(echo $1 | cut -d'.' -f 1)
-
-
 # Clean everything to be sure it is the right thing
 if [ -z $IS_VERYCLEAN ];
 then
@@ -54,6 +54,11 @@ then
     eval $SYNCHRONIZER_COMMAND
 fi
 
+if ! [ -f "$SCRIPT_FOLDER_PATH/$APPLICATION_TO_RUN.cc" ];
+then
+    printf "The application '$APPLICATION.cc' does not exists!\n"
+    exit 0
+fi
 
 # REMOTE_COMMAND_TO_RUN="cd /home/evandro.coan/OperatingSystems/TeachingEpos;
 # REMOTE_COMMAND_TO_RUN="PATH=/usr/local/ia32/gcc-7.2.0/bin:\$PATH;
