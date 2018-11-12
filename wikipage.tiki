@@ -68,7 +68,7 @@ __Entregável: D3__
 * Aprimorar o modo como as seções críticas são definidas e permitir que sejam definidas seções críticas a partir de funções com um número arbitrário de parâmetros, assim como ocorre com threads.
 * Substituir os mecanismos de sincronização das aplicações de teste pela nova implementação com uso de guarda.
 __Entregável: D4__
-# As aplicações ''synchronizer_test.cc'', "scheduler_cpu_affinity_test.cc'' e ''semaphore_test.cc'' utilizando o algoritmo de guarda em vez de mutexes e semáforos.
+# As aplicações ''synchronizer_test.cc'', ''scheduler_cpu_affinity_test.cc'' e ''semaphore_test.cc'' utilizando o algoritmo de guarda em vez de mutexes e semáforos.
 
 !!!T5 - Validação  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 * Realização de testes em nível acadêmico, com o objetivo de garantir, na medida do possível, a corretude dos componentes implementados até aqui.
