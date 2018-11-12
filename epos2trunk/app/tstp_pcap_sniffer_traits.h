@@ -12,6 +12,7 @@ struct Traits
     static const bool enabled = true;
     static const bool debugged = false;
     static const bool hysterically_debugged = false;
+    static const bool dispatch_debugged = false;
     typedef TLIST<> ASPECTS;
 };
 

@@ -535,11 +535,11 @@ private:
         if((i >= INT_FIRST_HARD) && (i <= INT_LAST_HARD))
             not_spurious = eoi(i);
         if(not_spurious) {
-            if((i != INT_TIMER) || Traits<IC>::hysterically_debugged)
+            if((i != INT_TIMER) || Traits<IC>::dispatch_debugged)
                 db<IC>(TRC) << "IC::dispatch(i=" << i << ")" << endl;
             _int_vector[i](i);
         } else {
-            if(i != INT_LAST_HARD)
+            if(i != INT_LAST_HARD || Traits<IC>::dispatch_debugged)
                 db<IC>(TRC) << "IC::spurious interrupt (" << i << ")" << endl;
         }
     }
