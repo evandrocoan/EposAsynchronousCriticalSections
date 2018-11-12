@@ -63,6 +63,7 @@ public:
 
         if(PARAMETERS_LENGTH)
             _parameters = new char[PARAMETERS_LENGTH];
+
         pack_helper( _parameters, an ... );
     }
 

@@ -1031,6 +1031,7 @@ public:
 
         if(PARAMETERS_LENGTH)
             _parameters = new char[PARAMETERS_LENGTH];
+
         pack_helper( _parameters, an ... );
     }
 
@@ -1272,7 +1273,7 @@ public:
     Closure<char (const char *, const char *, char)>::Function _entry;
     char *_parameters;
 
-    Closure(Closure<char (const char *, const char *, char)>::Function _entry, 
+    Closure(Closure<char (const char *, const char *, char)>::Function _entry,
             const char *an, const char *an, char an) : _entry(_entry)
     {
         this->_parameters = new char [PARAMETERS_LENGTH];
