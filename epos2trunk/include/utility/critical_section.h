@@ -46,8 +46,11 @@ class Critical_Section: public Critical_Section_Base, private Closure<void( Tn..
     using Closure<void( Tn... )>::run;
 
 public:
-    Critical_Section(void(*_entry)(Tn ...), Tn ... an) : Closure<void( Tn... )>::Closure( _entry, an ... )
+    Critical_Section(void(*_entry)(Tn ...), Tn ... an) :
+            Closure<void( Tn... )>::Closure( _entry, an ... )
     {
+        db<Synchronizer>(TRC) << "Critical_Section(_entry=" << _entry 
+                << ") => " << this << endl;
     }
 
     inline void start() {
