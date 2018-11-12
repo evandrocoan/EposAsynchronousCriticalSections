@@ -170,7 +170,7 @@ public:
     }
 
 private:
-    void print(const char * s) { _print(s); }
+    virtual void print(const char * s) { _print(s); }
 
     int itoa(int v, char * s);
     int utoa(unsigned int v, char * s, unsigned int i = 0);
