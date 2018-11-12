@@ -10,6 +10,9 @@ $(SUBDIRS):	FORCE
 		(cd $@ && $(MAKE))
 
 clean:
+	${MAKE} clean_multithread -j$(NPROCS)
+
+clean_multithread:
 		make MAKE:="$(MAKECLEAN)" $(SUBDIRS)
 
 FORCE:
