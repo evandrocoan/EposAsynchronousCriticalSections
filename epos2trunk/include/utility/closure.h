@@ -56,7 +56,7 @@ private:
 public:
     Closure(Function _entry, Tn ... an): _entry(_entry)
     {
-        db<Synchronizer>(TRC) << "Closure::Closure(_entry=" << &_entry
+        db<Synchronizer>(TRC) << "Closure(_entry=" << &_entry
                 << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
                 << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH
                 << ", sizeof=" << sizeof(*this) << ") => " << this << endl;
@@ -68,7 +68,7 @@ public:
     }
 
     ~Closure() {
-        db<Synchronizer>(TRC) << "Closure::~Closure(this=" << this
+        db<Synchronizer>(TRC) << "~Closure(this=" << this
                 << ", _entry=" << &_entry << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
                 << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH
                 << ", sizeof=" << sizeof(*this) << ")" << endl;
