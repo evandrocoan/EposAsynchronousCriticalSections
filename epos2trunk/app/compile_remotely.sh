@@ -54,22 +54,21 @@ then
     eval $SYNCHRONIZER_COMMAND
 fi
 
-if ! [ -f "$SCRIPT_FOLDER_PATH/$APPLICATION_TO_RUN.cc" ];
+if [ -f "$SCRIPT_FOLDER_PATH/$APPLICATION_TO_RUN.cc" ];
 then
+    # REMOTE_COMMAND_TO_RUN="cd /home/evandro.coan/OperatingSystems/TeachingEpos;
+    # REMOTE_COMMAND_TO_RUN="PATH=/usr/local/ia32/gcc-7.2.0/bin:\$PATH;
+    REMOTE_COMMAND_TO_RUN="
+    cd $TARGET_DIRECTORY;
+    printf '\nThe current directory is:\n'; pwd;
+    printf '\nThe current path is: %s\n' \$PATH;
+    printf 'Running the command: sh compile_and_run.sh $APPLICATION_TO_RUN\n';
+    sh compile_and_run.sh $APPLICATION_TO_RUN;"
+
+    sshpass -p $EPOS_COMPILER_MACHINE_PASS ssh $EPOS_COMPILER_MACHINE_ADDRESS $REMOTE_COMMAND_TO_RUN;
+else
     printf "The application '$APPLICATION.cc' does not exists!\n"
-    exit 0
 fi
-
-# REMOTE_COMMAND_TO_RUN="cd /home/evandro.coan/OperatingSystems/TeachingEpos;
-# REMOTE_COMMAND_TO_RUN="PATH=/usr/local/ia32/gcc-7.2.0/bin:\$PATH;
-REMOTE_COMMAND_TO_RUN="
-cd $TARGET_DIRECTORY;
-printf '\nThe current directory is:\n'; pwd;
-printf '\nThe current path is: %s\n' \$PATH;
-printf 'Running the command: sh compile_and_run.sh $APPLICATION_TO_RUN\n';
-sh compile_and_run.sh $APPLICATION_TO_RUN;"
-
-sshpass -p $EPOS_COMPILER_MACHINE_PASS ssh $EPOS_COMPILER_MACHINE_ADDRESS $REMOTE_COMMAND_TO_RUN;
 
 showTheElapsedSeconds "$0"
 
