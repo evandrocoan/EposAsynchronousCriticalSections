@@ -27,7 +27,7 @@ void show_message(const char * message, int line, int column) {
 void show_message_stream(StringStream * message, int line, int column) {
     Display::position( line, column );
 
-    cout << message->buffer();
+    cout << message;
     delete message;
 }
 

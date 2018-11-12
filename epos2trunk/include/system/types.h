@@ -63,6 +63,7 @@ class Lists;
 class Observers;
 class Observeds;
 class OStream;
+class StringStream;
 class Queues;
 class Random;
 class Spin;

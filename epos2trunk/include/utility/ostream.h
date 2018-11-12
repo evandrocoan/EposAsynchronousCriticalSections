@@ -64,6 +64,8 @@ public:
         return *this;
     }
 
+    OStream & operator<<(const StringStream * stream);
+
     OStream & operator<<(char c) {
         char buf[2];
         buf[0] = c;

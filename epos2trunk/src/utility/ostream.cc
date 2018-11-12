@@ -1,12 +1,19 @@
 // EPOS OStream Implementation
 
 #include <utility/ostream.h>
+#include <utility/stringstream.h>
 #include <machine.h>
 
 __BEGIN_UTIL
 
 // Class Attributes
 const char OStream::_digits[] = "0123456789abcdef";
+
+
+OStream & OStream::operator<<(const StringStream * stream)
+{
+    return operator<<(stream->buffer());
+}
 
 
 // Class Methods
