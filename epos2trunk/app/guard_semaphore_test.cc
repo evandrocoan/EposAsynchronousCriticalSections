@@ -1,8 +1,9 @@
 // EPOS Semaphore Component Test Program
 
 #include <utility/ostream.h>
+#include <utility/stringstream.h>
+#include <utility/guard.h>
 #include <thread.h>
-#include <mutex.h>
 #include <semaphore.h>
 #include <alarm.h>
 #include <display.h>
@@ -10,53 +11,52 @@
 using namespace EPOS;
 
 const int iterations = 2;
+#define log(argument) db<Synchronizer>(WRN) << argument;
 
-Mutex table;
+Guard table;
+OStream cout;
 
 Thread * phil[5];
 Semaphore * chopstick[5];
 
-OStream cout;
+void show_message(const char * message, int line, int column) {
+    Display::position( line, column );
+    cout << message;
+}
 
-int philosopher(int n, int l, int c)
+void show_message_stream(StringStream * message, int line, int column) {
+    Display::position( line, column );
+
+    cout << message->buffer();
+    delete message;
+}
+
+int philosopher(int philosopher_index, int line, int column)
 {
-    int first = (n < 4)? n : 0;
-    int second = (n < 4)? n + 1 : 4;
+    int first = (philosopher_index < 4)? philosopher_index : 0;
+    int second = (philosopher_index < 4)? philosopher_index + 1 : 4;
 
-    for(int i = iterations; i > 0; i--) {
-
-        table.lock();
-        Display::position(l, c);
-        cout << "thinking";
-        table.unlock();
-
+    for(int i = iterations; i > 0; i--)
+    {
+        table.submit( &show_message, "thinking", line, column );
         Delay thinking(2000000);
 
         chopstick[first]->p();    // get first chopstick
         chopstick[second]->p();   // get second chopstick
 
-        table.lock();
-        Display::position(l, c);
-        cout << " eating ";
-        table.unlock();
-
+        table.submit( &show_message, " eating ", line, column );
         Delay eating(1000000);
 
         chopstick[first]->v();    // release first chopstick
         chopstick[second]->v();   // release second chopstick
     }
 
-    table.lock();
-    Display::position(l, c);
-    cout << "  done  ";
-    table.unlock();
-
+    table.submit( &show_message, "  done  ", line, column );
     return iterations;
 }
 
-int main()
+void setup_program()
 {
-    table.lock();
     Display::clear();
     Display::position(0, 0);
     cout << "The Philosopher's Dinner:" << endl;
@@ -85,14 +85,18 @@ int main()
     Display::position(19, 0);
 
     cout << "The dinner is served ..." << endl;
-    table.unlock();
+}
+
+int main()
+{
+    table.submit( &setup_program );
 
     for(int i = 0; i < 5; i++) {
         int ret = phil[i]->join();
-        table.lock();
-        Display::position(20 + i, 0);
-        cout << "Philosopher " << i << " ate " << ret << " times " << endl;
-        table.unlock();
+        StringStream* stream = new StringStream(100);
+
+        *stream << "Philosopher " << i << " ate " << ret << " times\n";
+        table.submit( &show_message_stream, stream, 20 + i, 0 );
     }
 
     for(int i = 0; i < 5; i++)
