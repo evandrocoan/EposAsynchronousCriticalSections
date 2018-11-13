@@ -1,6 +1,7 @@
 // EPOS OStream Interface
 
 #include <utility/ostream.h>
+#include <utility/string.h>
 
 #ifndef __stringstream_h
 #define __stringstream_h
@@ -42,18 +43,11 @@ public:
         return *this;
     }
 
-    static int string_length(const char* string) {
-        for( int index = 0; ; ++index ) {
-            if( string[index] == '\0' ) return index;
-        }
-        return 0;
-    }
-
     void print(const char* string) {
         db<StringStream>(TRC) << "StringStream::print(this=" << this
                 << "), string=" << string << ", ";
 
-        int string_size = string_length(string);
+        int string_size = strlen(string);
         int total_size = string_size + _last_position;
 
         if( total_size > _buffer_size ) total_size = _buffer_size;
