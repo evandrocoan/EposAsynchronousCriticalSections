@@ -499,8 +499,11 @@ public:
     static void int_vector(const Interrupt_Id & i, const Interrupt_Handler & h) {
         db<IC>(TRC) << "IC::int_vector(int=" << i << ",h=" << reinterpret_cast<void *>(h) <<")" << endl;
         assert(i < INTS);
+        // When enabling the asserts expressions, the compiler keeps complaining about
         // WARNING: in static member function 'static void EPOS::S::FPGA::init()': error: array subscript is above array bounds
-        _int_vector[i] = h;
+        // Then, do some hack to overrule it  and let the above assert() do its thing on runtime.
+        unsigned int index = i >= INTS ? INTS - 1 : i;
+        _int_vector[index] = h;
     }
 
     static void enable() {
