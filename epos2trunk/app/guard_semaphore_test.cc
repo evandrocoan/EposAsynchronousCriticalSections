@@ -1,8 +1,11 @@
 // EPOS Semaphore Component Test Program
 
+#define DEBUG_SYNC
+
 #include <utility/ostream.h>
 #include <utility/stringstream.h>
 #include <utility/guard.h>
+#include <utility/future.h>
 #include <thread.h>
 #include <semaphore.h>
 #include <alarm.h>
@@ -11,64 +14,106 @@
 using namespace EPOS;
 
 const int iterations = 2;
-#define log(argument) db<Synchronizer>(WRN) << argument;
+#define CONSOLE_MODE
 
 Guard table;
 Guard guard;
-OStream cout;
 
+OStream cout;
 Thread * phil[5];
-Semaphore * chopstick[5];
-// bool chopstick[5];
+
+bool is_chopstick_free[5];
+Future<int>* locked_futures[5];
 
 void show_message(const char * message, int line, int column) {
-    // Display::position( line, column );
-    cout << message << "(" << line << ")" << endl;
+#ifdef CONSOLE_MODE
+    LOG( Synchronizer, WRN, "(" << line << ")" << endl )
+#else
+    Display::position( line, column );
+    cout << message;
+#endif
 }
 
 void show_message(StringStream * message, int line, int column) {
-    // Display::position( line, column );
+#ifdef CONSOLE_MODE
+    LOG( Synchronizer, WRN, message )
+#else
+    Display::position( line, column );
     cout << message;
+#endif
     delete message;
 }
 
-// void get_chopstick(Future<int>* ) {
-// }
+void release_chopsticks(int philosopher_index, int chopstick_index) {
+    LOG( Synchronizer, WRN, "Philosopher=" << philosopher_index 
+            << ", release chopstick=" << chopstick_index 
+            << ", is_chopstick_free=" << is_chopstick_free[chopstick_index] << endl )
+
+    is_chopstick_free[chopstick_index] = true;
+    locked_futures[chopstick_index]->resolve(1);
+}
+
+void get_chopsticks(int philosopher_index, int chopstick_index, Future<int>* future_chopstick)
+{
+    LOG( Synchronizer, WRN, "Philosopher=" << philosopher_index 
+            << ", getting chopstick=" << chopstick_index 
+            << ", is_chopstick_free=" << is_chopstick_free[chopstick_index] << endl )
+
+    if( is_chopstick_free[chopstick_index] ) {
+        is_chopstick_free[chopstick_index] = false;
+
+        future_chopstick->resolve(1);
+        return;
+    }
+    else {
+        locked_futures[chopstick_index] = future_chopstick;
+    }
+}
 
 int philosopher(int philosopher_index, int line, int column)
 {
     int first = (philosopher_index < 4)? philosopher_index : 0;
     int second = (philosopher_index < 4)? philosopher_index + 1 : 4;
+
+#ifdef CONSOLE_MODE
     line = philosopher_index;
+#endif
+
     for(int i = iterations; i > 0; i--)
     {
         table.submit( &show_message, "thinking", line, column );
         Delay thinking(2000000);
 
-        chopstick[first]->p();    // get first chopstick
-        chopstick[second]->p();   // get second chopstick
+        // Get the first chopstick
+        Future<int>* chopstick1 = new Future<int>();
+        guard.submit( &get_chopsticks, philosopher_index, first, chopstick1 );
+        chopstick1->get_value(); delete chopstick1;
 
+        // Get the second chopstick
+        Future<int>* chopstick2 = new Future<int>();
+        guard.submit( &get_chopsticks, philosopher_index, second, chopstick2 );
+        chopstick2->get_value(); delete chopstick2;
+
+    #ifdef CONSOLE_MODE
         StringStream* stream1 = new StringStream{100};
-        *stream1 << "Philosopher=" << philosopher_index << " got      the first=" << first 
+        *stream1 << "Philosopher=" << philosopher_index << " got      the first=" << first
                 << " and second=" << second << " chopstick\n";
         table.submit( &show_message, stream1, line, column );
-
-        // Future<bool>* first_chopstick = new Future<bool>();
-        // Future<bool>* second_chopstick = new Future<bool>();
-        // guard.submit( &get_chopstick, first_chopstick, second_chopstick )
+    #endif
 
         table.submit( &show_message, " eating ", line, column );
         Delay eating(1000000);
 
-        chopstick[first]->v();    // release first chopstick
-        chopstick[second]->v();   // release second chopstick
+        // Release the chopsticks
+        guard.submit( &release_chopsticks, philosopher_index, first );
+        guard.submit( &release_chopsticks, philosopher_index, second );
 
+    #ifdef CONSOLE_MODE
         StringStream* stream2 = new StringStream{100};
-        *stream2 << "Philosopher=" << philosopher_index << " released the first=" << first 
+        *stream2 << "Philosopher=" << philosopher_index << " released the first=" << first
                 << " and second=" << second << " chopstick\n";
         table.submit( &show_message, stream2, line, column );
-        
-        // guard.submit( &release_chopstick, first_chopstick, second_chopstick )
+    #endif
     }
 
     table.submit( &show_message, "  done  ", line, column );
@@ -82,8 +127,7 @@ void setup_program()
     cout << "The Philosopher's Dinner:" << endl;
 
     for(int i = 0; i < 5; i++)
-        // chopstick[i] = true;
-        chopstick[i] = new Semaphore;
+        is_chopstick_free[i] = true;
 
     phil[0] = new Thread(&philosopher, 0,  5, 32);
     phil[1] = new Thread(&philosopher, 1, 10, 44);
