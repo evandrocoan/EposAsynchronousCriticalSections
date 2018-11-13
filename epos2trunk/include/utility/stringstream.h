@@ -15,6 +15,8 @@ class StringStream: public OStream
     int _last_position;
 
 public:
+    using OStream::operator<<;
+
     StringStream(const unsigned int _buffer_size) :
             OStream::OStream(), _buffer_size(_buffer_size), _last_position(0)
     {
@@ -33,6 +35,11 @@ public:
 
     const char * const buffer() const {
         return _buffer;
+    }
+
+    StringStream & operator<<(const StringStream & stream) {
+        print(stream.buffer());
+        return *this;
     }
 
     static int string_length(const char* string) {
