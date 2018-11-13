@@ -2,7 +2,8 @@
 
 include	../../makedefs
 
-ifeq ($(MAKE),$(MAKECLEAN))
+# https://www.gnu.org/software/make/manual/html_node/Testing-Flags.html#Testing-Flags
+ifneq (,$(findstring -i clean,$(MAKE)))
 SUBDIRS := $(shell find * -maxdepth 0 -type d)
 else
 SUBDIRS := $(ARCH)
@@ -36,6 +37,6 @@ $(SUBDIRS):	FORCE
 		(cd $@ && $(MAKE))
 
 clean:
-		make MAKE:="$(MAKECLEAN)" $(SUBDIRS)
+		make MAKE:="${MAKE} -i clean" $(SUBDIRS)
 
 FORCE:

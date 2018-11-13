@@ -214,7 +214,6 @@ LD              = $(COMP_PREFIX)ld
 LDFLAGS         = $(MACH_LD_FLAGS) -nostdlib -L$(LIB) -Bstatic
 
 MAKE            := make --print-directory
-MAKECLEAN       := make -i clean
 MAKETEST        := make --no-print-directory --silent
 MAKEFLAGS       := --no-builtin-rules
 

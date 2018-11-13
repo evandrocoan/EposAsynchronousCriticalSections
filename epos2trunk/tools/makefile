@@ -32,6 +32,6 @@ $(SUBDIRS):	FORCE
 		(cd $@ && $(MAKE))
 
 clean:
-		make MAKE:="$(MAKECLEAN)" $(SUBDIRS)
+		make MAKE:="${MAKE} -i clean" $(SUBDIRS)
 
 FORCE:
