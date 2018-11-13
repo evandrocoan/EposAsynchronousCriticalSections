@@ -64,6 +64,8 @@ public:
         return *this;
     }
 
+    // Implemented on `ostream.cc`, because `stringstream.h` includes `ostream.h`,
+    // hence, `ostream.h` cannot include `stringstream.h` back (cyclic reference)
     OStream & operator<<(const StringStream * stream);
 
     OStream & operator<<(char c) {
