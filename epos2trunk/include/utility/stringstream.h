@@ -12,14 +12,14 @@ __BEGIN_UTIL
 class StringStream: public OStream
 {
     char* _buffer;
-    int _buffer_size;
-    int _last_position;
+    unsigned int _last_position;
+    const unsigned int _buffer_size;
 
 public:
     using OStream::operator<<;
 
     StringStream(const unsigned int _buffer_size) :
-            OStream::OStream(), _buffer_size(_buffer_size), _last_position(0)
+            OStream::OStream(), _last_position(0), _buffer_size(_buffer_size)
     {
         assert(_buffer_size > 0);
         db<StringStream>(TRC) << "StringStream::StringStream(_buffer_size="
@@ -50,8 +50,8 @@ public:
                 << reinterpret_cast<int *>(this)
                 << "), string=" << string << ", ";
 
-        int string_size = strlen(string);
-        int total_size = string_size + _last_position;
+        unsigned int string_size = strlen(string);
+        unsigned int total_size = string_size + _last_position;
 
         db<StringStream>(TRC) << "string_size=" << string_size << ", "
                 << "total_size=" << total_size;
