@@ -659,7 +659,7 @@ static int fas(volatile int & value, volatile int & replacement) {
 {DIV}^
 
 !!!stringstream.h [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
-Para auxiliar o uso de algoritmo do ''Guarda'', e permite que faça-se a formatação prévia de strings antes de envia-las para a seção crítica, criou-se uma nova class auxiliar chamada ''StringStream'' criada no arquivo ''stringstream.h''. Ela é uma extensão simples da classe ''OStream'' do EPOS, que já sabe como fazer a formatação de vários tipos. Assim, na implementação do ''stringstream.h'' somente implementamos um wrapper sobre a manipulação de todas as strings que já foram formatadas pela super classe ''OStream''.
+Para auxiliar o uso do algoritmo do ''Guarda'', e permite que faça-se a formatação prévia de strings antes de envia-las para a seção crítica, criou-se uma nova class auxiliar chamada ''StringStream'' criada no arquivo ''stringstream.h''. Ela é uma extensão simples da classe ''OStream'' do EPOS, que já sabe como fazer a formatação de vários tipos. Assim, na implementação do ''stringstream.h'' somente implementamos um wrapper sobre a manipulação de todas as strings que já foram formatadas pela super classe ''OStream''.
 ^::__Listagem 19:__ Modificações do arquivo ''/include/utility/ostream.h''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
