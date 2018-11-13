@@ -1,45 +1,43 @@
 // EPOS Semaphore Component Test Program
-
 #include <utility/stringstream.h>
 
 using namespace EPOS;
-
 #define log(argument) db<Synchronizer>(WRN) << argument;
 
 int main()
 {
     log( endl << "Welcome to the `stringstream.h` test program" << endl )
-    StringStream stream98chars{100};
-    StringStream stream99chars{100};
-    StringStream stream100chars{100};
-    StringStream stream101chars{100};
+    StringStream stream48chars{50};
+    StringStream stream49chars{50};
+    StringStream stream50chars{50};
+    StringStream stream51chars{50};
 
-    stream98chars  << "66666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666660098";
-    stream99chars  << "666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666600099";
-    stream100chars << "6666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666000100";
-    stream101chars << "66666666666666666666666666666666666666666666666666666666666666666666666666666666666666666666660000101";
+    stream48chars << "666666666666666666666666666666666666666666660058";
+    stream49chars << "6666666666666666666666666666666666666666666600049";
+    stream50chars << "66666666666666666666666666666666666666666666000050";
+    stream51chars << "666666666666666666666666666666666666666666660000051";
 
-    log( &stream98chars << endl )
-    log( &stream99chars << endl )
-    log( &stream100chars << endl )
-    log( &stream101chars << endl << endl )
+    log( &stream48chars << endl )
+    log( &stream49chars << endl )
+    log( &stream50chars << endl )
+    log( &stream51chars << endl << endl )
 
-    StringStream base48chars{100};
-    StringStream stream98chars2{100};
-    StringStream stream99chars2{100};
-    StringStream stream100chars2{100};
-    StringStream stream101chars2{100};
+    StringStream base23chars{50};
+    StringStream stream48chars2{50};
+    StringStream stream49chars2{50};
+    StringStream stream50chars2{50};
+    StringStream stream51chars2{50};
 
-    base48chars     << "777777777777777777777777777777777777777777777777";
-    stream98chars2  << base48chars << "88888888888888888888888888888888888888888888880098";
-    stream99chars2  << base48chars << "888888888888888888888888888888888888888888888800099";
-    stream100chars2 << base48chars << "8888888888888888888888888888888888888888888888000100";
-    stream101chars2 << base48chars << "88888888888888888888888888888888888888888888880000101";
+    base23chars    << "77777777777777777777777";
+    stream48chars2 << base23chars << "8888888888888888888880048";
+    stream49chars2 << base23chars << "88888888888888888888800049";
+    stream50chars2 << base23chars << "888888888888888888888000050";
+    stream51chars2 << base23chars << "8888888888888888888880000051";
 
-    log( &stream98chars2 << endl )
-    log( &stream99chars2 << endl )
-    log( &stream100chars2 << endl )
-    log( &stream101chars2 << endl )
+    log( &stream48chars2 << endl )
+    log( &stream49chars2 << endl )
+    log( &stream50chars2 << endl )
+    log( &stream51chars2 << endl )
 
     return 0;
 }
