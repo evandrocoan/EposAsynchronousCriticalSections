@@ -5,6 +5,7 @@
 
 #include <system/config.h>
 
+/// https://linux.die.net/man/3/strncpy
 extern "C" {
     int memcmp(const void * m1, const void * m2, size_t n);
     void * memcpy(void * d, const void * s, size_t n);
