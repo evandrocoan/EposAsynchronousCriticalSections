@@ -658,6 +658,55 @@ static int fas(volatile int & value, volatile int & replacement) {
 ~/np~{DIV}
 {DIV}^
 
+!!!Parallel Makefile [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+Para auxiliar o desenvolvimento, reduzindo o tempo de espera pela compilação completa do EPOS com um ''make veryclean'', foi paralelizado a compilação do EPOS alterando alguns ''Makefile'''s chave na commit [https://github.com/evandrocoan/asynchronous_critical_sections/commit/2ea7cc01087eeb6f38268c25606475062d7a299a|3bd15fb]:
+# ''src/architecture/makefile''
+# ''src/component/makefile''
+# ''src/init/makefile''
+# ''src/machine/makefile''
+# ''src/setup/makefile''
+# ''src/utility/makefile''
+# ''tools/makefile''
+A alteração feita nesses ''Makefile'''s foi a seguinte:
+^::__Listagem 18:__ Novo ''makefile'' paralelizado::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+# How can I write a makefile to auto-detect and parallelize the build with GNU Make?
+# https://stackoverflow.com/questions/2527496/how-can-i-write-a-makefile-to-auto
+ifeq ($J,)
+    ifeq ($(OS),Windows_NT)
+        NPROCS := $(NUMBER_OF_PROCESSORS)
+        FIND_EXEC := /bin/find
+    else
+        ifeq ($(UNAME),Darwin)
+          NPROCS := $(shell sysctl -n hw.ncpu)
+          FIND_EXEC := /usr/bin/find
+        else
+          NPROCS := $(shell grep -c ^processor /proc/cpuinfo)
+          FIND_EXEC := /usr/bin/find
+        endif
+    endif
+else
+  NPROCS := ""
+endif
+all:
+    ${MAKE} all_multithread -j$(NPROCS)
+all_multithread: $(SUBDIRS)
+~/np~{DIV}
+{DIV}^
+A alteração não foi feita somente no ''Makefile'' raíz por que alguns ''Makefile'''s como ''src/system'' precisam ser executados sequencialmente. A seleção de quais ''Makefile'''s poderiam ser paralelizados foi feita pela tentativa e erro. Adicionava-se o comando de paralelização, e verifica-se o EPOS compilava corretamente depois de um ''make veryclean''.
+
+Para paralelizar o comando ''make veryclean'', simplesmente precisou-se editar o ''Makefile'' raíz ''src/makefile'', adicionado o seguinte comando:
+^::__Listagem 18:__ Novo comando ''make clean''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+clean:
+    ${MAKE} clean_multithread -j$(NPROCS)
+clean_multithread:
+~/np~{DIV}
+{DIV}^
+Para ''make veryclean'' funcionar paralelamente, foi preciso remover a definição ''MAKECLEAN'' no arquivo principal ''makedefs'' [https://github.com/evandrocoan/asynchronous_critical_sections/commit/a020ccdb4216bb8131e7d86e3c99c6b95d726d0a|4237faf], por que para que o comando ''-j'' de paralelização do ''Makefile'' funcione, as chamadas recursivas de makefile precisam ser feitas utilizando a variável ''${MAKE}'' ao contrário de chamar o make file diretamente como ''MAKECLEAN := make -i clean'' fazia.
+
 !!!Futures [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Das 2 implementações distintas de futures apresentadas, realiza-se a implementação do modelo de future bloqueante, apresentado no artigo referência {DIV(type="span")}[{DIV}[#Refer_ncias_|2]]. Como a implementação atual do algoritmo do guarda não suporta passagens de parâmetros variádicos, fez-se a implementação dos métodos para que aceitem vários parâmetros com meta programação. Ver a seção [#Closure_Metaprogramada_|Closure Metaprogramada].
 
