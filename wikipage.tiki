@@ -850,14 +850,11 @@ A alteração feita nesses ''Makefile'''s foi a seguinte:
 ifeq ($J,)
     ifeq ($(OS),Windows_NT)
         NPROCS := $(NUMBER_OF_PROCESSORS)
-        FIND_EXEC := /bin/find
     else
         ifeq ($(UNAME),Darwin)
           NPROCS := $(shell sysctl -n hw.ncpu)
-          FIND_EXEC := /usr/bin/find
         else
           NPROCS := $(shell grep -c ^processor /proc/cpuinfo)
-          FIND_EXEC := /usr/bin/find
         endif
     endif
 else
@@ -879,7 +876,7 @@ clean:
 clean_multithread:
 ~/np~{DIV}
 {DIV}^
-Para ''make veryclean'' funcionar paralelamente, foi preciso remover a definição ''MAKECLEAN'' no arquivo principal ''makedefs'' [https://github.com/evandrocoan/asynchronous_critical_sections/commit/a020ccdb4216bb8131e7d86e3c99c6b95d726d0a|4237faf], por que para que o comando ''-j'' de paralelização do ''Makefile'' funcione, as chamadas recursivas de makefile precisam ser feitas utilizando a variável ''${MAKE}'' ao contrário de chamar o make file diretamente como ''MAKECLEAN := make -i clean'' fazia.
+Para ''make veryclean'' funcionar paralelamente, foi preciso remover a definição ''MAKECLEAN'' no arquivo principal ''makedefs'' [https://github.com/evandrocoan/asynchronous_critical_sections/commit/a020ccdb4216bb8131e7d86e3c99c6b95d726d0a|4237faf] && [https://github.com/evandrocoan/asynchronous_critical_sections/commit/5dfd5d7a53ebbf77c33816beec785201c8d7a1c5|e4faae6], por que para que o comando ''-j'' de paralelização do ''Makefile'' funcione, as chamadas recursivas de makefile precisam ser feitas utilizando a variável ''${MAKE}'' ao contrário de chamar o make file diretamente como ''MAKECLEAN := make -i clean'' fazia.
 
 !!!Futures [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Das 2 implementações distintas de futures apresentadas, realiza-se a implementação do modelo de future bloqueante, apresentado no artigo referência {DIV(type="span")}[{DIV}[#Refer_ncias_|2]]. Como a implementação atual do algoritmo do guarda não suporta passagens de parâmetros variádicos, fez-se a implementação dos métodos para que aceitem vários parâmetros com meta programação. Ver a seção [#Closure_Metaprogramada_|Closure Metaprogramada].

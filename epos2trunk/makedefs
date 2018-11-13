@@ -243,14 +243,11 @@ TOUCH		:= touch
 ifeq ($J,)
 	ifeq ($(OS),Windows_NT)
 		NPROCS := $(NUMBER_OF_PROCESSORS)
-		FIND_EXEC := /bin/find
 	else
 		ifeq ($(UNAME),Darwin)
 		  NPROCS := $(shell sysctl -n hw.ncpu)
-		  FIND_EXEC := /usr/bin/find
 		else
 		  NPROCS := $(shell grep -c ^processor /proc/cpuinfo)
-		  FIND_EXEC := /usr/bin/find
 		endif
 	endif
 else
