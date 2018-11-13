@@ -21,6 +21,7 @@ public:
     StringStream(const unsigned int _buffer_size) :
             OStream::OStream(), _buffer_size(_buffer_size), _last_position(0)
     {
+        assert(_buffer_size > 0);
         db<StringStream>(TRC) << "StringStream::StringStream(_buffer_size="
                 << _buffer_size << ") => " << reinterpret_cast<int *>(this) << endl;
 
