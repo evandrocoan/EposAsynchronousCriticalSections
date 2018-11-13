@@ -1251,7 +1251,8 @@ public:
 
             db<TSTP>(INF) << "Node ID: " << _id << endl;
 
-            assert(Cipher::KEY_SIZE == sizeof(Node_ID));
+            // There is not cipher.h header
+            // assert(Cipher::KEY_SIZE == sizeof(Node_ID));
             _cipher.encrypt(_id, _id, _auth);
         }
         ~Security();
