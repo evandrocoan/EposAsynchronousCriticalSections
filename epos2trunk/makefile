@@ -72,13 +72,13 @@ else
 endif
 
 clean1: FORCE
-		(cd etc && ${MAKE} -i clean)
-		(cd app && ${MAKE} -i clean)
-		(cd src && ${MAKE} -i clean)
+		(cd etc && ${MAKE} $(MAKECLEAN))
+		(cd app && ${MAKE} $(MAKECLEAN))
+		(cd src && ${MAKE} $(MAKECLEAN))
 		find $(LIB) -maxdepth 1 -type f -exec $(CLEAN) {} \;
 
 veryclean: clean
-		(cd tools && ${MAKE} -i clean)
+		(cd tools && ${MAKE} $(MAKECLEAN))
 		find $(LIB) -maxdepth 1 -type f -exec $(CLEAN) {} \;
 		find $(BIN) -maxdepth 1 -type f -exec $(CLEAN) {} \;
 		find $(APP) -maxdepth 1 -type f -perm -755 -exec $(CLEAN) {} \;

@@ -13,6 +13,6 @@ clean:
 	${MAKE} clean_multithread -j$(NPROCS)
 
 clean_multithread:
-		make MAKE:="${MAKE} -i clean" $(SUBDIRS)
+		make MAKE:="${MAKE} $(MAKECLEAN)" $(SUBDIRS)
 
 FORCE:

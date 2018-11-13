@@ -213,6 +213,7 @@ INSTALL		:= install
 LD              = $(COMP_PREFIX)ld
 LDFLAGS         = $(MACH_LD_FLAGS) -nostdlib -L$(LIB) -Bstatic
 
+MAKECLEAN       := -i clean
 MAKE            := make --print-directory
 MAKETEST        := make --no-print-directory --silent
 MAKEFLAGS       := --no-builtin-rules

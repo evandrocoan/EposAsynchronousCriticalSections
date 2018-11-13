@@ -13,6 +13,6 @@ $(SUBDIRS):	FORCE
 		(cd $@ && $(MAKE))
 
 clean:
-		make MAKE:="${MAKE} -i clean" $(SUBDIRS)
+		make MAKE:="${MAKE} $(MAKECLEAN)" $(SUBDIRS)
 
 FORCE:
