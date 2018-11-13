@@ -24,7 +24,7 @@ void show_message(const char * message, int line, int column) {
     cout << message;
 }
 
-void show_message_stream(StringStream * message, int line, int column) {
+void show_message(StringStream * message, int line, int column) {
     Display::position( line, column );
 
     cout << message;
@@ -96,7 +96,7 @@ int main()
         StringStream* stream = new StringStream(100);
 
         *stream << "Philosopher " << i << " ate " << ret << " times\n";
-        table.submit( &show_message_stream, stream, 20 + i, 0 );
+        table.submit( &show_message, stream, 20 + i, 0 );
     }
 
     for(int i = 0; i < 5; i++)
