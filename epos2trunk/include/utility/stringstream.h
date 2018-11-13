@@ -1,4 +1,4 @@
-// EPOS OStream Interface
+// EPOS StringStream Interface
 
 #include <utility/ostream.h>
 #include <utility/string.h>
