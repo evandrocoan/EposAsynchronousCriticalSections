@@ -505,7 +505,7 @@ public:
 
     static void enable() {
         db<IC>(TRC) << "IC::enable()" << endl;
-        assert(i < INTS);
+        // assert(i < INTS);
         Engine::enable();
     }
 
@@ -517,7 +517,7 @@ public:
 
     static void disable() {
         db<IC>(TRC) << "IC::disable()" << endl;
-        assert(i < INTS);
+        // assert(i < INTS);
         Engine::disable();
     }
 
