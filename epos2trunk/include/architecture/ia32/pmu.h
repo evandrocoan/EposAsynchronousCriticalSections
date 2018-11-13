@@ -599,7 +599,7 @@ public:
     Intel_Sandy_Bridge_PMU() {}
 
     static bool config(const Channel & channel, const Event & event, const Flags & flags = NONE) {
-        assert((channel < CHANNELS) && (event < EVENTS));
+        assert((channel < CHANNELS) && (static_cast<unsigned int>(event) < EVENTS));
         db<PMU>(TRC) << "PMU::config(c=" << channel << ",e=" << event << ",f=" << flags << ")" << endl;
 
         if(((channel == 0) && (event != INSTRUCTION)) || ((channel == 1) && (event != DVS_CLOCK)) || ((channel == 2) && (event != CLOCK))) {
