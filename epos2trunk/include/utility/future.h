@@ -14,8 +14,8 @@ class Future
 {
 public:
     Future(): _condition(), _is_resolved() {
-        LOG( Future, TRC, "Future(_is_resolved=" << _is_resolved \
-                  << ", _condition=" << _condition.size() \
+        LOG( Future, TRC, "Future(_is_resolved=" << _is_resolved
+                  << ", _condition=" << _condition.size()
                   << ") => " << this << endl )
     }
 
@@ -24,9 +24,9 @@ public:
     }
 
     FutureType get_value() {
-        LOG( Future, TRC, "Future::get_value(this=" << this \
-                              << " _is_resolved=" << _is_resolved \
-                              << " _condition=" << _condition.size() \
+        LOG( Future, TRC, "Future::get_value(this=" << this
+                              << " _is_resolved=" << _is_resolved
+                              << " _condition=" << _condition.size()
                               <<  ")" << endl )
         _lock.lock();
 
@@ -41,9 +41,9 @@ public:
     }
 
     void resolve(FutureType value) {
-        LOG( Future, TRC, "Future::resolve(this=" << this \
-                              << " _is_resolved=" << _is_resolved \
-                              << " _condition=" << _condition.size() \
+        LOG( Future, TRC, "Future::resolve(this=" << this
+                              << " _is_resolved=" << _is_resolved
+                              << " _condition=" << _condition.size()
                               <<  ")" << endl )
         _lock.lock();
         assert(!_is_resolved);
