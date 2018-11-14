@@ -5,17 +5,17 @@
 __BEGIN_UTIL
 
 Guard::Guard(): _head(0), _tail(0) {
-    LOG( Synchronizer, TRC, "Guard(head=" << _head << ", tail=" << _tail
+    DB( Synchronizer, TRC, "Guard(head=" << _head << ", tail=" << _tail
             << ") => " << this << endl )
 }
 
 Guard::~Guard() {
-    LOG( Synchronizer, TRC, "~Guard(this=" << this << ")" << endl )
+    DB( Synchronizer, TRC, "~Guard(this=" << this << ")" << endl )
 }
 
 Guard::Element * Guard::vouch(Element * item)
 {
-    LOG( Synchronizer, TRC, "Guard::vouch(this=" << this
+    DB( Synchronizer, TRC, "Guard::vouch(this=" << this
             << " head=" << _head << " tail=" << _tail <<  ")" << endl )
 
     item->next(reinterpret_cast<Element *>(NULL));
@@ -32,7 +32,7 @@ Guard::Element * Guard::vouch(Element * item)
 
 Guard::Element * Guard::clear()
 {
-    LOG( Synchronizer, TRC, "Guard::clear(this=" << this
+    DB( Synchronizer, TRC, "Guard::clear(this=" << this
             << " head=" << _head << " tail=" << _tail <<  ")" << endl )
 
     Element * item = _head;

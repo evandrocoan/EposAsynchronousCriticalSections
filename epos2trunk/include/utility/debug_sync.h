@@ -16,17 +16,17 @@ __BEGIN_UTIL
 __END_UTIL
 
     // A debug function cannot call this recursively, otherwise a deadlock happens
-    #define LOG(name,level,...) do { \
+    #define DB(name,level,...) do { \
         _debug_syncronized_semaphore_lock.lock(); \
             db<name>(level) << __VA_ARGS__; \
         _debug_syncronized_semaphore_lock.unlock(); } while(0);
 
 #else
-    #define LOG(name,level,...) db<name>(level) << __VA_ARGS__;
+    #define DB(name,level,...) db<name>(level) << __VA_ARGS__;
 
 #endif
 
-#define DB(...) LOG(Debug, WRN, __VA_ARGS__)
+#define LOG(...) DB(Debug, WRN, __VA_ARGS__)
 
 #endif
 

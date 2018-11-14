@@ -16,14 +16,14 @@ Semaphore counter_lock;
 // No, this is not how you would add 10,000,000 to
 // a counter, but it shows the problem nicely.
 int mythread(char arg) {
-    DB( arg << ": begin" << endl )
+    LOG( arg << ": begin" << endl )
     for (int i = 0; i < 1e4; i++) {
         counter_lock.p();
         counter = counter + 1;
         counter_lock.v();
     }
 
-    DB( arg << ": done" << endl )
+    LOG( arg << ": done" << endl )
     return 0;
 }
 
@@ -35,13 +35,13 @@ int main()
     Thread p1(&mythread, 'A');
     Thread p2(&mythread, 'B');
 
-    DB( endl )
-    DB( "main: begin (counter = " << counter << ")" << endl )
+    LOG( endl )
+    LOG( "main: begin (counter = " << counter << ")" << endl )
 
     // join waits for the threads to finish
     p1.join();
     p2.join();
 
-    DB( "main: done with both (counter = " << counter << ")"<< endl )
+    LOG( "main: done with both (counter = " << counter << ")"<< endl )
     return 0;
 }

@@ -16,7 +16,7 @@ int current = 10;
 int next = 11;
 
 #define check(thread, name) \
-    DB( thread << name \
+    LOG( thread << name \
             << ", old=" << old \
             << ", current=" << current \
             << ", next=" << next \
@@ -53,8 +53,8 @@ int myThread2() {
 
 int main()
 {
-    DB( endl )
-    DB( "iterations=" << iterations << endl )
+    LOG( endl )
+    LOG( "iterations=" << iterations << endl )
     Thread p1(&myThread1);
     Thread p2(&myThread2);
 

@@ -14,17 +14,17 @@ class Future
 {
 public:
     Future(): _condition(), _is_resolved() {
-        LOG( Synchronizer, TRC, "Future(_is_resolved=" << _is_resolved
+        DB( Synchronizer, TRC, "Future(_is_resolved=" << _is_resolved
                   << ", _condition=" << _condition.size()
                   << ") => " << this << endl )
     }
 
     ~Future() {
-        LOG( Synchronizer, TRC, "~Future(this=" << this << ")" << endl );
+        DB( Synchronizer, TRC, "~Future(this=" << this << ")" << endl );
     }
 
     FutureType get_value() {
-        LOG( Synchronizer, TRC, "Future::get_value(this=" << this
+        DB( Synchronizer, TRC, "Future::get_value(this=" << this
                               << " _is_resolved=" << _is_resolved
                               << " _condition=" << _condition.size()
                               <<  ")" << endl )
@@ -41,7 +41,7 @@ public:
     }
 
     void resolve(FutureType value) {
-        LOG( Synchronizer, TRC, "Future::resolve(this=" << this
+        DB( Synchronizer, TRC, "Future::resolve(this=" << this
                               << " _is_resolved=" << _is_resolved
                               << " _condition=" << _condition.size()
                               <<  ")" << endl )

@@ -36,7 +36,7 @@ Future<int>* locked_futures[5];
 
 void show_message(const char * message, int line, int column) {
 #ifdef CONSOLE_MODE
-    LOG( Synchronizer, LVL, message << "(" << line << ")" << endl )
+    DB( Synchronizer, LVL, message << "(" << line << ")" << endl )
 #else
     Display::position( line, column );
     cout << message;
@@ -45,7 +45,7 @@ void show_message(const char * message, int line, int column) {
 
 void show_message(StringStream * message, int line, int column) {
 #ifdef CONSOLE_MODE
-    LOG( Synchronizer, LVL, message )
+    DB( Synchronizer, LVL, message )
 #else
     Display::position( line, column );
     cout << message;
@@ -54,7 +54,7 @@ void show_message(StringStream * message, int line, int column) {
 }
 
 void release_chopsticks(int philosopher_index, int chopstick_index, Future<int>* future_chopstick, const char* which_chopstick) {
-    LOG( Synchronizer, LVL, "Philosopher=" << philosopher_index
+    DB( Synchronizer, LVL, "Philosopher=" << philosopher_index
             << ", release chopstick=" << chopstick_index
             << ", is_chopstick_free=" << is_chopstick_free[chopstick_index]
             << ", future_chopstick=" << future_chopstick
@@ -65,7 +65,7 @@ void release_chopsticks(int philosopher_index, int chopstick_index, Future<int>*
     delete future_chopstick;
 
     if( locked_futures[chopstick_index] ) {
-        LOG( Synchronizer, LVL, endl )
+        DB( Synchronizer, LVL, endl )
 
         auto old = locked_futures[chopstick_index];
         locked_futures[chopstick_index] = nullptr;
@@ -73,13 +73,13 @@ void release_chopsticks(int philosopher_index, int chopstick_index, Future<int>*
     }
     else {
         assert( locked_futures[chopstick_index] == nullptr );
-        LOG( Synchronizer, LVL, endl )
+        DB( Synchronizer, LVL, endl )
     }
 }
 
 void get_chopsticks(int philosopher_index, int chopstick_index, Future<int>* future_chopstick, const char* which_chopstick)
 {
-    LOG( Synchronizer, LVL, "Philosopher=" << philosopher_index
+    DB( Synchronizer, LVL, "Philosopher=" << philosopher_index
             << ", getting chopstick=" << chopstick_index
             << ", is_chopstick_free=" << is_chopstick_free[chopstick_index]
             << ", " << which_chopstick )
@@ -87,14 +87,14 @@ void get_chopsticks(int philosopher_index, int chopstick_index, Future<int>* fut
     if( is_chopstick_free[chopstick_index] ) {
         is_chopstick_free[chopstick_index] = false;
 
-        LOG( Synchronizer, LVL, ", future_chopstick=" << future_chopstick << endl )
+        DB( Synchronizer, LVL, ", future_chopstick=" << future_chopstick << endl )
         future_chopstick->resolve(1);
     }
     else {
         assert( locked_futures[chopstick_index] == nullptr );
         locked_futures[chopstick_index] = future_chopstick;
 
-        LOG( Synchronizer, LVL, ", locked_futures=" << locked_futures[chopstick_index] << endl )
+        DB( Synchronizer, LVL, ", locked_futures=" << locked_futures[chopstick_index] << endl )
     }
 }
 

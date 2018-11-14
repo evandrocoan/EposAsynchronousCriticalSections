@@ -16,36 +16,36 @@ void increment_counter(Future<int>* future) {
     Delay thinking(1000000);
     counter = counter + 1;
 
-    DB( "increment_counter (counter=" << counter << ")" << endl )
+    LOG( "increment_counter (counter=" << counter << ")" << endl )
     future->resolve(counter);
 }
 
 int functionA() {
-    DB( "functionA ()" << endl )
+    LOG( "functionA ()" << endl )
     Future<int>* future = new Future<int>();
 
     guard.submit(&increment_counter, future);
     auto value = future->get_value();
 
-    DB( "functionA (result=" << value << ")" << endl )
+    LOG( "functionA (result=" << value << ")" << endl )
     return 0;
 }
 
 int functionB() {
-    DB( "functionB ()" << endl )
+    LOG( "functionB ()" << endl )
     Future<int>* future = new Future<int>();
 
     guard.submit(&increment_counter, future);
     auto value = future->get_value();
 
-    DB( "functionB (result=" << value << ")" << endl )
+    LOG( "functionB (result=" << value << ")" << endl )
     return 0;
 }
 
 int main()
 {
-    DB( endl )
-    DB( "Starting main application..." << endl )
+    LOG( endl )
+    LOG( "Starting main application..." << endl )
 
     Thread* producer = new Thread(&functionA);
     Thread* consumer = new Thread(&functionB);
@@ -53,6 +53,6 @@ int main()
     consumer->join();
     producer->join();
 
-    DB( "Exiting main application..." << endl )
+    LOG( "Exiting main application..." << endl )
     return 0;
 }

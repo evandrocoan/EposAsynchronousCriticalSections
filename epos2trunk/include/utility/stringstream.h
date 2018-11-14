@@ -23,14 +23,14 @@ public:
             OStream::OStream(), _last_position(0), _buffer_size(_buffer_size)
     {
         assert(_buffer_size > 0);
-        LOG( Synchronizer, TRC, "StringStream::StringStream(_buffer_size="
+        DB( Synchronizer, TRC, "StringStream::StringStream(_buffer_size="
                 << _buffer_size << ") => " << reinterpret_cast<int *>(this) << endl )
 
         _buffer = new char[_buffer_size];
     }
 
     ~StringStream() {
-        LOG( Synchronizer, TRC, "StringStream::~StringStream(this="
+        DB( Synchronizer, TRC, "StringStream::~StringStream(this="
                 << reinterpret_cast<int *>(this) << ", _buffer="
                 << reinterpret_cast<int *>(_buffer) << ")" << endl )
 
@@ -47,14 +47,14 @@ public:
     }
 
     void print(const char* string) {
-        LOG( Synchronizer, TRC, "StringStream::print(this="
+        DB( Synchronizer, TRC, "StringStream::print(this="
                 << reinterpret_cast<int *>(this)
                 << "), string=" << string << ", " )
 
         unsigned int string_size = strlen(string);
         unsigned int total_size = string_size + _last_position;
 
-        LOG( Synchronizer, TRC, "string_size=" << string_size << ", "
+        DB( Synchronizer, TRC, "string_size=" << string_size << ", "
                 << "total_size=" << total_size )
 
         // https://linux.die.net/man/3/strncpy
@@ -69,7 +69,7 @@ public:
         }
 
         _last_position = total_size;
-        LOG( Synchronizer, TRC, ", _last_position=" << _last_position
+        DB( Synchronizer, TRC, ", _last_position=" << _last_position
                 << ", _buffer=" << _buffer << endl )
     }
 };

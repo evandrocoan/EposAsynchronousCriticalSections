@@ -16,12 +16,12 @@ Guard display_guard;
 Thread * pool[5];
 
 void show(char arg, const char * type) {
-    DB( arg << ": " << type << " (counter=" << counter << ")" << endl )
+    LOG( arg << ": " << type << " (counter=" << counter << ")" << endl )
 }
 
 void increment_counter() {
     counter = counter + 1;
-    DB( "increment_counter (counter=" << counter << ")" << endl )
+    LOG( "increment_counter (counter=" << counter << ")" << endl )
 }
 
 int mythread(char arg) {
@@ -38,8 +38,8 @@ int mythread(char arg) {
 
 int main()
 {
-    DB( endl )
-    DB( "main: begin (counter=" << counter << ")" << endl )
+    LOG( endl )
+    LOG( "main: begin (counter=" << counter << ")" << endl )
 
     pool[0] = new Thread(&mythread, 'A');
     pool[1] = new Thread(&mythread, 'B');
@@ -47,20 +47,20 @@ int main()
     pool[3] = new Thread(&mythread, 'D');
     pool[4] = new Thread(&mythread, 'E');
 
-    DB( "main: start joining the threads (counter=" << counter << ")" << endl )
+    LOG( "main: start joining the threads (counter=" << counter << ")" << endl )
     pool[0]->join();
     pool[1]->join();
     pool[2]->join();
     pool[3]->join();
     pool[4]->join();
 
-    DB( "main: done with both (counter=" << counter << ")" << endl )
+    LOG( "main: done with both (counter=" << counter << ")" << endl )
     delete pool[0];
     delete pool[1];
     delete pool[2];
     delete pool[3];
     delete pool[4];
 
-    DB( "main: exiting (counter=" << counter << ")" << endl )
+    LOG( "main: exiting (counter=" << counter << ")" << endl )
     return 0;
 }
