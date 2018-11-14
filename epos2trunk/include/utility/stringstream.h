@@ -2,6 +2,7 @@
 
 #include <utility/ostream.h>
 #include <utility/string.h>
+#include <utility/debug_sync.h>
 
 #ifndef __stringstream_h
 #define __stringstream_h
@@ -22,16 +23,16 @@ public:
             OStream::OStream(), _last_position(0), _buffer_size(_buffer_size)
     {
         assert(_buffer_size > 0);
-        db<StringStream>(TRC) << "StringStream::StringStream(_buffer_size="
-                << _buffer_size << ") => " << reinterpret_cast<int *>(this) << endl;
+        LOG( Synchronizer, TRC, "StringStream::StringStream(_buffer_size="
+                << _buffer_size << ") => " << reinterpret_cast<int *>(this) << endl )
 
         _buffer = new char[_buffer_size];
     }
 
     ~StringStream() {
-        db<StringStream>(TRC) << "StringStream::~StringStream(this="
+        LOG( Synchronizer, TRC, "StringStream::~StringStream(this="
                 << reinterpret_cast<int *>(this) << ", _buffer="
-                << reinterpret_cast<int *>(_buffer) << ")" << endl;
+                << reinterpret_cast<int *>(_buffer) << ")" << endl )
 
         delete _buffer;
     }
@@ -46,15 +47,15 @@ public:
     }
 
     void print(const char* string) {
-        db<StringStream>(TRC) << "StringStream::print(this="
+        LOG( Synchronizer, TRC, "StringStream::print(this="
                 << reinterpret_cast<int *>(this)
-                << "), string=" << string << ", ";
+                << "), string=" << string << ", " )
 
         unsigned int string_size = strlen(string);
         unsigned int total_size = string_size + _last_position;
 
-        db<StringStream>(TRC) << "string_size=" << string_size << ", "
-                << "total_size=" << total_size;
+        LOG( Synchronizer, TRC, "string_size=" << string_size << ", "
+                << "total_size=" << total_size )
 
         // https://linux.die.net/man/3/strncpy
         if( total_size >= _buffer_size ) {
@@ -68,8 +69,8 @@ public:
         }
 
         _last_position = total_size;
-        db<StringStream>(TRC) << ", _last_position=" << _last_position
-                << ", _buffer=" << _buffer << endl;
+        LOG( Synchronizer, TRC, ", _last_position=" << _last_position
+                << ", _buffer=" << _buffer << endl )
     }
 };
 
