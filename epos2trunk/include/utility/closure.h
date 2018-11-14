@@ -1,5 +1,7 @@
 // EPOS Guard Component Declarations
 
+#include <utility/debug_sync.h>
+
 #ifndef __closure_h
 #define __closure_h
 
@@ -56,10 +58,10 @@ private:
 public:
     Closure(Function _entry, Tn ... an): _entry(_entry)
     {
-        db<Synchronizer>(TRC) << "Closure(_entry=" << &_entry
+        LOG( Closure, TRC, "Closure(_entry=" << &_entry
                 << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
                 << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH
-                << ", sizeof=" << sizeof(*this) << ") => " << this << endl;
+                << ", sizeof=" << sizeof(*this) << ") => " << this << endl )
 
         if(PARAMETERS_LENGTH)
             _parameters = new char[PARAMETERS_LENGTH];
@@ -68,10 +70,10 @@ public:
     }
 
     ~Closure() {
-        db<Synchronizer>(TRC) << "~Closure(this=" << this
+        LOG( Closure, TRC, "~Closure(this=" << this
                 << ", _entry=" << &_entry << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
                 << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH
-                << ", sizeof=" << sizeof(*this) << ")" << endl;
+                << ", sizeof=" << sizeof(*this) << ")" << endl )
 
         if(PARAMETERS_LENGTH)
             delete _parameters;
@@ -89,17 +91,17 @@ private:
     template<int ...Sequence>
     inline ReturnType _unpack_and_run(MetaSequenceOfIntegers<Sequence...>)
     {
-        db<Synchronizer>(TRC) << "Closure::_unpack_and_run(this=" << this << ")" << endl;
+        LOG( Closure, TRC, "Closure::_unpack_and_run(this=" << this << ")" << endl )
         return _entry( unpack_helper<Sequence, Tn>()... );
     }
 
     template<const int position, typename T>
     inline T unpack_helper()
     {
-        db<Synchronizer>(TRC) << "Closure::unpack_helper(Head=" << sizeof( T )
+        LOG( Closure, TRC, "Closure::unpack_helper(Head=" << sizeof( T )
                 << ", address=" << reinterpret_cast<int *>(_parameters + position)
                 << "(" << reinterpret_cast<int *>(_parameters) << ")"
-                << ", position=" << position << ")" << endl;
+                << ", position=" << position << ")" << endl )
 
         return *reinterpret_cast<T *>( _parameters + position );
     }
@@ -108,8 +110,8 @@ public:
     template<typename Head, typename ... Tail>
     static void pack_helper(char* pointer_address, Head head, Tail ... tail)
     {
-        db<Synchronizer>(TRC) << "Closure::pack_helper(Head=" << sizeof( Head )
-                << ", address=" << reinterpret_cast<int *>(pointer_address) << ")" << endl;
+        LOG( Closure, TRC, "Closure::pack_helper(Head=" << sizeof( Head )
+                << ", address=" << reinterpret_cast<int *>(pointer_address) << ")" << endl )
 
         *reinterpret_cast<Head *>(pointer_address) = head;
         pack_helper(pointer_address + sizeof( Head ), tail ...);
