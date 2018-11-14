@@ -33,7 +33,8 @@ flash:		strip $(FLASH)
 
 run:		strip $(IMAGE)
 ifeq ($(NODES),1)
-		$(EMULATOR)$(IMAGE) | $(TEE) $(OUTPUT)
+		# $(EMULATOR)$(IMAGE) | $(TEE) $(OUTPUT)
+		$(EMULATOR)$(IMAGE)
 else
 #		$(TERM) "$(EMULATOR) $(IMAGE) -net nic,model=pcnet,macaddr=56:34:12:0:54:08 -net dump,file=r-$(APPLICATION).pcap -net socket,listen=:1234 -net user,net=10.0.1.0/24,host=10.0.1.1,dhcpstart=10.0.1.8 | $(TEE) r-$(OUTPUT)
 		$(TERM) "$(EMULATOR)$(IMAGE) -net nic,model=pcnet,macaddr=56:34:12:0:54:08 -net dump,file=r-$(APPLICATION).pcap -net socket,listen=:1234 | $(TEE) r-$(OUTPUT) \
