@@ -15,17 +15,17 @@ int counter = 0;
 // No, this is not how you would add 10,000,000 to
 // a counter, but it shows the problem nicely.
 int mythread(char arg) {
-    LOG( Debug, WRN, arg << ": begin : " << endl)
+    DB( arg << ": begin : " << endl)
 
     for (int i = 0; i < 1e6; i++) {
         if (counter%100000 == 0){
-            LOG( Debug, WRN, arg << " : " << counter << endl )
+            DB( arg << " : " << counter << endl )
         }
         counter = counter + 1;
-        // LOG( Debug, WRN, "Counting " << counter << endl )
+        // DB( "Counting " << counter << endl )
     }
 
-    LOG( Debug, WRN, arg << ": done" << endl )
+    DB( arg << ": done" << endl )
     return 0;
 }
 
@@ -34,8 +34,8 @@ int mythread(char arg) {
 // and then waits for them (pthread_join)
 int main()
 {
-    LOG( Debug, WRN, endl )
-    LOG( Debug, WRN, "main: begin (counter = " << counter << ")" << endl )
+    DB( endl )
+    DB( "main: begin (counter = " << counter << ")" << endl )
 
     Thread * p1 = new Thread(&mythread, 'A');
     Thread * p2 = new Thread(&mythread, 'B');
@@ -52,6 +52,6 @@ int main()
     p5->join();
     p6->join();
 
-    LOG( Debug, WRN, "main: done with both (counter = " << counter << ")"<< endl )
+    DB( "main: done with both (counter = " << counter << ")"<< endl )
     return 0;
 }

@@ -6,8 +6,8 @@ using namespace EPOS;
 
 int main()
 {
-    LOG( Debug, WRN, endl )
-    LOG( Debug, WRN, "Welcome to the `stringstream.h` test program" << endl )
+    DB( endl )
+    DB( "Welcome to the `stringstream.h` test program" << endl )
 
     StringStream stream48chars{50};
     StringStream stream49chars{50};
@@ -19,10 +19,10 @@ int main()
     stream50chars << "66666666666666666666666666666666666666666666000050";
     stream51chars << "666666666666666666666666666666666666666666660000051";
 
-    LOG( Debug, WRN, &stream48chars << endl )
-    LOG( Debug, WRN, &stream49chars << endl )
-    LOG( Debug, WRN, &stream50chars << endl )
-    LOG( Debug, WRN, &stream51chars << endl << endl )
+    DB( &stream48chars << endl )
+    DB( &stream49chars << endl )
+    DB( &stream50chars << endl )
+    DB( &stream51chars << endl << endl )
 
     StringStream base23chars{50};
     StringStream stream48chars2{50};
@@ -36,10 +36,10 @@ int main()
     stream50chars2 << base23chars << "888888888888888888888000050";
     stream51chars2 << base23chars << "8888888888888888888880000051";
 
-    LOG( Debug, WRN, &stream48chars2 << endl )
-    LOG( Debug, WRN, &stream49chars2 << endl )
-    LOG( Debug, WRN, &stream50chars2 << endl )
-    LOG( Debug, WRN, &stream51chars2 << endl )
+    DB( &stream48chars2 << endl )
+    DB( &stream49chars2 << endl )
+    DB( &stream50chars2 << endl )
+    DB( &stream51chars2 << endl )
 
     return 0;
 }

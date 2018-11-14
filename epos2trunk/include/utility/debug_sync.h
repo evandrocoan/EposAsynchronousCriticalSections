@@ -1,16 +1,16 @@
 // EPOS Debug Utility Declarations
 
-#ifndef __debug_sync_h
-#define __debug_sync_h
-
-
 #include <utility/debug.h>
 #include <semaphore.h>
+
+#ifndef __debug_sync_h
+#define __debug_sync_h
 
 // You can define it anywhere before including this file
 // #define DEBUG_SYNC
 
 #ifdef DEBUG_SYNC
+
 __BEGIN_UTIL
     Semaphore _debug_syncronized_semaphore_lock;
 __END_UTIL
@@ -26,6 +26,7 @@ __END_UTIL
 
 #endif
 
+#define DB(...) LOG(Debug, WRN, __VA_ARGS__)
 
 #endif
 

@@ -9,29 +9,29 @@
 using namespace EPOS;
 
 int producerFunction(Future<int>* future) {
-    LOG( Debug, WRN, "producerFunction ()" << endl )
+    DB( "producerFunction ()" << endl )
     Delay thinking(1000000);
     future->resolve(10);
 
-    LOG( Debug, WRN, "producerFunction (resolving future=" << future << " to 10)" << endl )
+    DB( "producerFunction (resolving future=" << future << " to 10)" << endl )
     return 0;
 }
 
 int consumerFunction(Future<int>* future) {
-    LOG( Debug, WRN, "consumerFunction ()" << endl )
+    DB( "consumerFunction ()" << endl )
 
     auto value = future->get_value();
-    LOG( Debug, WRN, "consumerFunction (result=" << value << ")" << endl )
+    DB( "consumerFunction (result=" << value << ")" << endl )
 
     value = future->get_value();
-    LOG( Debug, WRN, "consumerFunction (result=" << value << ")" << endl )
+    DB( "consumerFunction (result=" << value << ")" << endl )
     return 0;
 }
 
 int main()
 {
-    LOG( Debug, WRN, endl )
-    LOG( Debug, WRN, "Starting main application..." << endl )
+    DB( endl )
+    DB( "Starting main application..." << endl )
     Future<int>* future = new Future<int>();
 
     Thread* consumer = new Thread(&consumerFunction, future);
@@ -40,6 +40,6 @@ int main()
     consumer->join();
     producer->join();
 
-    LOG( Debug, WRN, "Exiting main application..." << endl )
+    DB( "Exiting main application..." << endl )
     return 0;
 }

@@ -10,14 +10,14 @@ OStream cout;
 
 int main()
 {
-    LOG( Debug, WRN, endl )
-    LOG( Debug, WRN, "Welcome to the CPU::cas() instruction test!" << endl )
+    DB( endl )
+    DB( "Welcome to the CPU::cas() instruction test!" << endl )
     int original = 5;
     int compare = 5;
     int replacement = 6;
     int replaced;
 
-    LOG( Debug, WRN, "original=" << original
+    DB( "original=" << original
             << ", compare=" << compare
             << ", replacement=" << replacement
             << ", replaced=" << replaced
@@ -25,11 +25,11 @@ int main()
 
     replaced = CPU::cas(original, compare, replacement);
 
-    LOG( Debug, WRN, "original=" << original
+    DB( "original=" << original
             << ", compare=" << compare
             << ", replacement=" << replacement
             << ", replaced=" << replaced
             << endl )
 
-    LOG( Debug, WRN, "The CPU::cas() instruction set ran successfully!" << endl )
+    DB( "The CPU::cas() instruction set ran successfully!" << endl )
 }
