@@ -1,4 +1,5 @@
 // EPOS Synchronizer Component Test Program
+#define DEBUG_SYNC
 
 #include <thread.h>
 #include <machine.h>
@@ -6,7 +7,6 @@
 #include <alarm.h>
 
 using namespace EPOS;
-#define log(argument) db<Synchronizer>(WRN) << argument;
 
 static volatile int counter = 0;
 static const int iterations = 5e0;
@@ -16,12 +16,12 @@ Guard display_guard;
 Thread * pool[5];
 
 void show(char arg, const char * type) {
-    log( arg << ": " << type << " (counter=" << counter << ")" << endl )
+    LOG( Debug, WRN, arg << ": " << type << " (counter=" << counter << ")" << endl )
 }
 
 void increment_counter() {
     counter = counter + 1;
-    log( "increment_counter (counter=" << counter << ")" << endl )
+    LOG( Debug, WRN, "increment_counter (counter=" << counter << ")" << endl )
 }
 
 int mythread(char arg) {
@@ -38,7 +38,7 @@ int mythread(char arg) {
 
 int main()
 {
-    log( endl << "main: begin (counter=" << counter << ")" << endl )
+    LOG( Debug, WRN, endl << "main: begin (counter=" << counter << ")" << endl )
 
     pool[0] = new Thread(&mythread, 'A');
     pool[1] = new Thread(&mythread, 'B');
@@ -46,20 +46,20 @@ int main()
     pool[3] = new Thread(&mythread, 'D');
     pool[4] = new Thread(&mythread, 'E');
 
-    log( "main: start joining the threads (counter=" << counter << ")" << endl )
+    LOG( Debug, WRN, "main: start joining the threads (counter=" << counter << ")" << endl )
     pool[0]->join();
     pool[1]->join();
     pool[2]->join();
     pool[3]->join();
     pool[4]->join();
 
-    log( "main: done with both (counter=" << counter << ")" << endl )
+    LOG( Debug, WRN, "main: done with both (counter=" << counter << ")" << endl )
     delete pool[0];
     delete pool[1];
     delete pool[2];
     delete pool[3];
     delete pool[4];
 
-    log( "main: exiting (counter=" << counter << ")" << endl )
+    LOG( Debug, WRN, "main: exiting (counter=" << counter << ")" << endl )
     return 0;
 }
