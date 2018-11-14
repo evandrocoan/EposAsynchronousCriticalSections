@@ -4,10 +4,7 @@ include ../../makedefs
 
 TARGET := $(if $(shell find $(MACH)* 2> /dev/null), $(if $(SETUP_ADDR), install, install.o))
 
-all:
-	${MAKE} all_multithread -j$(NPROCS)
-
-all_multithread: $(TARGET)
+all: $(TARGET)
 
 ifeq ($(MACH),cortex)
 $(MACH)_setup.s: $(MACH)_setup.S
