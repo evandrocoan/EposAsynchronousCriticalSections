@@ -1,36 +1,29 @@
 // EPOS Synchronizer Component Test Program
+#define DEBUG_SYNC
 
-#include <utility/ostream.h>
+#include <utility/debug_sync.h>
 #include <semaphore.h>
 #include <thread.h>
 #include <machine.h>
 
 using namespace EPOS;
-
 static volatile int counter = 0;
 
-Semaphore display_lock;
 Semaphore counter_lock; 
-
-OStream cout;
 
 // mythread()
 // Simply adds 1 to counter repeatedly, in a loop
 // No, this is not how you would add 10,000,000 to
 // a counter, but it shows the problem nicely.
 int mythread(char arg) {
-    display_lock.p();
-    cout << arg << ": begin" << endl;
-    display_lock.v();
+    LOG( Debug, WRN, arg << ": begin" << endl )
     for (int i = 0; i < 1e4; i++) {
         counter_lock.p();
         counter = counter + 1;
         counter_lock.v();
     }
 
-    display_lock.p();
-    cout << arg << ": done" << endl;
-    display_lock.v();
+    LOG( Debug, WRN, arg << ": done" << endl )
     return 0;
 }
 
@@ -42,15 +35,13 @@ int main()
     Thread p1(&mythread, 'A');
     Thread p2(&mythread, 'B');
 
-    display_lock.p();
-    cout << "main: begin (counter = " << counter << ")" << endl;
-    display_lock.v();
+    LOG( Debug, WRN, endl )
+    LOG( Debug, WRN, "main: begin (counter = " << counter << ")" << endl )
 
     // join waits for the threads to finish
     p1.join();
     p2.join();
 
-    cout << "main: done with both (counter = " << counter << ")"<< endl;
-
+    LOG( Debug, WRN, "main: done with both (counter = " << counter << ")"<< endl )
     return 0;
 }
