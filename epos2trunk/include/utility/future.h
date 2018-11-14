@@ -3,6 +3,7 @@
 #ifndef __future_h
 #define __future_h
 
+#include <semaphore.h>
 #include <condition.h>
 #include <utility/debug_sync.h>
 
@@ -27,8 +28,15 @@ public:
                               << " _is_resolved=" << _is_resolved \
                               << " _condition=" << _condition.size() \
                               <<  ")" << endl )
+        _lock.lock();
 
-        if(!_is_resolved) _condition.wait();
+        if(!_is_resolved) {
+            _lock.unlock();
+            _condition.wait();
+        }
+        else {
+            _lock.unlock();
+        }
         return _value;
     }
 
@@ -37,20 +45,23 @@ public:
                               << " _is_resolved=" << _is_resolved \
                               << " _condition=" << _condition.size() \
                               <<  ")" << endl )
-
+        _lock.lock();
         assert(!_is_resolved);
         // If `resolve()` was called and the instruction pointer got until here,
         // and the thread is unscheduled, and another thread call `resolve()`,
-        // then, the `assert` above will not work.
+        // then, the `assert` will not work, if the resolve() call is not atomic.
         _value = value;
         _is_resolved = true;
         _condition.broadcast();
+        _lock.unlock();
     }
 
 private:
     bool _is_resolved;
-    FutureType _value;
+    Semaphore _lock;
+
     Condition _condition;
+    FutureType _value;
 };
 
 __END_UTIL

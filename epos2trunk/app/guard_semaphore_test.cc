@@ -11,10 +11,14 @@
 #include <alarm.h>
 #include <display.h>
 
+#if !defined(nullptr)
+    #define nullptr 0
+#endif
+
 using namespace EPOS;
 
-const int iterations = 2;
 #define CONSOLE_MODE
+const int iterations = 2;
 
 Guard table;
 Guard guard;
@@ -25,9 +29,15 @@ Thread * phil[5];
 bool is_chopstick_free[5];
 Future<int>* locked_futures[5];
 
+#ifdef CONSOLE_MODE
+    #define LVL WRN
+#else
+    #define LVL FFF
+#endif
+
 void show_message(const char * message, int line, int column) {
 #ifdef CONSOLE_MODE
-    LOG( Synchronizer, WRN, "(" << line << ")" << endl )
+    LOG( Synchronizer, LVL, message << "(" << line << ")" << endl )
 #else
     Display::position( line, column );
     cout << message;
@@ -36,7 +46,7 @@ void show_message(const char * message, int line, int column) {
 
 void show_message(StringStream * message, int line, int column) {
 #ifdef CONSOLE_MODE
-    LOG( Synchronizer, WRN, message )
+    LOG( Synchronizer, LVL, message )
 #else
     Display::position( line, column );
     cout << message;
@@ -44,29 +54,42 @@ void show_message(StringStream * message, int line, int column) {
     delete message;
 }
 
-void release_chopsticks(int philosopher_index, int chopstick_index) {
-    LOG( Synchronizer, WRN, "Philosopher=" << philosopher_index 
-            << ", release chopstick=" << chopstick_index 
-            << ", is_chopstick_free=" << is_chopstick_free[chopstick_index] << endl )
+void release_chopsticks(int philosopher_index, int chopstick_index, const char* which_chopstick) {
+    LOG( Synchronizer, LVL, "Philosopher=" << philosopher_index
+            << ", release chopstick=" << chopstick_index
+            << ", is_chopstick_free=" << is_chopstick_free[chopstick_index]
+            << ", " << which_chopstick )
 
     is_chopstick_free[chopstick_index] = true;
-    locked_futures[chopstick_index]->resolve(1);
+
+    if( locked_futures[chopstick_index] ) {
+        LOG( Synchronizer, LVL, ", locked_futures=" << locked_futures[chopstick_index] << endl )
+
+        auto old = locked_futures[chopstick_index];
+        locked_futures[chopstick_index] = nullptr;
+        old->resolve(1);
+    }
+    else {
+        LOG( Synchronizer, LVL, endl )
+    }
 }
 
-void get_chopsticks(int philosopher_index, int chopstick_index, Future<int>* future_chopstick)
+void get_chopsticks(int philosopher_index, int chopstick_index, Future<int>* future_chopstick, const char* which_chopstick)
 {
-    LOG( Synchronizer, WRN, "Philosopher=" << philosopher_index 
-            << ", getting chopstick=" << chopstick_index 
-            << ", is_chopstick_free=" << is_chopstick_free[chopstick_index] << endl )
+    LOG( Synchronizer, LVL, "Philosopher=" << philosopher_index
+            << ", getting chopstick=" << chopstick_index
+            << ", is_chopstick_free=" << is_chopstick_free[chopstick_index]
+            << ", " << which_chopstick )
 
     if( is_chopstick_free[chopstick_index] ) {
         is_chopstick_free[chopstick_index] = false;
 
+        LOG( Synchronizer, LVL, ", future_chopstick=" << future_chopstick << endl )
         future_chopstick->resolve(1);
-        return;
     }
     else {
         locked_futures[chopstick_index] = future_chopstick;
+        LOG( Synchronizer, LVL, ", locked_futures=" << locked_futures[chopstick_index] << endl )
     }
 }
 
@@ -81,42 +104,42 @@ int philosopher(int philosopher_index, int line, int column)
 
     for(int i = iterations; i > 0; i--)
     {
-        table.submit( &show_message, "thinking", line, column );
+        table.submit( &show_message, "    thinking", line, column );
         Delay thinking(2000000);
 
         // Get the first chopstick
         Future<int>* chopstick1 = new Future<int>();
-        guard.submit( &get_chopsticks, philosopher_index, first, chopstick1 );
+        guard.submit( &get_chopsticks, philosopher_index, first, chopstick1, "FIRST " );
         chopstick1->get_value(); delete chopstick1;
 
         // Get the second chopstick
         Future<int>* chopstick2 = new Future<int>();
-        guard.submit( &get_chopsticks, philosopher_index, second, chopstick2 );
+        guard.submit( &get_chopsticks, philosopher_index, second, chopstick2, "SECOND" );
         chopstick2->get_value(); delete chopstick2;
 
     #ifdef CONSOLE_MODE
         StringStream* stream1 = new StringStream{100};
-        *stream1 << "Philosopher=" << philosopher_index << " got      the first=" << first
+        *stream1 << "Philosopher=" << philosopher_index << ", got     the first=" << first
                 << " and second=" << second << " chopstick\n";
         table.submit( &show_message, stream1, line, column );
     #endif
 
-        table.submit( &show_message, " eating ", line, column );
+        table.submit( &show_message, "    eating  ", line, column );
         Delay eating(1000000);
 
         // Release the chopsticks
-        guard.submit( &release_chopsticks, philosopher_index, first );
-        guard.submit( &release_chopsticks, philosopher_index, second );
+        guard.submit( &release_chopsticks, philosopher_index, second, "SECOND" );
+        guard.submit( &release_chopsticks, philosopher_index, first, "FIRST " );
 
     #ifdef CONSOLE_MODE
         StringStream* stream2 = new StringStream{100};
-        *stream2 << "Philosopher=" << philosopher_index << " released the first=" << first
+        *stream2 << "Philosopher=" << philosopher_index << ", release the first=" << first
                 << " and second=" << second << " chopstick\n";
         table.submit( &show_message, stream2, line, column );
     #endif
     }
 
-    table.submit( &show_message, "  done  ", line, column );
+    table.submit( &show_message, "    done    ", line, column );
     return iterations;
 }
 
@@ -126,9 +149,10 @@ void setup_program()
     Display::position(0, 0);
     cout << "The Philosopher's Dinner:" << endl;
 
-    for(int i = 0; i < 5; i++)
+    for(int i = 0; i < 5; i++) {
         is_chopstick_free[i] = true;
-
+        locked_futures[i] = nullptr;
+    }
     phil[0] = new Thread(&philosopher, 0,  5, 32);
     phil[1] = new Thread(&philosopher, 1, 10, 44);
     phil[2] = new Thread(&philosopher, 2, 16, 39);
