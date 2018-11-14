@@ -49,7 +49,7 @@ public:
     Critical_Section(void(*_entry)(Tn ...), Tn ... an) :
             Closure<void( Tn... )>::Closure( _entry, an ... )
     {
-        DB( Synchronizer, TRC, "Critical_Section(_entry=" << _entry 
+        DB( Synchronizer, TRC, "Critical_Section(_entry=" << reinterpret_cast<void *>(_entry)
                 << ") => " << this << endl )
     }
 

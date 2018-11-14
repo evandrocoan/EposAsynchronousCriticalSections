@@ -58,7 +58,7 @@ private:
 public:
     Closure(Function _entry, Tn ... an): _entry(_entry)
     {
-        DB( Synchronizer, TRC, "Closure(_entry=" << &_entry
+        DB( Synchronizer, TRC, "Closure(_entry=" << reinterpret_cast<void *>(_entry)
                 << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
                 << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH
                 << ", sizeof=" << sizeof(*this) << ") => " << this << endl )
@@ -71,7 +71,8 @@ public:
 
     ~Closure() {
         DB( Synchronizer, TRC, "~Closure(this=" << this
-                << ", _entry=" << &_entry << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
+                << ", _entry=" << reinterpret_cast<void *>(_entry) 
+                << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
                 << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH
                 << ", sizeof=" << sizeof(*this) << ")" << endl )
 
