@@ -18,7 +18,7 @@
 using namespace EPOS;
 
 #define CONSOLE_MODE
-const int iterations = 2;
+const int iterations = 10;
 
 Guard table;
 Guard guard;
@@ -54,22 +54,26 @@ void show_message(StringStream * message, int line, int column) {
     delete message;
 }
 
-void release_chopsticks(int philosopher_index, int chopstick_index, const char* which_chopstick) {
+void release_chopsticks(int philosopher_index, int chopstick_index, Future<int>* future_chopstick, const char* which_chopstick) {
     LOG( Synchronizer, LVL, "Philosopher=" << philosopher_index
             << ", release chopstick=" << chopstick_index
             << ", is_chopstick_free=" << is_chopstick_free[chopstick_index]
+            << ", future_chopstick=" << future_chopstick
+            << ", locked_futures=" << locked_futures[chopstick_index]
             << ", " << which_chopstick )
 
     is_chopstick_free[chopstick_index] = true;
+    delete future_chopstick;
 
     if( locked_futures[chopstick_index] ) {
-        LOG( Synchronizer, LVL, ", locked_futures=" << locked_futures[chopstick_index] << endl )
+        LOG( Synchronizer, LVL, endl )
 
         auto old = locked_futures[chopstick_index];
         locked_futures[chopstick_index] = nullptr;
         old->resolve(1);
     }
     else {
+        assert( locked_futures[chopstick_index] == nullptr );
         LOG( Synchronizer, LVL, endl )
     }
 }
@@ -88,7 +92,9 @@ void get_chopsticks(int philosopher_index, int chopstick_index, Future<int>* fut
         future_chopstick->resolve(1);
     }
     else {
+        assert( locked_futures[chopstick_index] == nullptr );
         locked_futures[chopstick_index] = future_chopstick;
+
         LOG( Synchronizer, LVL, ", locked_futures=" << locked_futures[chopstick_index] << endl )
     }
 }
@@ -110,12 +116,12 @@ int philosopher(int philosopher_index, int line, int column)
         // Get the first chopstick
         Future<int>* chopstick1 = new Future<int>();
         guard.submit( &get_chopsticks, philosopher_index, first, chopstick1, "FIRST " );
-        chopstick1->get_value(); delete chopstick1;
+        chopstick1->get_value(); 
 
         // Get the second chopstick
         Future<int>* chopstick2 = new Future<int>();
         guard.submit( &get_chopsticks, philosopher_index, second, chopstick2, "SECOND" );
-        chopstick2->get_value(); delete chopstick2;
+        chopstick2->get_value(); 
 
     #ifdef CONSOLE_MODE
         StringStream* stream1 = new StringStream{100};
@@ -128,8 +134,8 @@ int philosopher(int philosopher_index, int line, int column)
         Delay eating(1000000);
 
         // Release the chopsticks
-        guard.submit( &release_chopsticks, philosopher_index, second, "SECOND" );
-        guard.submit( &release_chopsticks, philosopher_index, first, "FIRST " );
+        guard.submit( &release_chopsticks, philosopher_index, second, chopstick2, "SECOND" );
+        guard.submit( &release_chopsticks, philosopher_index, first, chopstick1, "FIRST " );
 
     #ifdef CONSOLE_MODE
         StringStream* stream2 = new StringStream{100};
