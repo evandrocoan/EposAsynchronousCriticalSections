@@ -29,6 +29,16 @@ class Select_Debug: public Debug {};
 template<>
 class Select_Debug<false>: public Null_Debug {};
 
+// Off
+enum Debug_Off {FFF = 0};
+
+template<typename T>
+inline Select_Debug<false>
+db(Debug_Off l)
+{
+    return Select_Debug<false>();
+}
+
 // Error
 enum Debug_Error {ERR = 1};
 
