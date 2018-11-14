@@ -1,4 +1,5 @@
 // EPOS Synchronizer Component Test Program
+#define DEBUG_SYNC
 
 #include <thread.h>
 #include <utility/guard.h>
@@ -10,39 +11,41 @@ using namespace EPOS;
 static volatile int counter = 0;
 
 Guard guard;
-Semaphore display_lock;
-
-// #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
-#define log(argument) db<Synchronizer>(WRN) << argument;
 
 void increment_counter(Future<int>* future) {
     Delay thinking(1000000);
     counter = counter + 1;
-    log( "increment_counter (counter=" << counter << ")" << endl )
+
+    LOG( Debug, WRN, "increment_counter (counter=" << counter << ")" << endl )
     future->resolve(counter);
 }
 
 int functionA() {
-    log( "functionA ()" << endl )
+    LOG( Debug, WRN, "functionA ()" << endl )
     Future<int>* future = new Future<int>();
 
     guard.submit(&increment_counter, future);
-    log( "functionA (result=" << future->get_value() << ")" << endl )
+    auto value = future->get_value();
+
+    LOG( Debug, WRN, "functionA (result=" << value << ")" << endl )
     return 0;
 }
 
 int functionB() {
-    log( "functionB ()" << endl )
+    LOG( Debug, WRN, "functionB ()" << endl )
     Future<int>* future = new Future<int>();
 
     guard.submit(&increment_counter, future);
-    log( "functionB (result=" << future->get_value() << ")" << endl )
+    auto value = future->get_value();
+
+    LOG( Debug, WRN, "functionB (result=" << value << ")" << endl )
     return 0;
 }
 
 int main()
 {
-    log( endl << "Starting main application..." << endl )
+    LOG( Debug, WRN, endl )
+    LOG( Debug, WRN, "Starting main application..." << endl )
 
     Thread* producer = new Thread(&functionA);
     Thread* consumer = new Thread(&functionB);
@@ -50,6 +53,6 @@ int main()
     consumer->join();
     producer->join();
 
-    log( "Exiting main application..." << endl )
+    LOG( Debug, WRN, "Exiting main application..." << endl )
     return 0;
 }

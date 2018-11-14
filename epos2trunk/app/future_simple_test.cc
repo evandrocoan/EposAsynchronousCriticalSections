@@ -1,4 +1,5 @@
 // EPOS Synchronizer Component Test Program
+#define DEBUG_SYNC
 
 #include <thread.h>
 #include <utility/future.h>
@@ -6,30 +7,31 @@
 #include <alarm.h>
 
 using namespace EPOS;
-Semaphore display_lock;
-
-// #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
-#define log(argument) db<Synchronizer>(WRN) << argument;
 
 int producerFunction(Future<int>* future) {
-    log( "producerFunction ()" << endl )
+    LOG( Debug, WRN, "producerFunction ()" << endl )
     Delay thinking(1000000);
     future->resolve(10);
 
-    log( "producerFunction (resolving future=" << future << " to 10)" << endl )
+    LOG( Debug, WRN, "producerFunction (resolving future=" << future << " to 10)" << endl )
     return 0;
 }
 
 int consumerFunction(Future<int>* future) {
-    log( "consumerFunction ()" << endl )
-    log( "consumerFunction (result=" << future->get_value() << ")" << endl )
-    log( "consumerFunction (result=" << future->get_value() << ")" << endl )
+    LOG( Debug, WRN, "consumerFunction ()" << endl )
+
+    auto value = future->get_value();
+    LOG( Debug, WRN, "consumerFunction (result=" << value << ")" << endl )
+
+    value = future->get_value();
+    LOG( Debug, WRN, "consumerFunction (result=" << value << ")" << endl )
     return 0;
 }
 
 int main()
 {
-    log( endl << "Starting main application..." << endl )
+    LOG( Debug, WRN, endl )
+    LOG( Debug, WRN, "Starting main application..." << endl )
     Future<int>* future = new Future<int>();
 
     Thread* consumer = new Thread(&consumerFunction, future);
@@ -38,6 +40,6 @@ int main()
     consumer->join();
     producer->join();
 
-    log( "Exiting main application..." << endl )
+    LOG( Debug, WRN, "Exiting main application..." << endl )
     return 0;
 }

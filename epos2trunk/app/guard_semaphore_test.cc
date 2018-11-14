@@ -1,5 +1,4 @@
 // EPOS Semaphore Component Test Program
-
 #define DEBUG_SYNC
 
 #include <utility/ostream.h>
@@ -198,6 +197,5 @@ int main()
         delete phil[i];
 
     cout << "The end!" << endl;
-
     return 0;
 }

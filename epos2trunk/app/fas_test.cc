@@ -1,6 +1,8 @@
 // EPOS Synchronizer Component Test Program
+#define DEBUG_SYNC
 
 #include <utility/ostream.h>
+#include <utility/debug_sync.h>
 #include <semaphore.h>
 #include <thread.h>
 #include <machine.h>
@@ -9,16 +11,12 @@
 using namespace EPOS;
 static const int iterations = 1e5;
 
-Semaphore display_lock;
-// #define log(argument) display_lock.p(); db<Synchronizer>(WRN) << argument; display_lock.v();
-#define log(argument) db<Synchronizer>(WRN) << argument;
-
 int old = 0;
 int current = 10;
 int next = 11;
 
 #define check(thread, name) \
-    log( thread << name \
+    LOG( Debug, WRN, thread << name \
             << ", old=" << old \
             << ", current=" << current \
             << ", next=" << next \
@@ -55,7 +53,8 @@ int myThread2() {
 
 int main()
 {
-    log( "iterations=" << iterations << endl )
+    LOG( Debug, WRN, endl )
+    LOG( Debug, WRN, "iterations=" << iterations << endl )
     Thread p1(&myThread1);
     Thread p2(&myThread2);
 
