@@ -15,6 +15,7 @@ __BEGIN_UTIL
     Semaphore _debug_syncronized_semaphore_lock;
 __END_UTIL
 
+    // A debug function cannot call this recursively, otherwise a deadlock happens
     #define LOG(name,level,...) do { \
         _debug_syncronized_semaphore_lock.lock(); \
             db<name>(level) << __VA_ARGS__; \
