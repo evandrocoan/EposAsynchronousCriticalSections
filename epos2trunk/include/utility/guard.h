@@ -5,6 +5,7 @@
 
 #include <architecture/ia32/cpu.h>
 #include <utility/critical_section.h>
+#include <utility/debug_sync.h>
 
 __BEGIN_UTIL
 
