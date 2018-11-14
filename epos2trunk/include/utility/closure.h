@@ -58,7 +58,7 @@ private:
 public:
     Closure(Function _entry, Tn ... an): _entry(_entry)
     {
-        LOG( Closure, TRC, "Closure(_entry=" << &_entry
+        LOG( Synchronizer, TRC, "Closure(_entry=" << &_entry
                 << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
                 << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH
                 << ", sizeof=" << sizeof(*this) << ") => " << this << endl )
@@ -70,7 +70,7 @@ public:
     }
 
     ~Closure() {
-        LOG( Closure, TRC, "~Closure(this=" << this
+        LOG( Synchronizer, TRC, "~Closure(this=" << this
                 << ", _entry=" << &_entry << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
                 << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH
                 << ", sizeof=" << sizeof(*this) << ")" << endl )
@@ -91,14 +91,14 @@ private:
     template<int ...Sequence>
     inline ReturnType _unpack_and_run(MetaSequenceOfIntegers<Sequence...>)
     {
-        LOG( Closure, TRC, "Closure::_unpack_and_run(this=" << this << ")" << endl )
+        LOG( Synchronizer, TRC, "Closure::_unpack_and_run(this=" << this << ")" << endl )
         return _entry( unpack_helper<Sequence, Tn>()... );
     }
 
     template<const int position, typename T>
     inline T unpack_helper()
     {
-        LOG( Closure, TRC, "Closure::unpack_helper(Head=" << sizeof( T )
+        LOG( Synchronizer, TRC, "Closure::unpack_helper(Head=" << sizeof( T )
                 << ", address=" << reinterpret_cast<int *>(_parameters + position)
                 << "(" << reinterpret_cast<int *>(_parameters) << ")"
                 << ", position=" << position << ")" << endl )
@@ -110,7 +110,7 @@ public:
     template<typename Head, typename ... Tail>
     static void pack_helper(char* pointer_address, Head head, Tail ... tail)
     {
-        LOG( Closure, TRC, "Closure::pack_helper(Head=" << sizeof( Head )
+        LOG( Synchronizer, TRC, "Closure::pack_helper(Head=" << sizeof( Head )
                 << ", address=" << reinterpret_cast<int *>(pointer_address) << ")" << endl )
 
         *reinterpret_cast<Head *>(pointer_address) = head;
