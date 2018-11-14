@@ -19,7 +19,8 @@ void show(char char1, const char* text1, const char* text2,
 
 int main()
 {
-    LOG( Debug, WRN, endl << "main: begin()" << endl )
+    LOG( Debug, WRN, endl )
+    LOG( Debug, WRN, "main: begin()" << endl )
     counter_guard.submit(&show, 'A', "Test 1", "Test 2", true, false, "Test 3", 10);
     counter_guard.submit(&show, 'B', "Test 4", "Test 5", false, false, "Test 6", 20);
 

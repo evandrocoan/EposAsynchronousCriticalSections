@@ -38,7 +38,8 @@ int mythread(char arg) {
 
 int main()
 {
-    LOG( Debug, WRN, endl << "main: begin (counter=" << counter << ")" << endl )
+    LOG( Debug, WRN, endl )
+    LOG( Debug, WRN, "main: begin (counter=" << counter << ")" << endl )
 
     pool[0] = new Thread(&mythread, 'A');
     pool[1] = new Thread(&mythread, 'B');

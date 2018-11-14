@@ -51,7 +51,8 @@ void test_function5(const char* arg1) {
 
 int main()
 {
-    LOG( Debug, WRN, endl << "main: begin()" << endl )
+    LOG( Debug, WRN, endl )
+    LOG( Debug, WRN, "main: begin()" << endl )
 
     test_closure_with_return( &test_function1, 'a', 10, false );
     test_closure_with_return( &test_function2, "test1", "test2", 'b' );
