@@ -26,6 +26,17 @@ extern "C"
     void free(void *);
 }
 
+// According to the site https://forum.arduino.cc/index.php?topic=74145.0 the signatures of new and
+// new placement are as follows:
+//
+// new
+//    void * operator new (size_t size) { return malloc (size); }
+//
+// placement new
+//    void * operator new (size_t size, void * ptr) { return ptr; }
+//
+// So, as we see below only the signatures of a placement new, I conclude that EPOS does not provide
+// signatures for the new operator when the system is being initialized internally.
 inline void * operator new(size_t s, void * a) { return a; }
 inline void * operator new[](size_t s, void * a) { return a; }
 
