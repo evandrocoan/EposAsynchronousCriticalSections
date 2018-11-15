@@ -41,6 +41,10 @@ public:
         return *this;
     }
 
+    // Implemented on `ostream.cc`, because `stringstream.h` includes `ostream.h`,
+    // hence, `ostream.h` cannot include `stringstream.h` back (cyclic reference)
+    OStream & operator<<(const StringStream * stream);
+
     OStream & operator<<(const Hex & hex) {
         _base = 16;
         return *this;
@@ -63,10 +67,6 @@ public:
         _error = true;
         return *this;
     }
-
-    // Implemented on `ostream.cc`, because `stringstream.h` includes `ostream.h`,
-    // hence, `ostream.h` cannot include `stringstream.h` back (cyclic reference)
-    OStream & operator<<(const StringStream * stream);
 
     OStream & operator<<(char c) {
         char buf[2];
@@ -173,20 +173,20 @@ public:
         return *this;
     }
 
-private:
-    virtual void print(const char * s) { _print(s); }
-
+protected:
     int itoa(int v, char * s);
     int utoa(unsigned int v, char * s, unsigned int i = 0);
     int llitoa(long long int v, char * s);
     int llutoa(unsigned long long int v, char * s, unsigned int i = 0);
     int ptoa(const void * p, char * s);
 
-private:
     int _base;
-    volatile bool _error;
-
     static const char _digits[];
+
+private:
+    // Adding virtual to the print() function caused the hysterically_debugged mode completely break
+    void print(const char * s) { _print(s); }
+    volatile bool _error;
 };
 
 extern OStream::Begl begl;
