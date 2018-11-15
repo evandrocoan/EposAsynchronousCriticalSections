@@ -29,7 +29,7 @@ int main(int argc, char * argv[]) {
     printf("main: begin (counter = %d)\n", counter);
     pthread_create( & p1, NULL, mythread, (void*)"A");
     pthread_create( & p2, NULL, mythread, (void*)"B");
-    
+
     // join waits for the threads to finish
     pthread_join(p1, NULL);
     pthread_join(p2, NULL);
@@ -38,7 +38,7 @@ int main(int argc, char * argv[]) {
 }
 
 // Example outputs
-// 
+//
 // $ ./main.exe
 // main: begin (counter = 0)
 // A: begin
@@ -46,7 +46,7 @@ int main(int argc, char * argv[]) {
 // B: done
 // A: done
 // main: done with both (counter = 11500671)
-// 
+//
 // $ ./main.exe
 // main: begin (counter = 0)
 // A: begin

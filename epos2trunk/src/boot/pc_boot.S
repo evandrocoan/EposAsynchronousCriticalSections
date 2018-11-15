@@ -6,81 +6,81 @@
 ;	SETUP. The boot strap is loaded by BIOS at 0x07c00
 ;==============================================================================
 
-; CONSTANTS                                                            
+; CONSTANTS
 ;==============================================================================
-; PHYSICAL MEMORY MAP 
-; 0x0000 0000 -+-----------------------+ BOOT_IDT 
-;              | IDT (4 K)             | 
-; 0x0000 1000 -+-----------------------+ BOOT_GDT 
-;              | GDT (4 K)             | 
-; 0x0000 2000 -+-----------------------+ 
-;              | SMP TRAMP. STACK (4 K)| 
+; PHYSICAL MEMORY MAP
+; 0x0000 0000 -+-----------------------+ BOOT_IDT
+;              | IDT (4 K)             |
+; 0x0000 1000 -+-----------------------+ BOOT_GDT
+;              | GDT (4 K)             |
+; 0x0000 2000 -+-----------------------+
+;              | SMP TRAMP. STACK (4 K)|
 ; 0x0000 3000 -+-----------------------+ TRAMPOLINE_STACK, TRAMPOLINE_CODE
-;              | SMP TRAMPOLINE (4 K)  | 
-; 0x0000 4000 -+-----------------------+ 
-;              :                       : 
-;              | BOOT STACK (15 K)     | 
-; 0x0000 7c00 -+-----------------------+ BOOTSTRAP_STACK, BOOTSTRAP_CODE 
-;              | BOOT CODE (512 b)     | 
-; 0x0000 7e00 -+-----------------------+ 
-;              | RESERVED (512 b)      | 
-; 0x0000 8000 -+-----------------------+ DISK_IMAGE 
-;              | DISK IMAGE (608 K)    | 
-;              :                       : 
-;              |                       | 
-; 0x000a 0000 -+-----------------------+ 
+;              | SMP TRAMPOLINE (4 K)  |
+; 0x0000 4000 -+-----------------------+
+;              :                       :
+;              | BOOT STACK (15 K)     |
+; 0x0000 7c00 -+-----------------------+ BOOTSTRAP_STACK, BOOTSTRAP_CODE
+;              | BOOT CODE (512 b)     |
+; 0x0000 7e00 -+-----------------------+
+;              | RESERVED (512 b)      |
+; 0x0000 8000 -+-----------------------+ DISK_IMAGE
+;              | DISK IMAGE (608 K)    |
+;              :                       :
+;              |                       |
+; 0x000a 0000 -+-----------------------+
 ;              | UNUSED (380K)         |
-;              :                       : 
-;              |                       | 
-; 0x000f f000 -+-----------------------+ 
+;              :                       :
+;              |                       |
+; 0x000f f000 -+-----------------------+
 BOOT_IDT         = 0x0000
 BOOT_GDT         = 0x1000
 TRAMPOLINE_STACK = 0x3000 ; SMP trampoline stack (descendent, 4K)
-TRAMPOLINE_CODE  = 0x3000 ; SMP trampoline code (4K) 
+TRAMPOLINE_CODE  = 0x3000 ; SMP trampoline code (4K)
 BOOTSTRAP_STACK  = 0x7c00 ; Bootstrap stack (descendent, 15K)
-BOOTSTRAP_CODE   = 0x7c00 ; Bootstrap code (512 bytes)        
-DISK_IMAGE 	 = 0x8000 ; = BOOT_IMAGE_PHY_ADDR from memory_map 
+BOOTSTRAP_CODE   = 0x7c00 ; Bootstrap code (512 bytes)
+DISK_IMAGE 	 = 0x8000 ; = BOOT_IMAGE_PHY_ADDR from memory_map
 
-; The size of a disk sector in bytes 
-DISK_SECT_SIZE =         512     
+; The size of a disk sector in bytes
+DISK_SECT_SIZE =         512
 
 ; The size of ELF object's header in bytes (GCC dependent)
 ; Can be determined with objdump -p $(EPOS)/src/setup/pc_setup | sed -n -e 's/^ *LOAD off *\(0x.*\) vaddr.*$/\1/ p' | head -1
 ; It is automatically adjusted by make (see makefile)
 ELF_HDR_SIZE =           XXX
 
-; DISK IMAGE LAYOUT 
-; -+-----------------------+ DISK_IMAGE_SYS_INFO 
-;  | SYS_INFO (512 bytes)  | 
-; -+-----------------------+ DISK_IMAGE_SETUP 
-;  | SETUP                 | 
-;  :                       : 
-; -+-----------------------+ 
-;  | SYSTEM                | 
-;  :                       : 
-; -+-----------------------+ 
-;  | INIT                  | 
-;  :                       : 
-; -+-----------------------+ 
-;  | LOADER/APP1           | 
-;  :                       : 
-; -+-----------------------+ 
-;  | APP1                  | 
-;  :                       : 
-; -+-----------------------+ 
-;  :                       : 
-; -+-----------------------+ 
-;  | APPn                  | 
-;  :                       : 
-; -+-----------------------+ 
-; BOOT IMAGE LAYOUT 
-; System Information 
+; DISK IMAGE LAYOUT
+; -+-----------------------+ DISK_IMAGE_SYS_INFO
+;  | SYS_INFO (512 bytes)  |
+; -+-----------------------+ DISK_IMAGE_SETUP
+;  | SETUP                 |
+;  :                       :
+; -+-----------------------+
+;  | SYSTEM                |
+;  :                       :
+; -+-----------------------+
+;  | INIT                  |
+;  :                       :
+; -+-----------------------+
+;  | LOADER/APP1           |
+;  :                       :
+; -+-----------------------+
+;  | APP1                  |
+;  :                       :
+; -+-----------------------+
+;  :                       :
+; -+-----------------------+
+;  | APPn                  |
+;  :                       :
+; -+-----------------------+
+; BOOT IMAGE LAYOUT
+; System Information
 DISK_IMAGE_SYS_INFO =    DISK_IMAGE
 
-; System Information 
+; System Information
 DISK_IMAGE_SETUP =       (DISK_IMAGE + DISK_SECT_SIZE)
 
-; SETUP entry point 
+; SETUP entry point
 SETUP_ENTRY =            (DISK_IMAGE_SETUP + ELF_HDR_SIZE)
 
 ;==============================================================================
@@ -89,9 +89,9 @@ SETUP_ENTRY =            (DISK_IMAGE_SETUP + ELF_HDR_SIZE)
 ; 8086 segment addresses
 IMAGE_SEG       = DISK_IMAGE >> 4
 INFO_SEG        = DISK_IMAGE_SYS_INFO >> 4
-	
+
 .text
-     
+
 ;==============================================================================
 ; MAIN
 ;==============================================================================
@@ -121,9 +121,9 @@ main:
 		pop	es
                 mov     si,#msg_done
 		call	print_msg
-		
+
 ; Stop the drive motor
-                call	stop_drive   
+                call	stop_drive
 
 ; Get extended memory size (in K)
 ;		xor	dx,dx
@@ -142,7 +142,7 @@ main:
 
 ; Enable A20 bus line
 		call	enable_a20
-		
+
 ; Zero IDT and GDT
                 cld
                 xor	ax,ax
@@ -155,18 +155,18 @@ main:
                 mov	si,#GDT_CODE	; Set GDT[1]=GDT_CODE and
                 mov	di,#BOOT_GDT	; GDT[2]=GDT_DATA
                 add	di,#8		; offset GDT[1] = 8
-                mov	cx,#8		; sizeof GDT[1] + GDT[2] = 8 WORDS 
+                mov	cx,#8		; sizeof GDT[1] + GDT[2] = 8 WORDS
 		rep			; move WORDS
 		movsw
 
 ; Set GDTR
                 lgdt	GDTR
-                   
+
 ; Enable Protected Mode
                 mov	eax,cr0
                 or	al,#0x01	; set PE flag and MP flag
                 mov	cr0,eax
-     
+
 ; Adjust selectors
                 mov	bx,#2 * 8	; adjust data selectors to use
                 mov	ds,bx		; GDT[2] (DATA) with RPL = 00
@@ -183,7 +183,7 @@ main:
 		.byte	0xEA
 		.long	SETUP_ENTRY
 		.word	0x0008
-		
+
 ;==============================================================================
 ; PRINT_MSG
 ;
@@ -199,16 +199,16 @@ print_msg:
                 push	bp
                 cld
 
-print_char:   
+print_char:
                 lodsb
                 cmp	al,#0
                 jz	end_print
-                mov	ah,#0x0E       
+                mov	ah,#0x0E
                 mov	bx,#0x0007
                 int	0x10
                 jmp	print_char
 
-end_print:              
+end_print:
 		pop	bp
                 pop	bx
                 pop	ax
@@ -272,8 +272,8 @@ ls_disk_error:
                 mov     si,#msg_disk_error
                 call    print_msg      ; print error msg if disk is bad
                 call    stop_drive
-ls_disk_halt:            
-                jmp     ls_disk_halt   ; halt 
+ls_disk_halt:
+                jmp     ls_disk_halt   ; halt
 
 ;========================================================================
 ; LOAD_IMAGE
@@ -285,7 +285,7 @@ ls_disk_halt:
 ;       cx     -> initial track (ch) and sector number (cl)
 ;       dx     -> inital side (dh) and drive number (dl)
 ;========================================================================
-load_image:	
+load_image:
 		pushf
 		push	ax
 		push	bx
@@ -399,16 +399,16 @@ trampoline:
 		mov es,ax
 		mov ss,ax
                 mov sp,#TRAMPOLINE_STACK ; set stack pointer
-	;; 		mov [0xB8004], #(0x32 & 0xFF) ; 
+	;; 		mov [0xB8004], #(0x32 & 0xFF) ;
 
 ; Set GDTR
                 lgdt	GDTR
-                   
+
 ; Enable Protected Mode
                 mov	eax,cr0
                 or	al,#0x01	; set PE flag and MP flag
                 mov	cr0,eax
-     
+
 ; Adjust selectors
                 mov	bx,#2 * 8	; adjust data selectors to use
                 mov	ds,bx		; GDT[2] (DATA) with RPL = 00
@@ -425,7 +425,7 @@ trampoline:
 		.byte	0xEA
 		.long	SETUP_ENTRY
 		.word	0x0008
-			
+
 ;==============================================================================
 ; DATA SEGMENT
 ;==============================================================================
@@ -467,7 +467,7 @@ msg_loading:
                 .ascii "Loading EPOS "
 		.byte 0x00
 
-msg_done:      
+msg_done:
 		.ascii " done;"
 		.word 0x0D0A
 		.byte 0x00

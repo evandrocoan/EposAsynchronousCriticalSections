@@ -80,7 +80,7 @@ template<> struct Traits<Serial_Display>: public Traits<void>
     static const bool enabled = true;
     enum {UART, USB};
     static const int ENGINE = UART;
-    static const int COLUMNS = 8000; // our 
+    static const int COLUMNS = 8000; // our
     static const int LINES = 24;
     static const int TAB_SIZE = 8;
 };
@@ -216,7 +216,7 @@ template<> struct Traits<UART>: public Traits<Machine_Common>
 template<> struct Traits<Display>: public Traits<Machine_Common>
 {
     static const bool enabled = !Traits<Serial_Display>::enabled;
-    static const int COLUMNS = 8000; // our 
+    static const int COLUMNS = 8000; // our
     static const int LINES = 25;
     static const int TAB_SIZE = 8;
 };

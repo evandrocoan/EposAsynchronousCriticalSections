@@ -14,7 +14,7 @@ int main()
     while(true) {
 
         cout << "Write" << endl;
-        
+
         buf[0] = 0x01;
         buf[1] = 0x11;
         buf[2] = 0xC0;

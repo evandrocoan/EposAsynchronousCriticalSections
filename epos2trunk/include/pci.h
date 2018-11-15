@@ -43,7 +43,7 @@ public:
         SUBSYSTEM_VENDOR_ID	= 0x2c, // 16 bits
         SUBSYSTEM_DEVICE_ID	= 0x2e, // 16 bits
         ROM_ADDRESS		= 0x30, // [11:31] address, [1:10] reserved
-        				// 0x34-0x3b are reserved	
+        				// 0x34-0x3b are reserved
         INTERRUPT_LINE		= 0x3c, //  8 bits
         INTERRUPT_PIN		= 0x3d, //  8 bits
         MIN_GNT			= 0x3e, //  8 bits

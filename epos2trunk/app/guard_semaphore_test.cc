@@ -119,7 +119,7 @@ int philosopher(int philosopher_index, int line, int column)
         // Get the second chopstick
         Future<int>* chopstick2 = new Future<int>();
         table.submit( &get_chopsticks, philosopher_index, second, chopstick2, "SECOND" );
-        chopstick2->get_value(); 
+        chopstick2->get_value();
 
     #ifdef CONSOLE_MODE
         StringStream* stream1 = new StringStream{100};

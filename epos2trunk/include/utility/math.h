@@ -66,7 +66,7 @@ inline T sqrt(T x)
 template <typename T>
 inline T pow(const T & x, unsigned int e)
 {
-    if(e == 0) 
+    if(e == 0)
         return 1;
     else if(e == 1)
         return x;

@@ -923,7 +923,7 @@ public:
                                 // conversion is completed before the previous data has been read,
                                 // the EOC bit remains high.
                                 // 0: Conversion not complete
-                                // 1: Conversion completed 
+                                // 1: Conversion completed
         ADCCON1_ST    = 1 << 6, // Start conversion
                                 // Read as 1 until conversion completes
                                 // 0: No conversion in progress.

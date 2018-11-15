@@ -131,7 +131,7 @@ private:
     };
 
 public:
-    static bool reset(I2C * i2c) { 
+    static bool reset(I2C * i2c) {
         bool ret = i2c->put(I2C_ADDR, RESET_SI, true);
         if(ret)
             Machine::delay(15000); // Si7020 may take up to 15ms to power up after a soft reset

@@ -145,7 +145,7 @@ void TSTP::Locator::bootstrap()
     //        _here = Coordinates(-970, -970, 350);
     //    else if(!memcmp(Machine::id(), "\x00\x4b\x12\x00\xdc\xaf\x0d\x06", 8)) // Water 4 // OK
     //        _here = Coordinates(-1020, -870, 350);
-    //    else if(!memcmp(Machine::id(), "\x00\x4b\x12\x00\x02\x0b\x0d\x06", 8)) // Router 0 
+    //    else if(!memcmp(Machine::id(), "\x00\x4b\x12\x00\x02\x0b\x0d\x06", 8)) // Router 0
     //        _here = Coordinates(610, 1700, 550);
     //    else if(!memcmp(Machine::id(), "\x00\x4b\x12\x00\xe7\x83\x0d\x06", 8)) // Water 5
     //        _here = Coordinates(710, 2800, 350);

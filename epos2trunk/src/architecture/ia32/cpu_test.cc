@@ -57,7 +57,7 @@ int main()
             else
                 cout << "cas(): ok" << endl;
     }
- 
+
     cout << "IA32 test finished" << endl;
 
     return 0;

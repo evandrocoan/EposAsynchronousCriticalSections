@@ -1,5 +1,5 @@
  .global memchr
-      
+
 
 memchr:
  pushl %ebp

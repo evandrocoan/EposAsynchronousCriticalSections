@@ -10,7 +10,7 @@
 using namespace EPOS;
 int counter = 0;
 
-Semaphore counter_lock; 
+Semaphore counter_lock;
 
 // mythread()
 // Simply adds 1 to counter repeatedly, in a loop

@@ -21,7 +21,7 @@ private:
 public:
     Guard();
     ~Guard();
-    
+
     template<typename ... Tn>
     void submit( void(*entry)( Tn ... ), Tn ... an )
     {

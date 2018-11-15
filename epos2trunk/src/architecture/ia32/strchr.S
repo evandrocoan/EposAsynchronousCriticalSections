@@ -1,5 +1,5 @@
  .global strchr
-      
+
 
 strchr:
 

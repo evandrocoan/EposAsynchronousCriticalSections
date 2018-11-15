@@ -668,7 +668,7 @@ class StringStream;
 ...
     // Implemented on `ostream.cc`, because `stringstream.h` includes `ostream.h`,
     // hence, `ostream.h` cannot include `stringstream.h` back (cyclic reference)
-    OStream & operator<<(const StringStream * stream); 
+    OStream & operator<<(const StringStream * stream);
 
     // // ostream.cc
     // #include <utility/stringstream.h>

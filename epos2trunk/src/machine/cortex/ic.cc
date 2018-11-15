@@ -160,7 +160,7 @@ More information can be found at:
 void IC::entry()
 {
     ASM("   mrs     r0, xpsr           \n"
-        "   and     r0, #0x3f          \n" // Store int_id in r0 (to be passed as argument to eoi() and dispatch())        
+        "   and     r0, #0x3f          \n" // Store int_id in r0 (to be passed as argument to eoi() and dispatch())
         "   push    {r0, lr}           \n"
         "   bl      _eoi               \n" // Acknowledge the interrupt
         "   pop     {r0, lr}           \n"

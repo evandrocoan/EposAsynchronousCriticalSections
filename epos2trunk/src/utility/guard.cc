@@ -17,7 +17,7 @@ Guard::Element * Guard::vouch(Element * item)
 {
     CPU::finc(_size);
     DB( Synchronizer, TRC, "Guard::vouch(this=" << this
-            << " head=" << _head << " tail=" << _tail 
+            << " head=" << _head << " tail=" << _tail
             << " item=" << item << ", size=" << _size )
 
     item->next(reinterpret_cast<Element *>(NULL));
@@ -39,7 +39,7 @@ Guard::Element * Guard::clear()
 {
     CPU::fdec(_size);
     DB( Synchronizer, TRC, "Guard::clear(this=" << this
-            << " head=" << _head << " tail=" << _tail 
+            << " head=" << _head << " tail=" << _tail
             << ", size=" << _size )
 
     Element * item = _head;

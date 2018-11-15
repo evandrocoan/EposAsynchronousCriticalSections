@@ -7,7 +7,7 @@ INITS := $(subst .cc,.o,$(shell find *.cc | grep _init))
 
 all:		$(LIBMACH) $(LIBINIT)
 
-$(LIBMACH):	$(LIBMACH)($(OBJS))	
+$(LIBMACH):	$(LIBMACH)($(OBJS))
 
 $(LIBINIT):	$(LIBINIT)($(INITS))
 

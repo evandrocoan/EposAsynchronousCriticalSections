@@ -1,5 +1,5 @@
  .global memcmp
-      
+
 
 memcmp:
 

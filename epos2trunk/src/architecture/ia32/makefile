@@ -15,7 +15,7 @@ crts:		$(CRTS)
 
 .INTERMEDIATE:	$(CRTSI)
 
-$(LIBARCH):	$(LIBARCH)($(OBJS))	
+$(LIBARCH):	$(LIBARCH)($(OBJS))
 
 $(LIBINIT):	$(LIBINIT)($(INITS))
 

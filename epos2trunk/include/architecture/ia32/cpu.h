@@ -352,7 +352,7 @@ public:
         ASM("lock xadd %0, %2" : "=a"(old) : "a"(old), "m"(value) : "memory");
         return old;
     }
-                            
+
     template<typename T>
     static T fdec(volatile T & value) {
         register T old = -1;

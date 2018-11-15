@@ -1,4 +1,4 @@
-#include <iostream> 
+#include <iostream>
 #include "pthread.h"
 
 #define ASM                     __asm__ __volatile__
@@ -10,19 +10,19 @@ class Critical_Section
 public:
     friend class Guard;
     typedef void (Function)();
-    
+
 public:
     Critical_Section(Function * h): _handler(h), _next(0) {}
     ~Critical_Section() {}
 
-    void run() { _handler(); } 
+    void run() { _handler(); }
 
 public:
     Function * _handler;
     Critical_Section * _next;
 };
 
-// BEGIN # ATOMIC OPERATIONS 
+// BEGIN # ATOMIC OPERATIONS
 static Critical_Section* fas(Critical_Section * volatile & value, Critical_Section * replacement) {
     ASM("xchg %2, %1" : "=r"(replacement) : "r"(replacement), "m"(value) : "memory");
     return replacement;
@@ -49,7 +49,7 @@ public:
     ~Guard() {}
 
     void submit(Function * f){
-        Critical_Section * volatile cur = vouch(new Critical_Section(f)); 
+        Critical_Section * volatile cur = vouch(new Critical_Section(f));
         if (cur != reinterpret_cast<Critical_Section *>(null)) do {
             cur->run();
             cur = clear();
@@ -57,26 +57,26 @@ public:
     }
 
     Critical_Section * volatile vouch(Critical_Section * item){
-        Critical_Section * volatile last = fas(_tail, item); 
+        Critical_Section * volatile last = fas(_tail, item);
         if (last){
-            if (cas(last->_next, reinterpret_cast<Critical_Section *>(null), item, true) == reinterpret_cast<Critical_Section *>(null)) 
+            if (cas(last->_next, reinterpret_cast<Critical_Section *>(null), item, true) == reinterpret_cast<Critical_Section *>(null))
                 return reinterpret_cast<Critical_Section *>(null);
             delete last;
         }
         _head = item;
-        return item; 
+        return item;
     }
 
     Critical_Section * clear(){
-        Critical_Section * volatile item = _head; 
-        Critical_Section * volatile next = fas(item->_next, reinterpret_cast<Critical_Section *>(done)); 
-        bool mine = true;                                                         
-        if (!next)                                                                
-            mine = cas(_tail, item, reinterpret_cast<Critical_Section *> (null), false) == item ; 
-        cas(_head, item, next, false); 
+        Critical_Section * volatile item = _head;
+        Critical_Section * volatile next = fas(item->_next, reinterpret_cast<Critical_Section *>(done));
+        bool mine = true;
+        if (!next)
+            mine = cas(_tail, item, reinterpret_cast<Critical_Section *> (null), false) == item ;
+        cas(_head, item, next, false);
         if (mine)
             delete item;
-        return next;    
+        return next;
     }
 public:
     Critical_Section * volatile _head;
@@ -103,7 +103,7 @@ void d_end()   { cout << "[D] : end " << counter << endl; }
 void c_end()   { cout << "[C] : end " << counter << endl; }
 
 void * mythread(void * id) {
-    
+
     long id_long = (long)(id);
     char arg = (char)(id_long+64);
 
@@ -121,7 +121,7 @@ void * mythread(void * id) {
             display_guard.submit(d_begin);
             break;
     }
-    
+
     for (int i = iterations; i > 0 ; i--) {
         counter_guard.submit(increment_counter);
     }

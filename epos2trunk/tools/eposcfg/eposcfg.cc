@@ -44,7 +44,7 @@ char str_cfg_names[STR_SIZE_MAX][ARRAY_MAX] = {
 };
 // Values for single-string configurations
 // populated at populate_strings()
-char str_cfg_values[STR_SIZE_MAX][ARRAY_MAX]; 
+char str_cfg_values[STR_SIZE_MAX][ARRAY_MAX];
 
 // List of EPOS components. Changes here must be replicated at populate_strings()
 char components[STR_SIZE_MAX][ARRAY_MAX] = {
@@ -193,7 +193,7 @@ int find_cfg(char names_array[STR_SIZE_MAX][ARRAY_MAX], const char * cfg_name)
 void populate_strings()
 {
     int idx;
-   
+
     idx = find_cfg(str_cfg_names, "-ARCHITECTURE");
     if(idx >= 0) {
         switch(Traits<Build>::ARCHITECTURE) {

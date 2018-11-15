@@ -205,9 +205,9 @@ public:
 public:
     Intel_PMU_V2() {}
 
-    static Reg64 global_overflow_status(void) { 
-        db<Intel_PMU_V1>(TRC) << "Intel_PMU_V1::overflow()" << endl; 
-        return rdmsr(GLOBAL_STATUS); 
+    static Reg64 global_overflow_status(void) {
+        db<Intel_PMU_V1>(TRC) << "Intel_PMU_V1::overflow()" << endl;
+        return rdmsr(GLOBAL_STATUS);
     }
 
     static bool cond_changed(void) {
@@ -674,7 +674,7 @@ public:
         wrmsr(GLOBAL_OVF, (PMC_MASK & 1ULL << (channel - FIXED))); //clear OVF flag
     }
 
-    static void handler(Handler * handler, const Channel & channel) { 
+    static void handler(Handler * handler, const Channel & channel) {
         if((channel - FIXED) < CHANNELS)
             _handlers[channel - FIXED] = handler;
         else

@@ -1,4 +1,4 @@
-#include <iostream> 
+#include <iostream>
 #include "pthread.h"
 
 #define ASM                     __asm__ __volatile__
@@ -14,13 +14,13 @@ static const int iterations = 1e7;
 void increment_counter(){ counter = counter + 1; }
 
 void * mythread(void * id) {
-    
+
     char arg = (char)((long)(id))+64;
 
     pthread_mutex_lock(&mutex);
     cout << "[" << arg << "] : begin (" << counter << ")" << endl;
     pthread_mutex_unlock(&mutex);
- 
+
     for (int i = iterations; i > 0 ; i--) {
         counter = counter + 1;
     }

@@ -71,7 +71,7 @@ public:
 
     ~Closure() {
         DB( Synchronizer, TRC, "~Closure(this=" << this
-                << ", _entry=" << reinterpret_cast<void *>(_entry) 
+                << ", _entry=" << reinterpret_cast<void *>(_entry)
                 << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
                 << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH
                 << ", sizeof=" << sizeof(*this) << ")" << endl )

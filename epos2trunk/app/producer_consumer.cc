@@ -33,7 +33,7 @@ void produce()
     buffer_count++;
     cout << "P->" << buffer[in] << "\t";
     in = (in + 1) % BUF_SIZE;
-} 
+}
 
 int consumer()
 {
