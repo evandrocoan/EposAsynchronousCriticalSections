@@ -4,10 +4,7 @@ include ../../makedefs
 
 OBJS := $(subst .cc,.o,$(shell find *.cc))
 
-all:
-	${MAKE} all_multithread -j$(NPROCS)
-
-all_multithread: install
+all: install
 
 install:        $(MACH)_install_$(MODE)
 
