@@ -313,8 +313,29 @@ public:
     static Hertz clock() { return _cpu_clock; }
     static Hertz bus_clock() { return _bus_clock; }
 
-    static void int_enable() { ASM("sti"); }
-    static void int_disable() { ASM("cli"); }
+    static void int_enable()
+    {
+        if( int_disabled() )
+        {
+            if( _not_reenable == 0 ) {
+                ASM("sti");
+            }
+            else {
+                _not_reenable -= 1;
+            }
+        }
+    }
+
+    static void int_disable()
+    {
+        if( int_enabled() ) {
+            ASM("cli");
+        }
+        else {
+            _not_reenable += 1;
+        }
+    }
+
     static bool int_enabled() { return (flags() & FLAG_IF); }
     static bool int_disabled() { return !int_enabled(); }
 
@@ -624,6 +645,7 @@ private:
     static void init();
 
 private:
+    static int _not_reenable;
     static unsigned int _cpu_clock;
     static unsigned int _bus_clock;
 };

@@ -8,6 +8,7 @@ extern "C" { void _exec(void *); }
 __BEGIN_SYS
 
 // Class attributes
+int CPU::_not_reenable = 0;
 unsigned int CPU::_cpu_clock;
 unsigned int CPU::_bus_clock;
 

@@ -26,6 +26,7 @@ void Thread::constructor_prologue(const Color & color, unsigned int stack_size)
     _thread_count++;
     _scheduler.insert(this);
 
+    // Somewhere on the new operator, it is being called enable() and disable() CPU interrupt
     if(Traits<MMU>::colorful && color != WHITE)
         _stack = new (color) char[stack_size];
     else
@@ -50,10 +51,14 @@ void Thread::constructor_epilogue(const Log_Addr & entry, unsigned int stack_siz
     if((_state != READY) && (_state != RUNNING))
         _scheduler.suspend(this);
 
-    if(preemptive && (_state == READY) && (_link.rank() != IDLE))
+    if(preemptive && (_state == READY) && (_link.rank() != IDLE)) {
+        db<Scheduler<Thread> >(TRC) << "Thread::constructor_epilogue(locked=" << locked() << ")" << endl;
+        assert(locked());
         reschedule(_link.rank().queue());
-    else
+    }
+    else {
         unlock();
+    }
 }
 
 
@@ -124,6 +129,9 @@ void Thread::priority(const Priority & c)
     }
 
     if(preemptive) {
+        db<Scheduler<Thread> >(TRC) << "Thread::priority(locked=" << locked() << ")" << endl;
+        assert(locked());
+
         reschedule(old_cpu);
         if(smp) {
             lock();
@@ -312,6 +320,7 @@ void Thread::wakeup_all(Queue * q)
 void Thread::reschedule()
 {
     db<Scheduler<Thread> >(TRC) << "Thread::reschedule()" << endl;
+    db<Scheduler<Thread> >(TRC) << "Thread::reschedule(locked=" << locked() << ")" << endl;
 
     // lock() must be called before entering this method
     assert(locked());
@@ -325,6 +334,10 @@ void Thread::reschedule()
 
 void Thread::reschedule(unsigned int cpu)
 {
+    db<Scheduler<Thread> >(TRC) << "Thread::reschedule(cpu=" << cpu << ")" << endl;
+    db<Scheduler<Thread> >(TRC) << "Thread::reschedule(locked=" << locked() << ")" << endl;
+    assert(locked());
+
     if(!smp || (cpu == Machine::cpu_id()))
         reschedule();
     else {
@@ -338,6 +351,8 @@ void Thread::reschedule(unsigned int cpu)
 void Thread::rescheduler(const IC::Interrupt_Id & interrupt)
 {
     lock();
+    // if( Traits<IC>::dispatch_debugged )
+    db<Synchronizer>(TRC) << "Thread::rescheduler(interrupt=" << interrupt << ")" << endl;
 
     reschedule();
 }
