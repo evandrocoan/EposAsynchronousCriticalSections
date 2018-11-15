@@ -659,7 +659,7 @@ static int fas(volatile int & value, volatile int & replacement) {
 {DIV}^
 
 !!!stringstream.h [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
-Para auxiliar o uso do algoritmo do ''Guarda'', e permite que faça-se a formatação prévia de strings antes de envia-las para a seção crítica, criou-se uma nova class auxiliar chamada ''StringStream'' criada no arquivo ''stringstream.h''. Ela é uma extensão simples da classe ''OStream'' do EPOS, que já sabe como fazer a formatação de vários tipos. Assim, na implementação do ''stringstream.h'' somente implementamos um wrapper sobre a manipulação de todas as strings que já foram formatadas pela super classe ''OStream''.
+Para auxiliar o uso do algoritmo do ''Guarda'', e permite que faça-se a formatação prévia de strings antes de envia-las para a seção crítica, criou-se uma nova class auxiliar chamada ''StringStream'' criada no arquivo ''stringstream.h''. Ela é uma extensão simples da classe ''OStream'' do EPOS, que já sabe como fazer a formatação de vários tipos. Assim, na implementação do ''stringstream.h'' somente implementou-se um wrapper sobre a manipulação de todas as strings que já foram formatadas pela super classe ''OStream''.
 ^::__Listagem 19:__ Modificações do arquivo ''/include/utility/ostream.h''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
@@ -836,9 +836,7 @@ Welcome to the `stringstream.h` test program
 Para auxiliar o desenvolvimento, reduzindo o tempo de espera pela compilação completa do EPOS com um ''make veryclean'', foi paralelizado a compilação do EPOS alterando alguns ''Makefile'''s:
 # ''src/architecture/makefile''
 # ''src/component/makefile''
-# ''src/init/makefile''
 # ''src/machine/makefile''
-# ''src/setup/makefile''
 # ''src/utility/makefile''
 # ''tools/makefile''
 A alteração feita nesses ''Makefile'''s foi a seguinte:
@@ -878,6 +876,304 @@ clean_multithread:
 {DIV}^
 Para ''make veryclean'' funcionar paralelamente, foi preciso remover a definição ''MAKECLEAN'' no arquivo principal ''makedefs'' [https://github.com/evandrocoan/asynchronous_critical_sections/commit/a020ccdb4216bb8131e7d86e3c99c6b95d726d0a|4237faf] && [https://github.com/evandrocoan/asynchronous_critical_sections/commit/5dfd5d7a53ebbf77c33816beec785201c8d7a1c5|e4faae6], por que para que o comando ''-j'' de paralelização do ''Makefile'' funcione, as chamadas recursivas de makefile precisam ser feitas utilizando a variável ''${MAKE}'' ao contrário de chamar o make file diretamente como ''MAKECLEAN := make -i clean'' fazia.
 
+!!!Assert
+Durante o desenvolvimento do trabalho, foi habilitado as instruções de assert do EPOS, no arquivo ''/include/system/config.h''. Entretanto, ao fazer isso, foram relevados alguns erros de compilação e de execução do EPOS.
+
+Um dos erros relevados pelos asserts foi construtor da classe ''Thread'', que deixa de ser atômico quando compila-se o EPOS para várias CPU's. Ao executar o trecho de código do construtor da classe ''Thread'' a seguir, as interrupções são ligadas pelo operator new. Isso, é um problema por que o construtor da classe ''Thread'' inicia com um ''lock()'' e termina com um ''unlock()'', portanto, não pode-se ter alguém no meio do processo reativando as interrupções.
+^::__Listagem 24:__ Trecho do construtor de ''/src/component/thread.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+// Somewhere on the new operator, it is being called enable() and disable() CPU interrupt
+if(Traits<MMU>::colorful && color != WHITE)
+    _stack = new (color) char[stack_size];
+else
+    _stack = new (SYSTEM) char[stack_size];
+~/np~{DIV}
+{DIV}^
+Para resolver-se esse problema, tentou-se estudar o código do operador de new, para encontrar onde tal anomalia estava acontecendo. Entretanto, mesmo que descoberto onde isso esteja acontecendo, tentar alterar ou modificar tal código, seria muito problemático. Portanto, ao contrario de lutar contra o problema, abraçou-se ele. Assim, modificou-se arquivo ''cpu.h'' adicionado-se o suporte a uma pilha de chamadas ''lock()'' e ''unlock()''. Assim, pode-se recursivamente chamar funções que precisa ser atómicas, garantido que a chamada mais externa continuará sempre atômica.
+^::__Listagem 24:__ Mudanças no arquivo ''/include/architecture/ia32/cpu.h''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+static void int_enable()
+{
+    if( int_disabled() )
+    {
+        if( _not_reenable == 0 ) {
+            ASM("sti");
+        }
+        else {
+            _not_reenable -= 1;
+        }
+    }
+}
+
+static void int_disable()
+{
+    if( int_enabled() ) {
+        ASM("cli");
+    }
+    else {
+        _not_reenable += 1;
+    }
+}
+~/np~{DIV}
+{DIV}^
+A seguir, vê-se um resumo das commits com errors relacionadas a ativação do assert.
+^::__Listagem 24:__ Lista de commits criadas pela ativação do ''assert()''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+Date:   Tue Nov 13 16:55:14 2018 -0200
+    Enabled asserts on config.h
+
+diff --git a/include/system/config.h b/include/system/config.h
+index 23e2476..83b045b 100644
+--- a/include/system/config.h
++++ b/include/system/config.h
+@@ -71,8 +71,8 @@ namespace EPOS {
+ //============================================================================
+ // ASSERT (for pre and post conditions)
+ //============================================================================
+-//#define assert(expr)    ((expr) ? static_cast<void>(0) : Assert::fail (#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__))
+-#define assert(expr)    (static_cast<void>(0))
++#define assert(expr)    ((expr) ? static_cast<void>(0) : Assert::fail (#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__))
++// #define assert(expr)    (static_cast<void>(0))
+ 
+ //============================================================================
+ // CONFIGURATION
+
+
+Date:   Tue Nov 13 16:55:03 2018 -0200
+    Make the debug.h assert messages more visible
+
+diff --git a/include/utility/debug.h b/include/utility/debug.h
+index 6508d48..ade97f7 100644
+--- a/include/utility/debug.h
++++ b/include/utility/debug.h
+@@ -116,7 +116,7 @@ class Assert
+ {
+ public:
+     static void fail(const char * __assertion, const char * __file, unsigned int __line, const char * __function) {
+-        db<void>(ERR) << "Assertion fail: " << __assertion << ", function=" << __function << ", file=" << __file << ", line=" << __line << endl;
++        db<void>(ERR) << endl << endl << "Assertion fail: " << __assertion << ", function=" << __function << ", file=" << __file << ", line=" << __line << endl << endl;
+     }
+ };
+ 
+
+Date:   Tue Nov 13 16:51:29 2018 -0200
+    Fixed tstp.h:1255: error: incomplete type 'EPOS::S::Cipher' used in
+    nested name specifier.
+
+diff --git a/include/tstp.h b/include/tstp.h
+index cd593d1..8cbfbc3 100644
+--- a/include/tstp.h
++++ b/include/tstp.h
+@@ -1251,7 +1251,8 @@ public:
+ 
+             db<TSTP>(INF) << "Node ID: " << _id << endl;
+ 
+-            assert(Cipher::KEY_SIZE == sizeof(Node_ID));
++            // There is not cipher.h header
++            // assert(Cipher::KEY_SIZE == sizeof(Node_ID));
+             _cipher.encrypt(_id, _id, _auth);
+         }
+         ~Security();
+
+
+Date:   Tue Nov 13 16:20:05 2018 -0200
+    Fixed ic.h:503: error: array subscript is above array bounds
+
+diff --git a/include/machine/pc/ic.h b/include/machine/pc/ic.h
+index 49c8f00..4aabea4 100644
+--- a/include/machine/pc/ic.h
++++ b/include/machine/pc/ic.h
+@@ -499,8 +499,11 @@ public:
+     static void int_vector(const Interrupt_Id & i, const Interrupt_Handler & h) {
+         db<IC>(TRC) << "IC::int_vector(int=" << i << ",h=" << reinterpret_cast<void *>(h) <<")" << endl;
+         assert(i < INTS);
++        // When enabling the asserts expressions, the compiler keeps complaining about
+         // WARNING: in static member function 'static void EPOS::S::FPGA::init()': error: array subscript is above array bounds
+-        _int_vector[i] = h;
++        // Then, do some hack to overrule it  and let the above assert() do its thing on runtime.
++        unsigned int index = i >= INTS ? INTS - 1 : i;
++        _int_vector[index] = h;
+     }
+ 
+     static void enable() {
+
+
+Date:   Tue Nov 13 16:14:31 2018 -0200
+    Fixed pmu.h:602: assert error: comparison between signed and unsigned
+    integer expressions
+
+diff --git a/include/architecture/ia32/pmu.h b/include/architecture/ia32/pmu.h
+index e8f7cc7..7184c17 100644
+--- a/include/architecture/ia32/pmu.h
++++ b/include/architecture/ia32/pmu.h
+@@ -599,7 +599,7 @@ public:
+     Intel_Sandy_Bridge_PMU() {}
+ 
+     static bool config(const Channel & channel, const Event & event, const Flags & flags = NONE) {
+-        assert((channel < CHANNELS) && (event < EVENTS));
++        assert((channel < CHANNELS) && (static_cast<unsigned int>(event) < EVENTS));
+         db<PMU>(TRC) << "PMU::config(c=" << channel << ",e=" << event << ",f=" << flags << ")" << endl;
+ 
+         if(((channel == 0) && (event != INSTRUCTION)) || ((channel == 1) && (event != DVS_CLOCK)) || ((channel == 2) && (event != CLOCK))) {
+
+
+Date:   Tue Nov 13 16:11:18 2018 -0200
+    Fixed assert error: 'i' was not declared in this scope on ic.h
+
+diff --git a/include/machine/pc/ic.h b/include/machine/pc/ic.h
+index a85fbcb..49c8f00 100644
+--- a/include/machine/pc/ic.h
++++ b/include/machine/pc/ic.h
+@@ -505,7 +505,7 @@ public:
+ 
+     static void enable() {
+         db<IC>(TRC) << "IC::enable()" << endl;
+-        assert(i < INTS);
++        // assert(i < INTS);
+         Engine::enable();
+     }
+ 
+@@ -517,7 +517,7 @@ public:
+ 
+     static void disable() {
+         db<IC>(TRC) << "IC::disable()" << endl;
+-        assert(i < INTS);
++        // assert(i < INTS);
+         Engine::disable();
+     }
+
+
+Date:   Thu Nov 15 16:01:15 2018 -0200
+    Fixed the thread.cc constructor not being atomic while building
+    EPOS with multiple CPUs.
+diff --git a/include/architecture/ia32/cpu.h b/include/architecture/ia32/cpu.h
+index d6d51d2..1ced73e 100644
+--- a/include/architecture/ia32/cpu.h
++++ b/include/architecture/ia32/cpu.h
+@@ -313,8 +313,29 @@ public:
+     static Hertz clock() { return _cpu_clock; }
+     static Hertz bus_clock() { return _bus_clock; }
+ 
+-    static void int_enable() { ASM("sti"); }
+-    static void int_disable() { ASM("cli"); }
++    static void int_enable()
++    {
++        if( int_disabled() )
++        {
++            if( _not_reenable == 0 ) {
++                ASM("sti");
++            }
++            else {
++                _not_reenable -= 1;
++            }
++        }
++    }
++
++    static void int_disable()
++    {
++        if( int_enabled() ) {
++            ASM("cli");
++        }
++        else {
++            _not_reenable += 1;
++        }
++    }
++
+     static bool int_enabled() { return (flags() & FLAG_IF); }
+     static bool int_disabled() { return !int_enabled(); }
+ 
+@@ -624,6 +645,7 @@ private:
+     static void init();
+ 
+ private:
++    static int _not_reenable;
+     static unsigned int _cpu_clock;
+     static unsigned int _bus_clock;
+ };
+diff --git a/src/architecture/ia32/cpu.cc b/src/architecture/ia32/cpu.cc
+index 8357fa0..e712aa2 100644
+--- a/src/architecture/ia32/cpu.cc
++++ b/src/architecture/ia32/cpu.cc
+@@ -8,6 +8,7 @@ extern "C" { void _exec(void *); }
+ __BEGIN_SYS
+ 
+ // Class attributes
++int CPU::_not_reenable = 0;
+ unsigned int CPU::_cpu_clock;
+ unsigned int CPU::_bus_clock;
+ 
+diff --git a/src/component/thread.cc b/src/component/thread.cc
+index 9495641..27dd942 100644
+--- a/src/component/thread.cc
++++ b/src/component/thread.cc
+@@ -26,6 +26,7 @@ void Thread::constructor_prologue(const Color & color, unsigned int stack_size)
+     _thread_count++;
+     _scheduler.insert(this);
+ 
++    // Somewhere on the new operator, it is being called enable() and disable() CPU interrupt
+     if(Traits<MMU>::colorful && color != WHITE)
+         _stack = new (color) char[stack_size];
+     else
+@@ -50,10 +51,14 @@ void Thread::constructor_epilogue(const Log_Addr & entry, unsigned int stack_siz
+     if((_state != READY) && (_state != RUNNING))
+         _scheduler.suspend(this);
+ 
+-    if(preemptive && (_state == READY) && (_link.rank() != IDLE))
++    if(preemptive && (_state == READY) && (_link.rank() != IDLE)) {
++        db<Scheduler<Thread> >(TRC) << "Thread::constructor_epilogue(locked=" << locked() << ")" << endl;
++        assert(locked());
+         reschedule(_link.rank().queue());
+-    else
++    }
++    else {
+         unlock();
++    }
+ }
+ 
+ 
+@@ -124,6 +129,9 @@ void Thread::priority(const Priority & c)
+     }
+ 
+     if(preemptive) {
++        db<Scheduler<Thread> >(TRC) << "Thread::priority(locked=" << locked() << ")" << endl;
++        assert(locked());
++
+         reschedule(old_cpu);
+         if(smp) {
+             lock();
+@@ -312,6 +320,7 @@ void Thread::wakeup_all(Queue * q)
+ void Thread::reschedule()
+ {
+     db<Scheduler<Thread> >(TRC) << "Thread::reschedule()" << endl;
++    db<Scheduler<Thread> >(TRC) << "Thread::reschedule(locked=" << locked() << ")" << endl;
+ 
+     // lock() must be called before entering this method
+     assert(locked());
+@@ -325,6 +334,10 @@ void Thread::reschedule()
+ 
+ void Thread::reschedule(unsigned int cpu)
+ {
++    db<Scheduler<Thread> >(TRC) << "Thread::reschedule(cpu=" << cpu << ")" << endl;
++    db<Scheduler<Thread> >(TRC) << "Thread::reschedule(locked=" << locked() << ")" << endl;
++    assert(locked());
++
+     if(!smp || (cpu == Machine::cpu_id()))
+         reschedule();
+     else {
+@@ -338,6 +351,8 @@ void Thread::reschedule(unsigned int cpu)
+ void Thread::rescheduler(const IC::Interrupt_Id & interrupt)
+ {
+     lock();
++    // if( Traits<IC>::dispatch_debugged )
++    db<Synchronizer>(TRC) << "Thread::rescheduler(interrupt=" << interrupt << ")" << endl;
+ 
+     reschedule();
+ }
+~/np~{DIV}
+{DIV}^
 !!!Futures [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Das 2 implementações distintas de futures apresentadas, realiza-se a implementação do modelo de future bloqueante, apresentado no artigo referência {DIV(type="span")}[{DIV}[#Refer_ncias_|2]]. Como a implementação atual do algoritmo do guarda não suporta passagens de parâmetros variádicos, fez-se a implementação dos métodos para que aceitem vários parâmetros com meta programação. Ver a seção [#Closure_Metaprogramada_|Closure Metaprogramada].
 
