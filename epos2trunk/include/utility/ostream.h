@@ -13,125 +13,102 @@ extern "C" {
 
 __BEGIN_UTIL
 
-class OStream
+template<class StreamType>
+class OStream_Base
 {
 public:
     struct Begl {};
     struct Endl {};
+
     struct Hex {};
     struct Dec {};
     struct Oct {};
     struct Bin {};
-    struct Err {};
 
 public:
-    OStream(): _base(10), _error(false) {}
+    OStream_Base(): _base(10) {}
 
-    OStream & operator<<(const Begl & begl) {
-        if(Traits<System>::multicore)
-            _print_preamble();
+    OStream_Base& operator<<(const Hex & hex) {
+        _set_base(16);
         return *this;
     }
-
-    OStream & operator<<(const Endl & endl) {
-        if(Traits<System>::multicore)
-            _print_trailler(_error);
-        print("\n");
-        _base = 10;
+    OStream_Base& operator<<(const Dec & dec) {
+        _set_base(10);
         return *this;
     }
-
-    // Implemented on `ostream.cc`, because `stringstream.h` includes `ostream.h`,
-    // hence, `ostream.h` cannot include `stringstream.h` back (cyclic reference)
-    OStream & operator<<(const StringStream * stream);
-
-    OStream & operator<<(const Hex & hex) {
-        _base = 16;
+    OStream_Base& operator<<(const Oct & oct) {
+        _set_base(8);
         return *this;
     }
-    OStream & operator<<(const Dec & dec) {
-        _base = 10;
-        return *this;
-    }
-    OStream & operator<<(const Oct & oct) {
-        _base = 8;
-        return *this;
-    }
-    OStream & operator<<(const Bin & bin) {
-        _base = 2;
+    OStream_Base& operator<<(const Bin & bin) {
+        _set_base(2);
         return *this;
     }
 
-    OStream & operator<<(const Err & err)
-    {
-        _error = true;
-        return *this;
-    }
-
-    OStream & operator<<(char c) {
+    OStream_Base& operator<<(char c) {
         char buf[2];
         buf[0] = c;
         buf[1] = '\0';
         print(buf);
         return *this;
     }
-    OStream & operator<<(unsigned char c) {
+    OStream_Base& operator<<(unsigned char c) {
         return operator<<(static_cast<unsigned int>(c));
     }
 
-    OStream & operator<<(int i) {
+    OStream_Base& operator<<(int i) {
         char buf[64];
         buf[itoa(i, buf)] = '\0';
         print(buf);
         return *this;
     }
-    OStream & operator<<(short s) {
+    OStream_Base& operator<<(short s) {
         return operator<<(static_cast<int>(s));
     }
-    OStream & operator<<(long l) {
+    OStream_Base& operator<<(long l) {
         return operator<<(static_cast<int>(l));
     }
 
-    OStream & operator<<(unsigned int u) {
+    OStream_Base& operator<<(unsigned int u) {
         char buf[64];
         buf[utoa(u, buf)] = '\0';
         print(buf);
         return *this;
     }
-    OStream & operator<<(unsigned short s) {
+    OStream_Base& operator<<(unsigned short s) {
         return operator<<(static_cast<unsigned int>(s));
     }
-    OStream & operator<<(unsigned long l) {
+    OStream_Base& operator<<(unsigned long l) {
         return operator<<(static_cast<unsigned int>(l));
     }
 
-    OStream & operator<<(long long int u) {
+    OStream_Base& operator<<(long long int u) {
         char buf[64];
         buf[llitoa(u, buf)] = '\0';
         print(buf);
         return *this;
     }
 
-    OStream & operator<<(unsigned long long int u) {
+    OStream_Base& operator<<(unsigned long long int u) {
         char buf[64];
         buf[llutoa(u, buf)] = '\0';
         print(buf);
         return *this;
     }
 
-    OStream & operator<<(const void * p) {
+    OStream_Base& operator<<(const void * p) {
         char buf[64];
         buf[ptoa(p, buf)] = '\0';
         print(buf);
         return *this;
     }
 
-    OStream & operator<<(const char * s) {
+    OStream_Base& operator<<(const char * s) {
         print(s);
         return *this;
     }
 
-    OStream & operator<<(float f) {
+    OStream_Base& operator<<(float f) {
         if(f < 0.0001f && f > -0.0001f)
             (*this) << "0.0000";
 
@@ -174,18 +151,218 @@ public:
     }
 
 protected:
-    int itoa(int v, char * s);
-    int utoa(unsigned int v, char * s, unsigned int i = 0);
-    int llitoa(long long int v, char * s);
-    int llutoa(unsigned long long int v, char * s, unsigned int i = 0);
-    int ptoa(const void * p, char * s);
+    int itoa(int v, char * s)
+    {
+        unsigned int i = 0;
+
+        if(v < 0) {
+            v = -v;
+            s[i++] = '-';
+        }
+
+        return utoa(static_cast<unsigned int>(v), s, i);
+    }
+
+    int utoa(unsigned int v, char * s, unsigned int i = 0)
+    {
+        unsigned int j;
+
+        if(!v) {
+            s[i++] = '0';
+            return i;
+        }
+
+        if(v > 256) {
+            if(_base == 8 || _base == 16)
+                s[i++] = '0';
+            if(_base == 16)
+                s[i++] = 'x';
+        }
+
+        for(j = v; j != 0; i++, j /= _base);
+        for(j = 0; v != 0; j++, v /= _base)
+            s[i - 1 - j] = _digits[v % _base];
+
+        return i;
+    }
+
+    int llitoa(long long int v, char * s)
+    {
+        unsigned int i = 0;
+
+        if(v < 0) {
+            v = -v;
+            s[i++] = '-';
+        }
+
+        return llutoa(static_cast<unsigned long long int>(v), s, i);
+    }
+
+    int llutoa(unsigned long long int v, char * s, unsigned int i = 0)
+    {
+        unsigned long long int j;
+
+        if(!v) {
+            s[i++] = '0';
+            return i;
+        }
+
+        if(v > 256) {
+            if(_base == 8 || _base == 16)
+                s[i++] = '0';
+            if(_base == 16)
+                s[i++] = 'x';
+        }
+
+        for(j = v; j != 0; i++, j /= _base);
+        for(j = 0; v != 0; j++, v /= _base)
+            s[i - 1 - j] = _digits[v % _base];
+
+        return i;
+    }
+
+    int ptoa(const void * p, char * s)
+    {
+        unsigned int j, v = reinterpret_cast<unsigned int>(p);
+
+        s[0] = '0';
+        s[1] = 'x';
+
+        for(j = 0; j < sizeof(void *) * 2; j++, v >>= 4)
+            s[2 + sizeof(void *) * 2 - 1 - j]
+                = _digits[v & 0xf];
+
+        return j + 2;
+    }
+
+    // https://stackoverflow.com/questions/34222703/how-to-override-static-method-of-template-class-in-derived-class
+    inline void print(const char * s) { StreamType::print(static_cast<StreamType*>(this), s); }
+    inline void _set_base(int v) { _base = v; }
 
     int _base;
     static const char _digits[];
+};
+
+// Class Attributes
+// https://stackoverflow.com/questions/3531060/how-to-initialize-a-static-const-member-in-c
+template<class OStream>
+const char OStream_Base<OStream>::_digits[] = "0123456789abcdef";
+
+
+// https://stackoverflow.com/questions/11761506/inheritance-function-that-returns-self-type
+class OStream : public OStream_Base<OStream>
+{
+public:
+    struct Err {};
+
+public:
+    OStream(): _error(false) {}
+
+    // Implemented on `ostream.cc`, because `stringstream.h` includes `ostream.h`,
+    // hence, `ostream.h` cannot include `stringstream.h` back (cyclic reference)
+    OStream & operator<<(const StringStream * stream);
+
+    OStream & operator<<(const Begl & begl) {
+        if(Traits<System>::multicore)
+            _print_preamble();
+        return *this;
+    }
+
+    OStream & operator<<(const Endl & endl) {
+        if(Traits<System>::multicore)
+            _print_trailler(_error);
+        OStream_Base<OStream>::print("\n");
+        _set_base(10);
+        return *this;
+    }
+
+    OStream & operator<<(const Hex & hex) {
+        OStream_Base<OStream>::operator<<(hex);
+        return *this;
+    }
+    OStream & operator<<(const Dec & dec) {
+        OStream_Base<OStream>::operator<<(dec);
+        return *this;
+    }
+    OStream & operator<<(const Oct & oct) {
+        OStream_Base<OStream>::operator<<(oct);
+        return *this;
+    }
+    OStream & operator<<(const Bin & bin) {
+        OStream_Base<OStream>::operator<<(bin);
+        return *this;
+    }
+
+    OStream & operator<<(const Err & err) {
+        _error = true;
+        return *this;
+    }
+
+    OStream & operator<<(char c) {
+        OStream_Base<OStream>::operator<<(c);
+        return *this;
+    }
+    OStream & operator<<(unsigned char c) {
+        OStream_Base<OStream>::operator<<(c);
+        return *this;
+    }
+
+    OStream & operator<<(int i) {
+        OStream_Base<OStream>::operator<<(i);
+        return *this;
+    }
+    OStream & operator<<(short s) {
+        OStream_Base<OStream>::operator<<(s);
+        return *this;
+    }
+    OStream & operator<<(long l) {
+        OStream_Base<OStream>::operator<<(l);
+        return *this;
+    }
+
+    OStream & operator<<(unsigned int u) {
+        OStream_Base<OStream>::operator<<(u);
+        return *this;
+    }
+    OStream & operator<<(unsigned short s) {
+        OStream_Base<OStream>::operator<<(s);
+        return *this;
+    }
+    OStream & operator<<(unsigned long l) {
+        OStream_Base<OStream>::operator<<(l);
+        return *this;
+    }
+
+    OStream & operator<<(long long int u) {
+        OStream_Base<OStream>::operator<<(u);
+        return *this;
+    }
+
+    OStream & operator<<(unsigned long long int u) {
+        OStream_Base<OStream>::operator<<(u);
+        return *this;
+    }
+
+    OStream & operator<<(const void * p) {
+        OStream_Base<OStream>::operator<<(p);
+        return *this;
+    }
+
+    OStream & operator<<(const char * s) {
+        OStream_Base<OStream>::operator<<(s);
+        return *this;
+    }
+
+    OStream & operator<<(float f) {
+        OStream_Base<OStream>::operator<<(f);
+        return *this;
+    }
+
+public:
+    // Adding virtual to the print() function caused the hysterically_debugged mode completely break
+    static void print(OStream* that, const char * s) { _print(s); }
 
 private:
-    // Adding virtual to the print() function caused the hysterically_debugged mode completely break
-    void print(const char * s) { _print(s); }
     volatile bool _error;
 };
 

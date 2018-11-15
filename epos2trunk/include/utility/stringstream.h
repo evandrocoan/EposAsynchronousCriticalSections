@@ -10,7 +10,7 @@
 __BEGIN_UTIL
 
 
-class StringStream: public OStream
+class StringStream : public OStream_Base<StringStream>
 {
 private:
     char* _buffer;
@@ -19,7 +19,7 @@ private:
 
 public:
     StringStream(const unsigned int _buffer_size) :
-            OStream::OStream(), _last_position(0), _buffer_size(_buffer_size)
+            _last_position(0), _buffer_size(_buffer_size)
     {
         assert(_buffer_size > 0);
         DB( Synchronizer, TRC, "StringStream::StringStream(_buffer_size="
@@ -41,39 +41,39 @@ public:
     }
 
     StringStream & operator<<(const StringStream & stream) {
-        print(stream.buffer());
+        OStream_Base<StringStream>::print(stream.buffer());
         return *this;
     }
     StringStream & operator<<(const StringStream * stream) {
-        print(stream->buffer());
+        OStream_Base<StringStream>::print(stream->buffer());
         return *this;
     }
 
-    void print(const char* string) {
+    static void print(StringStream* that, const char* string) {
         DB( Synchronizer, TRC, "StringStream::print(this="
-                << reinterpret_cast<int *>(this)
+                << reinterpret_cast<int *>(that)
                 << "), string=" << string << ", " )
 
         unsigned int string_size = strlen(string);
-        unsigned int total_size = string_size + _last_position;
+        unsigned int total_size = string_size + that->_last_position;
 
         DB( Synchronizer, TRC, "string_size=" << string_size << ", "
                 << "total_size=" << total_size )
 
         // https://linux.die.net/man/3/strncpy
-        if( total_size >= _buffer_size ) {
-            total_size = _buffer_size - 1;
+        if( total_size >= that->_buffer_size ) {
+            total_size = that->_buffer_size - 1;
 
-            strncpy(&_buffer[_last_position], string, total_size - _last_position);
-            _buffer[total_size] = '\0';
+            strncpy(&that->_buffer[that->_last_position], string, total_size - that->_last_position);
+            that->_buffer[total_size] = '\0';
         }
         else {
-            strcpy(&_buffer[_last_position], string);
+            strcpy(&that->_buffer[that->_last_position], string);
         }
 
-        _last_position = total_size;
-        DB( Synchronizer, TRC, ", _last_position=" << _last_position
-                << ", _buffer=" << _buffer << endl )
+        that->_last_position = total_size;
+        DB( Synchronizer, TRC, ", _last_position=" << that->_last_position
+                << ", _buffer=" << that->_buffer << endl )
     }
 
 public:
@@ -82,130 +82,85 @@ public:
     }
 
     StringStream & operator<<(const Endl & endl) {
-        print("\n");
-        _base = 10;
+        OStream_Base<StringStream>::print("\n");
+        _set_base(10);
         return *this;
     }
 
     StringStream & operator<<(const Hex & hex) {
-        _base = 16;
+        OStream_Base<StringStream>::operator<<(hex);
         return *this;
     }
     StringStream & operator<<(const Dec & dec) {
-        _base = 10;
+        OStream_Base<StringStream>::operator<<(dec);
         return *this;
     }
     StringStream & operator<<(const Oct & oct) {
-        _base = 8;
+        OStream_Base<StringStream>::operator<<(oct);
         return *this;
     }
     StringStream & operator<<(const Bin & bin) {
-        _base = 2;
+        OStream_Base<StringStream>::operator<<(bin);
         return *this;
     }
 
     StringStream & operator<<(char c) {
-        char buf[2];
-        buf[0] = c;
-        buf[1] = '\0';
-        print(buf);
+        OStream_Base<StringStream>::operator<<(c);
         return *this;
     }
     StringStream & operator<<(unsigned char c) {
-        return operator<<(static_cast<unsigned int>(c));
+        OStream_Base<StringStream>::operator<<(c);
+        return *this;
     }
 
     StringStream & operator<<(int i) {
-        char buf[64];
-        buf[itoa(i, buf)] = '\0';
-        print(buf);
+        OStream_Base<StringStream>::operator<<(i);
         return *this;
     }
     StringStream & operator<<(short s) {
-        return operator<<(static_cast<int>(s));
+        OStream_Base<StringStream>::operator<<(s);
+        return *this;
     }
     StringStream & operator<<(long l) {
-        return operator<<(static_cast<int>(l));
+        OStream_Base<StringStream>::operator<<(l);
+        return *this;
     }
 
     StringStream & operator<<(unsigned int u) {
-        char buf[64];
-        buf[utoa(u, buf)] = '\0';
-        print(buf);
+        OStream_Base<StringStream>::operator<<(u);
         return *this;
     }
     StringStream & operator<<(unsigned short s) {
-        return operator<<(static_cast<unsigned int>(s));
+        OStream_Base<StringStream>::operator<<(s);
+        return *this;
     }
     StringStream & operator<<(unsigned long l) {
-        return operator<<(static_cast<unsigned int>(l));
+        OStream_Base<StringStream>::operator<<(l);
+        return *this;
     }
 
     StringStream & operator<<(long long int u) {
-        char buf[64];
-        buf[llitoa(u, buf)] = '\0';
-        print(buf);
+        OStream_Base<StringStream>::operator<<(u);
         return *this;
     }
 
     StringStream & operator<<(unsigned long long int u) {
-        char buf[64];
-        buf[llutoa(u, buf)] = '\0';
-        print(buf);
+        OStream_Base<StringStream>::operator<<(u);
         return *this;
     }
 
     StringStream & operator<<(const void * p) {
-        char buf[64];
-        buf[ptoa(p, buf)] = '\0';
-        print(buf);
+        OStream_Base<StringStream>::operator<<(p);
         return *this;
     }
 
     StringStream & operator<<(const char * s) {
-        print(s);
+        OStream_Base<StringStream>::operator<<(s);
         return *this;
     }
 
     StringStream & operator<<(float f) {
-        if(f < 0.0001f && f > -0.0001f)
-            (*this) << "0.0000";
-
-        int b = 0;
-        int m = 0;
-
-        float x = f;
-        if(x >= 0.0001f) {
-            while(x >= 1.0000f) {
-                x -= 1.0f;
-                b++;
-            }
-            (*this) << b << ".";
-            for(int i = 0; i < 3; i++) {
-                m = 0;
-                x *= 10.0f;
-                while(x >= 1.000f) {
-                    x -= 1.0f;
-                    m++;
-                }
-                (*this) << m;
-            }
-        } else {
-            while(x <= -1.000f) {
-                x += 1.0f;
-                b++;
-            }
-            (*this) << "-" << b << ".";
-            for(int i = 0; i < 3; i++) {
-                m = 0;
-                x *= 10.0f;
-                while(x <= -1.000f) {
-                    x += 1.0f;
-                    m++;
-                }
-                (*this) << m;
-            }
-        }
+        OStream_Base<StringStream>::operator<<(f);
         return *this;
     }
 };
