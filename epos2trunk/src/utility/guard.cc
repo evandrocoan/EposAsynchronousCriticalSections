@@ -15,14 +15,19 @@ Guard::~Guard() {
 
 Guard::Element * Guard::vouch(Element * item)
 {
+    CPU::finc(_size);
     DB( Synchronizer, TRC, "Guard::vouch(this=" << this
-            << " head=" << _head << " tail=" << _tail <<  ")" << endl )
+            << " head=" << _head << " tail=" << _tail 
+            << " item=" << item << ", size=" << _size )
 
     item->next(reinterpret_cast<Element *>(NULL));
     Element * last = CPU::fas(_tail, item);
+    DB( Synchronizer, TRC, ", last=" << last << ")" << endl )
+
     if (last) {
         if (CPU::cas(last->_next, reinterpret_cast<Element *>(NULL), item)
                     == reinterpret_cast<Element *>(NULL))
+
             return reinterpret_cast<Element *>(NULL);
         delete item->object();
     }
@@ -32,17 +37,23 @@ Guard::Element * Guard::vouch(Element * item)
 
 Guard::Element * Guard::clear()
 {
+    CPU::fdec(_size);
     DB( Synchronizer, TRC, "Guard::clear(this=" << this
-            << " head=" << _head << " tail=" << _tail <<  ")" << endl )
+            << " head=" << _head << " tail=" << _tail 
+            << ", size=" << _size )
 
     Element * item = _head;
     Element * next = CPU::fas(item->_next, reinterpret_cast<Element *>(DONE));
+    DB( Synchronizer, TRC, ", next=" << next << ")" << endl )
+
     bool mine = true;
     if (!next)
         mine = CPU::cas(_tail, item, reinterpret_cast<Element *> (NULL)) == item;
+
     CPU::cas(_head, item, next);
     if (mine)
         delete item->object();
+
     return next;
 }
 

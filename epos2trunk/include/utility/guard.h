@@ -39,6 +39,8 @@ public:
     Element * clear();
 
 private:
+    int _size;
+
     Element * _head;
     Element * _tail;
 };
