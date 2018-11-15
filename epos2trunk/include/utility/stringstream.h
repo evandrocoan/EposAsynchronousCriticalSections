@@ -9,7 +9,6 @@
 
 __BEGIN_UTIL
 
-
 class StringStream : public OStream_Base<StringStream>
 {
 private:
@@ -87,84 +86,8 @@ public:
         return *this;
     }
 
-    StringStream & operator<<(const Hex & hex) {
-        OStream_Base<StringStream>::operator<<(hex);
-        return *this;
-    }
-    StringStream & operator<<(const Dec & dec) {
-        OStream_Base<StringStream>::operator<<(dec);
-        return *this;
-    }
-    StringStream & operator<<(const Oct & oct) {
-        OStream_Base<StringStream>::operator<<(oct);
-        return *this;
-    }
-    StringStream & operator<<(const Bin & bin) {
-        OStream_Base<StringStream>::operator<<(bin);
-        return *this;
-    }
-
-    StringStream & operator<<(char c) {
-        OStream_Base<StringStream>::operator<<(c);
-        return *this;
-    }
-    StringStream & operator<<(unsigned char c) {
-        OStream_Base<StringStream>::operator<<(c);
-        return *this;
-    }
-
-    StringStream & operator<<(int i) {
-        OStream_Base<StringStream>::operator<<(i);
-        return *this;
-    }
-    StringStream & operator<<(short s) {
-        OStream_Base<StringStream>::operator<<(s);
-        return *this;
-    }
-    StringStream & operator<<(long l) {
-        OStream_Base<StringStream>::operator<<(l);
-        return *this;
-    }
-
-    StringStream & operator<<(unsigned int u) {
-        OStream_Base<StringStream>::operator<<(u);
-        return *this;
-    }
-    StringStream & operator<<(unsigned short s) {
-        OStream_Base<StringStream>::operator<<(s);
-        return *this;
-    }
-    StringStream & operator<<(unsigned long l) {
-        OStream_Base<StringStream>::operator<<(l);
-        return *this;
-    }
-
-    StringStream & operator<<(long long int u) {
-        OStream_Base<StringStream>::operator<<(u);
-        return *this;
-    }
-
-    StringStream & operator<<(unsigned long long int u) {
-        OStream_Base<StringStream>::operator<<(u);
-        return *this;
-    }
-
-    StringStream & operator<<(const void * p) {
-        OStream_Base<StringStream>::operator<<(p);
-        return *this;
-    }
-
-    StringStream & operator<<(const char * s) {
-        OStream_Base<StringStream>::operator<<(s);
-        return *this;
-    }
-
-    StringStream & operator<<(float f) {
-        OStream_Base<StringStream>::operator<<(f);
-        return *this;
-    }
+    using OStream_Base<StringStream>::operator<<;
 };
-
 
 __END_UTIL
 
