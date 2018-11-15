@@ -16,11 +16,10 @@
 
 using namespace EPOS;
 
-#define CONSOLE_MODE
+// #define CONSOLE_MODE
 const int iterations = 10;
 
 Guard table;
-Guard guard;
 
 OStream cout;
 Thread * phil[5];
@@ -114,12 +113,12 @@ int philosopher(int philosopher_index, int line, int column)
 
         // Get the first chopstick
         Future<int>* chopstick1 = new Future<int>();
-        guard.submit( &get_chopsticks, philosopher_index, first, chopstick1, "FIRST " );
-        chopstick1->get_value(); 
+        table.submit( &get_chopsticks, philosopher_index, first, chopstick1, "FIRST " );
+        chopstick1->get_value();
 
         // Get the second chopstick
         Future<int>* chopstick2 = new Future<int>();
-        guard.submit( &get_chopsticks, philosopher_index, second, chopstick2, "SECOND" );
+        table.submit( &get_chopsticks, philosopher_index, second, chopstick2, "SECOND" );
         chopstick2->get_value(); 
 
     #ifdef CONSOLE_MODE
@@ -133,8 +132,8 @@ int philosopher(int philosopher_index, int line, int column)
         Delay eating(1000000);
 
         // Release the chopsticks
-        guard.submit( &release_chopsticks, philosopher_index, second, chopstick2, "SECOND" );
-        guard.submit( &release_chopsticks, philosopher_index, first, chopstick1, "FIRST " );
+        table.submit( &release_chopsticks, philosopher_index, second, chopstick2, "SECOND" );
+        table.submit( &release_chopsticks, philosopher_index, first, chopstick1, "FIRST " );
 
     #ifdef CONSOLE_MODE
         StringStream* stream2 = new StringStream{100};
