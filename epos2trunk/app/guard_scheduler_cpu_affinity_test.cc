@@ -1,5 +1,5 @@
 // EPOS Scheduler Test Program
-#define DEBUG_SYNC
+// #define DEBUG_SYNC
 
 #include <utility/ostream.h>
 #include <utility/stringstream.h>
@@ -99,7 +99,7 @@ int main()
 
     for(int i = 0; i < 5; i++) {
         int ret = phil[i]->join();
-        StringStream* stream = new StringStream(100);
+        StringStream* stream = new StringStream{100};
 
         *stream << "Philosopher " << i << " ate " << ret << " times\n";
         table.submit( &show_message, stream, 20 + i, 0 );
@@ -171,13 +171,13 @@ int philosopher(int philosopher_index, int line, int column)
 #endif
 
     for(int i = iterations; i > 0; i--) {
-        StringStream* stream1 = new StringStream{100};
-        *stream1 << "thinking[" << Machine::cpu_id() << "]" << "\n";
+        StringStream* stream1 = new StringStream{101};
+        *stream1 << "thinking[" << Machine::cpu_id() << "]" << " (" << line << ")" << "\n";
         table.submit( &show_message, stream1, line, column );
         think(1000000);
 
-        StringStream* stream2 = new StringStream{100};
-        *stream2 << "  hungry[" << Machine::cpu_id() << "]" << "\n";
+        StringStream* stream2 = new StringStream{102};
+        *stream2 << "  hungry[" << Machine::cpu_id() << "]" << " (" << line << ")" << "\n";
         table.submit( &show_message, stream2, line, column );
 
         // Get the first chopstick
@@ -191,21 +191,21 @@ int philosopher(int philosopher_index, int line, int column)
         chopstick2->get_value();
 
     #ifdef CONSOLE_MODE
-        StringStream* stream6 = new StringStream{100};
+        StringStream* stream6 = new StringStream{103};
         *stream6 << "Philosopher=" << philosopher_index
                 << ", got     the first=" << first
                 << " and second=" << second << " chopstick" << "\n";
         table.submit( &show_message, stream6, line, column );
     #endif
 
-        StringStream* stream3 = new StringStream{100};
+        StringStream* stream3 = new StringStream{104};
         *stream3 << " eating[" << Machine::cpu_id() << "] " << "\n";
         table.submit( &show_message, stream3, line, column );
 
         eat(500000);
 
-        StringStream* stream4 = new StringStream{100};
-        *stream4 << "    ate[" << Machine::cpu_id() << "]" << "\n";
+        StringStream* stream4 = new StringStream{105};
+        *stream4 << "    ate[" << Machine::cpu_id() << "]" << " (" << line << ")" << "\n";
         table.submit( &show_message, stream4, line, column );
 
         // Release the chopsticks
@@ -213,7 +213,7 @@ int philosopher(int philosopher_index, int line, int column)
         table.submit( &release_chopstick, philosopher_index, first, chopstick1, "FIRST " );
 
     #ifdef CONSOLE_MODE
-        StringStream* stream7 = new StringStream{100};
+        StringStream* stream7 = new StringStream{106};
         *stream7 << "Philosopher=" << philosopher_index
                 << ", release the first=" << first
                 << " and second=" << second << " chopstick" << "\n";
@@ -221,8 +221,8 @@ int philosopher(int philosopher_index, int line, int column)
     #endif
     }
 
-    StringStream* stream5 = new StringStream{100};
-    *stream5 << "  done[" << Machine::cpu_id() << "]  " << "\n";
+    StringStream* stream5 = new StringStream{107};
+    *stream5 << "  done[" << Machine::cpu_id() << "]  " << " (" << line << ")" << "\n";
     table.submit( &show_message, stream5, line, column );
 
     return iterations;
