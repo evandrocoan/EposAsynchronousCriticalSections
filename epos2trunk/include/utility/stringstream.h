@@ -20,10 +20,10 @@ public:
     StringStream(const unsigned int _buffer_size) :
             _last_position(0), _buffer_size(_buffer_size)
     {
-        assert(_buffer_size > 0);
         DB( Synchronizer, TRC, "StringStream::StringStream(_buffer_size="
                 << _buffer_size << ") => " << reinterpret_cast<int *>(this) << endl )
 
+        assert(_buffer_size > 0);
         _buffer = new char[_buffer_size];
     }
 
