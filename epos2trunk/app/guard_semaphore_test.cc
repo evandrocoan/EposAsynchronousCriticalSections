@@ -158,10 +158,12 @@ void setup_program()
     Display::position(0, 0);
     cout << "The Philosopher's Dinner:" << endl;
 
-    for(int i = 0; i < 5; i++) {
+    for(int i = 0; i < 5; i++)
+    {
         is_chopstick_free[i] = true;
         locked_futures[i] = nullptr;
     }
+
     phil[0] = new Thread(&philosopher, 0,  5, 32);
     phil[1] = new Thread(&philosopher, 1, 10, 44);
     phil[2] = new Thread(&philosopher, 2, 16, 39);
