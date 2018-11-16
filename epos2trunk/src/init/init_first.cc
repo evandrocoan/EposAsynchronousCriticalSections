@@ -68,7 +68,7 @@ public:
         if(si->lm.has_ext)
             db<Init>(INF) << "Init_First: additional data from mkbi at "  << reinterpret_cast<void *>(si->lm.app_extra) << ":" << si->lm.app_extra_size << endl;
 
-        db<Init>(INF) << "done!" << endl;
+        db<Init>(INF) << "Init_First: done!" << endl;
 
         db<Init>(INF) << "INIT ends here!" << endl;
 

@@ -34,7 +34,7 @@ public:
         // Initialize the processor
         db<Init>(INF) << "Initializing the CPU: " << endl;
         CPU::init();
-        db<Init>(INF) << "done!" << endl;
+        db<Init>(INF) << "Initializing the CPU done!" << endl;
 
         // Initialize System's heap
         db<Init>(INF) << "Initializing system's heap: " << endl;
@@ -43,19 +43,19 @@ public:
             System::_heap = new (&System::_preheap[sizeof(Segment)]) Heap(Address_Space(MMU::current()).attach(System::_heap_segment, Memory_Map::SYS_HEAP), System::_heap_segment->size());
         } else
             System::_heap = new (&System::_preheap[0]) Heap(MMU::alloc(MMU::pages(HEAP_SIZE)), HEAP_SIZE);
-        db<Init>(INF) << "done!" << endl;
+        db<Init>(INF) << "Initializing system's heap done!" << endl;
 
         // Initialize the machine
         db<Init>(INF) << "Initializing the machine: " << endl;
         Machine::init();
-        db<Init>(INF) << "done!" << endl;
+        db<Init>(INF) << "Initializing the machine done!" << endl;
 
         Machine::smp_barrier(); // signalizes "machine ready" to other CPUs
 
         // Initialize system abstractions
         db<Init>(INF) << "Initializing system abstractions: " << endl;
         System::init();
-        db<Init>(INF) << "done!" << endl;
+        db<Init>(INF) << "Initializing system abstractions done!" << endl;
 
         // Randomize the Random Numbers Generator's seed
         if(Traits<Random>::enabled) {
@@ -76,10 +76,10 @@ public:
 #endif
             if(!Traits<TSC>::enabled && !Traits<NIC>::enabled)
                 db<Init>(WRN) << "Due to lack of entropy, Random is a pseudo random numbers generator!" << endl;
-            db<Init>(INF) << "done!" << endl;
+            db<Init>(INF) << "Randomizing the Random Numbers Generator done!" << endl;
         }
 
-        // Initialization continues at init_first
+        db<Init>(INF) << "Initialization continues at init_first!" << endl;
     }
 };
 
