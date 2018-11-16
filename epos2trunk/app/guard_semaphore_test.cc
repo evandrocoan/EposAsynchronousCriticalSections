@@ -51,7 +51,9 @@ void show_message(StringStream * message, int line, int column) {
     delete message;
 }
 
-void release_chopsticks(int philosopher_index, int chopstick_index, Future<int>* future_chopstick, const char* which_chopstick) {
+void release_chopstick(int philosopher_index, int chopstick_index,
+        Future<int>* future_chopstick, const char* which_chopstick)
+{
     DB( Synchronizer, LVL, "Philosopher=" << philosopher_index
             << ", release chopstick=" << chopstick_index
             << ", is_chopstick_free=" << is_chopstick_free[chopstick_index]
@@ -75,7 +77,8 @@ void release_chopsticks(int philosopher_index, int chopstick_index, Future<int>*
     }
 }
 
-void get_chopsticks(int philosopher_index, int chopstick_index, Future<int>* future_chopstick, const char* which_chopstick)
+void get_chopstick(int philosopher_index, int chopstick_index,
+        Future<int>* future_chopstick, const char* which_chopstick)
 {
     DB( Synchronizer, LVL, "Philosopher=" << philosopher_index
             << ", getting chopstick=" << chopstick_index
@@ -92,7 +95,8 @@ void get_chopsticks(int philosopher_index, int chopstick_index, Future<int>* fut
         assert( locked_futures[chopstick_index] == nullptr );
         locked_futures[chopstick_index] = future_chopstick;
 
-        DB( Synchronizer, LVL, ", locked_futures=" << locked_futures[chopstick_index] << endl )
+        DB( Synchronizer, LVL, ", locked_futures="
+                << locked_futures[chopstick_index] << endl )
     }
 }
 
@@ -112,17 +116,18 @@ int philosopher(int philosopher_index, int line, int column)
 
         // Get the first chopstick
         Future<int>* chopstick1 = new Future<int>();
-        table.submit( &get_chopsticks, philosopher_index, first, chopstick1, "FIRST " );
+        table.submit( &get_chopstick, philosopher_index, first, chopstick1, "FIRST " );
         chopstick1->get_value();
 
         // Get the second chopstick
         Future<int>* chopstick2 = new Future<int>();
-        table.submit( &get_chopsticks, philosopher_index, second, chopstick2, "SECOND" );
+        table.submit( &get_chopstick, philosopher_index, second, chopstick2, "SECOND" );
         chopstick2->get_value();
 
     #ifdef CONSOLE_MODE
         StringStream* stream1 = new StringStream{100};
-        *stream1 << "Philosopher=" << philosopher_index << ", got     the first=" << first
+        *stream1 << "Philosopher=" << philosopher_index
+                << ", got     the first=" << first
                 << " and second=" << second << " chopstick\n";
         table.submit( &show_message, stream1, line, column );
     #endif
@@ -131,12 +136,13 @@ int philosopher(int philosopher_index, int line, int column)
         Delay eating(1000000);
 
         // Release the chopsticks
-        table.submit( &release_chopsticks, philosopher_index, second, chopstick2, "SECOND" );
-        table.submit( &release_chopsticks, philosopher_index, first, chopstick1, "FIRST " );
+        table.submit( &release_chopstick, philosopher_index, second, chopstick2, "SECOND" );
+        table.submit( &release_chopstick, philosopher_index, first, chopstick1, "FIRST " );
 
     #ifdef CONSOLE_MODE
         StringStream* stream2 = new StringStream{100};
-        *stream2 << "Philosopher=" << philosopher_index << ", release the first=" << first
+        *stream2 << "Philosopher=" << philosopher_index
+                << ", release the first=" << first
                 << " and second=" << second << " chopstick\n";
         table.submit( &show_message, stream2, line, column );
     #endif
