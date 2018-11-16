@@ -658,9 +658,50 @@ static int fas(volatile int & value, volatile int & replacement) {
 ~/np~{DIV}
 {DIV}^
 
+!!!debug_sync.h [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+Para auxiliar e melhorar o entendimento das aplicações multithread, foi criado uma macro especial para realizar o debug das aplicações e novos componentes do EPOS criados, como ''closure.h'', ''guard.h'' e ''stringstream.h''.
+
+Sua implementação baseia-se somente em semáforo global uma simples macro que replica seu uso. Ela pode ser desativada completamente, não adicionando a diretiva ''#define DEBUG_SYNC'' do pré-processador C que realiza sua ativação.
+^::__Listagem 19:__ Arquivo ''/include/utility/debug_sync.h''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+// EPOS Debug Utility Declarations
+
+#include <utility/debug.h>
+#include <semaphore.h>
+
+#ifndef __debug_sync_h
+#define __debug_sync_h
+
+// You can define it anywhere before including this file
+// #define DEBUG_SYNC
+
+#ifdef DEBUG_SYNC
+
+__BEGIN_UTIL
+    Semaphore _debug_syncronized_semaphore_lock;
+__END_UTIL
+
+    // A debug function cannot call this recursively, otherwise a deadlock happens
+    #define DB(name,level,...) do { \
+        _debug_syncronized_semaphore_lock.lock(); \
+            db<name>(level) << __VA_ARGS__; \
+        _debug_syncronized_semaphore_lock.unlock(); } while(0);
+
+#else
+    #define DB(name,level,...) db<name>(level) << __VA_ARGS__;
+
+#endif
+
+#define LOG(...) DB(Debug, WRN, __VA_ARGS__)
+
+#endif
+~/np~{DIV}
+{DIV}^
+
 !!!stringstream.h [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Para auxiliar o uso do algoritmo do ''Guarda'', e permite que faça-se a formatação prévia de strings antes de envia-las para a seção crítica, criou-se uma nova class auxiliar chamada ''StringStream'' criada no arquivo ''stringstream.h''. Ela é uma extensão simples da classe ''OStream'' do EPOS, que já sabe como fazer a formatação de vários tipos. Assim, na implementação do ''stringstream.h'' somente implementou-se um wrapper sobre a manipulação de todas as strings que já foram formatadas pela super classe ''OStream''.
-^::__Listagem 19:__ Modificações do arquivo ''/include/utility/ostream.h''::
+^::__Listagem 20:__ Modificações do arquivo ''/include/utility/ostream.h''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 class StringStream;
@@ -685,7 +726,7 @@ private:
 Foi necessário tornar o método ''print()'' da classe ''OStream'' virtual e para facilitar o uso, também permitiu-se que classe ''OStream'' possa imprimir diretamente ponteiros do tipo ''StringStream''. Entretanto, depois de declarar o método ''print()'' com o modificador ''virtual'', faz-se com que não se tenha nenhuma saída de texto ao executar a aplicação.
 
 No exemplo a seguir, vê-se a execução de uma aplicação no modo ''hysterically_debugged = true'' após adicionar-se o modificador ''virtual'' na assinatura da função ''void print(const char * s) { _print(s); }''.
-^::__Listagem 20:__ Saída da execução de uma aplicação com ''hysterically_debugged = true''::
+^::__Listagem 21:__ Saída da execução de uma aplicação com ''hysterically_debugged = true''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 EPOS bootable image tool
@@ -722,7 +763,7 @@ Percebe-se que ao compilar e executar a aplicação ''guard_scheduler_cpu_affini
 Portando, devido ao bug com o uso da identificador ''virtual'', fez-se o uso de outra alternativa mais agressiva do que o polimorfismo permitido pelo identificador ''virtual''. Após muita pesquisa, chegou-se a uma implementação que faz uso de muitos ''static_cast'''s e utiliza-se métodos estáticos para permitir que o objeto que derivam da super classe possam funcionar correta, 'imitando' o funcionamento que se obtém-se com o uso do identificador ''virtual''.
 
 Agora, tem-se uma nova super classe meta programada chamada ''OStream_Base'', que será base de todas os tipos de stream, incluindo ''OStream'' e o novo tipo ''StringStream''. A seguir encontra-se a sua implementação:
-^::__Listagem 20:__ Arquivo ''/include/utility/ostream.h''::
+^::__Listagem 22:__ Arquivo ''/include/utility/ostream.h''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 template<class StreamType>
@@ -968,7 +1009,7 @@ Como por padrão o operator de stream ''operator<<'' returna um objeto o mesmo t
 Para contornar o problema de não poder-se utilizar o identificador ''virtual'' no método ''inline void print(const char * s)'' logo acima, faz-se uso da meta programação com template ''StreamType'', para acessar diretamente o método estático da classe derivada passando como primeiro parâmetro o ponteiro para o objeto do tipo da classe derivada, após realizar sua conversão ''StreamType::print(static_cast<StreamType*>(this), s)''.
 
 Assim, após refatorar-se todo o conteúdo da antiga ''OStream'', tem-se uma nova ''OStream'' que deriva da super classe ''OStream_Base'':
-^::__Listagem 20:__ Arquivo ''/include/utility/ostream.h''::
+^::__Listagem 23:__ Arquivo ''/include/utility/ostream.h''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // https://stackoverflow.com/questions/11761506/inheritance-function-that-returns-self-type
@@ -1014,7 +1055,7 @@ private:
 ~/np~{DIV}
 {DIV}^
 Agora, a implementação do novo tipo ''StringStream'' resume-se ao seguinte:
-^::__Listagem 20:__ Arquivo ''/include/utility/stringstream.h''::
+^::__Listagem 24:__ Arquivo ''/include/utility/stringstream.h''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 class StringStream : public OStream_Base<StringStream>
@@ -1028,10 +1069,10 @@ public:
     StringStream(const unsigned int _buffer_size) :
             _last_position(0), _buffer_size(_buffer_size)
     {
-        assert(_buffer_size > 0);
         DB( Synchronizer, TRC, "StringStream::StringStream(_buffer_size="
                 << _buffer_size << ") => " << reinterpret_cast<int *>(this) << endl )
 
+        assert(_buffer_size > 0);
         _buffer = new char[_buffer_size];
     }
 
@@ -1101,7 +1142,7 @@ public:
 ~/np~{DIV}
 {DIV}^
 Segue-se alguns testes de extremo de uso da ''StringStream'', quando o buffer está quase cheio:
-^::__Listagem 21:__ Arquivo ''/app/stringstream_test.cc''::
+^::__Listagem 25:__ Arquivo ''/app/stringstream_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Semaphore Component Test Program
@@ -1150,7 +1191,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 22:__ Arquivo ''/app/stringstream_test.cc''::
+^::__Listagem 26:__ Arquivo ''/app/stringstream_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 Welcome to the `stringstream.h` test program
@@ -1174,7 +1215,7 @@ Para auxiliar o desenvolvimento, reduzindo o tempo de espera pela compilação c
 # ''src/utility/makefile''
 # ''tools/makefile''
 A alteração feita nesses ''Makefile'''s foi a seguinte:
-^::__Listagem 23:__ Novo ''makefile'' paralelizado::
+^::__Listagem 27:__ Novo ''makefile'' paralelizado::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 # How can I write a makefile to auto-detect and parallelize the build with GNU Make?
@@ -1200,7 +1241,7 @@ all_multithread: $(SUBDIRS)
 A alteração não foi feita somente no ''Makefile'' raíz por que alguns ''Makefile'''s como ''src/system'' precisam ser executados sequencialmente. A seleção de quais ''Makefile'''s poderiam ser paralelizados foi feita pela tentativa e erro. Adicionava-se o comando de paralelização, e verifica-se o EPOS compilava corretamente depois de um ''make veryclean''.
 
 Para paralelizar o comando ''make veryclean'', simplesmente precisou-se editar o ''Makefile'' raíz ''src/makefile'', adicionado o seguinte comando:
-^::__Listagem 24:__ Novo comando ''make clean''::
+^::__Listagem 28:__ Novo comando ''make clean''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 clean:
@@ -1214,7 +1255,7 @@ Para ''make veryclean'' funcionar paralelamente, foi preciso remover a definiç�
 Durante o desenvolvimento do trabalho, foi habilitado as instruções de assert do EPOS, no arquivo ''/include/system/config.h''. Entretanto, ao fazer isso, foram relevados alguns erros de compilação e de execução do EPOS.
 
 Um dos erros relevados pelos asserts foi construtor da classe ''Thread'', que deixa de ser atômico quando compila-se o EPOS para várias CPU's. Ao executar o trecho de código do construtor da classe ''Thread'' a seguir, as interrupções são ligadas pelo operator new. Isso, é um problema por que o construtor da classe ''Thread'' inicia com um ''lock()'' e termina com um ''unlock()'', portanto, não pode-se ter alguém no meio do processo reativando as interrupções.
-^::__Listagem 25:__ Trecho do construtor de ''/src/component/thread.cc''::
+^::__Listagem 29:__ Trecho do construtor de ''/src/component/thread.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // Somewhere on the new operator, it is being called enable() and disable() CPU interrupt
@@ -1225,7 +1266,7 @@ else
 ~/np~{DIV}
 {DIV}^
 Para resolver-se esse problema, tentou-se estudar o código do operador de new, para encontrar onde tal anomalia estava acontecendo. Entretanto, mesmo que descoberto onde isso esteja acontecendo, tentar alterar ou modificar tal código, seria muito problemático. Portanto, ao contrario de lutar contra o problema, abraçou-se ele. Assim, modificou-se arquivo ''cpu.h'' adicionado-se o suporte a uma pilha de chamadas ''lock()'' e ''unlock()''. Assim, pode-se recursivamente chamar funções que precisa ser atómicas, garantido que a chamada mais externa continuará sempre atômica.
-^::__Listagem 26:__ Mudanças no arquivo ''/include/architecture/ia32/cpu.h''::
+^::__Listagem 30:__ Mudanças no arquivo ''/include/architecture/ia32/cpu.h''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 static void int_enable()
@@ -1253,7 +1294,7 @@ static void int_disable()
 ~/np~{DIV}
 {DIV}^
 A seguir, vê-se um resumo das commits com errors relacionadas a ativação do assert.
-^::__Listagem 27:__ Lista de commits criadas pela ativação do ''assert()''::
+^::__Listagem 31:__ Lista de commits criadas pela ativação do ''assert()''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 Date:   Tue Nov 13 16:55:14 2018 -0200
@@ -1512,7 +1553,7 @@ index 9495641..27dd942 100644
 Das 2 implementações distintas de futures apresentadas, realiza-se a implementação do modelo de future bloqueante, apresentado no artigo referência {DIV(type="span")}[{DIV}[#Refer_ncias_|2]]. Como a implementação atual do algoritmo do guarda não suporta passagens de parâmetros variádicos, fez-se a implementação dos métodos para que aceitem vários parâmetros com meta programação. Ver a seção [#Closure_Metaprogramada_|Closure Metaprogramada].
 
 Uma vez que a future é resolvida, i.e., seu método ''resolve()'' é chamado e seu valor é definido, ele não pode ser mais alterado, e qualquer um que tentar obter o valor da future com ''get_value()'' não precisará mais bloquear, pois o valor não é indefinido. Futures são implementadas totalmente no arquivo header ''.h'' por que são meta classes que são instanciadas pelo compilador e seu código é gerado somente caso alguém crie uma especialização com algum tipo de dado.
-^::__Listagem 28:__ Implementação de future em ''/include/utility/future.h''::
+^::__Listagem 32:__ Implementação de future em ''/include/utility/future.h''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Guard Component Declarations
@@ -1573,7 +1614,7 @@ __END_UTIL
 ~/np~{DIV}
 {DIV}^
 Agora ve-sê um simples programa que demonstra o uso de futures:
-^::__Listagem 29:__ Arquivo de Teste ''/app/future_simple_test.cc''::
+^::__Listagem 33:__ Arquivo de Teste ''/app/future_simple_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
@@ -1622,7 +1663,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 30:__ Arquivo ''/app/future_simple_test.cc''::
+^::__Listagem 34:__ Arquivo ''/app/future_simple_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 Starting main application...
@@ -1639,7 +1680,7 @@ Exiting main application...
 ~/np~{DIV}
 {DIV}^
 A seguir vê-se um simples exemplo de uso de futures. Nesse exemplo, evolve-se varias classes to EPOS, fazendo seu uso em conjunto com o algoritmo do guarda.
-^::__Listagem 31:__ Arquivo de Teste ''/app/future_guard_test.cc''::
+^::__Listagem 35:__ Arquivo de Teste ''/app/future_guard_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
@@ -1699,7 +1740,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 32:__ Arquivo ''/app/future_guard_test.cc''::
+^::__Listagem 36:__ Arquivo ''/app/future_guard_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 Starting main application...
@@ -1723,7 +1764,7 @@ Exiting main application...
 A ''Critical_Section'' inicialmente descrita não apresenta a possibilidade de definir-se/criar-se funções com um número variado de argumentos. Por isso, essa implementação foi substituída por uma ''Critical_Section'' meta programada, que faz uso de templates variádicos do C++ 11.
 
 A seguir ve-sê a implementação da classe base de todas as ''Critical_Section''. Uma classe base é necessária por que o algoritmo do Guarda implementa uma lista encadeada de seções críticas, que em nosso caso são presentados por ''Closures''. Assim, como a implementação de lista, que o algoritmo do Guarda faz uso, não permite que tipos diferentes sejam adicionados na lista, faz-se uso do polimorfismo para criar um lista com diferentes closures meta programadas.
-^::__Listagem 33:__ Base de todas ''Closures'' meta programadas, Arquivo: ''/include/utility/critical_section.h''::
+^::__Listagem 37:__ Base de todas ''Closures'' meta programadas, Arquivo: ''/include/utility/critical_section.h''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 class Critical_Section_Base
@@ -1762,7 +1803,7 @@ private:
 ~/np~{DIV}
 {DIV}^
 A implementação da ''Critical_Section'' meta programada é simplesmente a herança privada da implementação de ''Closure'', mais a herança da classe base de todas as seções críticas, a ''Critical_Section_Base''.
-^::__Listagem 34:__ Definição da ''Critical_Section'' meta programada baseada na implementação de ''Closures''::
+^::__Listagem 38:__ Definição da ''Critical_Section'' meta programada baseada na implementação de ''Closures''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 template<typename... Tn>
@@ -1785,7 +1826,7 @@ public:
 %%%
 !!!!Argumentos Variádicos  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Para poder-se criar Closures com um número variado do parâmetros, fez-se uso de um meta programa que calcula, recursivamente as posições dos parâmetros da closures.
-^::__Listagem 35:__ Cálculo do index dos parâmetros da seção crítica dentro da closure::
+^::__Listagem 39:__ Cálculo do index dos parâmetros da seção crítica dentro da closure::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 template<int ...>
@@ -1821,7 +1862,7 @@ struct GeneratorOfIntegerSequence<AccumulatedSize, Grouper(), GeneratedSequence.
 ~/np~{DIV}
 {DIV}^
 Este programa é executado em tempo de compilação, e para uma dada entrada, como por exemplo ''GeneratorOfIntegerSequence< 0, int(char, int, char) >::type()'', gera o seguinte código, que calcula o pacote de parâmetros ''<0, 1, 5>'', que significa que o primeiro parâmetro da função, que é o tipo ''char'', está na posição 0, enquanto o segundo parâmetro do tipo ''int'' está na posição 1, que e o último parâmetro, ''char'' está na posição 5. Tais valores devem-se aos respectivos tamanhos de ''char'' e ''int'' serem 1 e 4:
-^::__Listagem 36:__ Trecho de código gerado pelo meta programa, obtido com compilador ''LLVM Clang''::
+^::__Listagem 40:__ Trecho de código gerado pelo meta programa, obtido com compilador ''LLVM Clang''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 $ clang++ -Xclang -ast-print -fsyntax-only \
@@ -1853,7 +1894,7 @@ template<> struct GeneratorOfIntegerSequence<6, int (), <0, 1, 5>>
 ~/np~{DIV}
 {DIV}^
 Segue o meta programa que implementa closures ou functors de parâmetros variádicos:
-^::__Listagem 37:__ Implementação da Closure meta programa, arquivo ''/include/utility/closure.h''::
+^::__Listagem 41:__ Implementação da Closure meta programa, arquivo ''/include/utility/closure.h''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 template<typename Tn>
@@ -1939,7 +1980,7 @@ public:
 ~/np~{DIV}
 {DIV}^
 Em tempo de compilação, ao detectar a criação de um Objeto closure, o compilador irá criar uma definição específica para a classe Closure de acordo com os argumentos ''(function, arg1, …, argN)''. Algo similar ao exemplo a seguir:
-^::__Listagem 38:__ Ilustração de um meta programa depois de compilado::
+^::__Listagem 42:__ Ilustração de um meta programa depois de compilado::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 class Closure<funcReturntype(char, …, int), char, …, int>{
@@ -1955,7 +1996,7 @@ Em tempo de execução, o construtor da classe Closure irá:
 %%%
 !!!!Exemplo de Uso  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Veja um exemplo completo de teste/uso das closures meta programadas:
-^::__Listagem 39:__ Arquivo ''/app/closure_test.cc''::
+^::__Listagem 43:__ Arquivo ''/app/closure_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
@@ -2027,7 +2068,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 40:__ Arquivo ''/app/closure_test.cc''::
+^::__Listagem 44:__ Arquivo ''/app/closure_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 main: begin()
@@ -2106,7 +2147,7 @@ main: exiting()
 {DIV}^
 
 Dada a função ''test_function2'' do exemplo anterior como tendo a seguinte assinatura, ''char test_function2(const char *, const char *, char)'', tem-se o seguinte código meta programado, gerado durante a compilação, para criar a ''Closure'' da ''test_function2'':
-^::__Listagem 41:__ Trecho de código gerado pelo meta programa, obtido com compilador ''LLVM Clang''::
+^::__Listagem 45:__ Trecho de código gerado pelo meta programa, obtido com compilador ''LLVM Clang''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 $ clang++ -Xclang -ast-print -fsyntax-only closure_test.cpp > expanded.cpp
@@ -2196,7 +2237,7 @@ public:
 %%%
 !!!!Integração com Guarda  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Para integrar a nova interface de ''Critical_Section'' no algoritmo do Guarda, foi necessário somente modificar o método ''Guard::submit'', que agora passa a ser um método meta programado:
-^::__Listagem 42:__ Arquivo ''/include/utility/guard.h''::
+^::__Listagem 46:__ Arquivo ''/include/utility/guard.h''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 template<typename ... Tn>
@@ -2216,7 +2257,7 @@ void submit( void(*entry)( Tn ... ), Tn ... an )
 Obrigatoriamente a nossa closure que representa a seção crítica, tem que retornar ''void'', pois no contexto de execução do algoritmo do guarda, uma vez que a ''Closure'' começa a executar, a única forma que ela tem para se comunicar com a thread original é através de uma memória compartilhada, que em nosso caso é utilizado o mecanismo de ''Futures'', como já explicado.
 
 Agora mostra-se um exemplo de uso de closures e do algoritmo do Guarda.
-^::__Listagem 43:__ Arquivo ''/app/closure_guard_test.cc''::
+^::__Listagem 47:__ Arquivo ''/app/closure_guard_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
@@ -2250,7 +2291,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 44:__ Arquivo ''/app/closure_guard_test.cc''::
+^::__Listagem 48:__ Arquivo ''/app/closure_guard_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 main: begin()
@@ -2309,7 +2350,7 @@ Todos os testes a seguir foram realizados utilizando ''static const unsigned int
 
 !!!fas_test.cc [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Aqui testa-se a implementação nova de FAS feita, repetidamente fazendo a troca de variáveis em duas thread executando em CPUs diferentes.
-^::__Listagem 45:__ Arquivo de Teste ''/app/fas_test.cc''::
+^::__Listagem 49:__ Arquivo de Teste ''/app/fas_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
@@ -2384,7 +2425,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 46:__ Arquivo ''/app/fas_test.cc''::
+^::__Listagem 50:__ Arquivo ''/app/fas_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 <1>: MMU is disabled! :<1>
@@ -2404,7 +2445,7 @@ Resultado da execução:
 
 !!!count_sync_guard.cc [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Neste teste, utiliza-se a implementação do guarda para controlar o acesso a seção crítica ''increment_counter()'', que simplesmente soma um contador. No final da execução, espera-se que resultado da conta seja precisamente o número de iterações feita.
-^::__Listagem 47:__ Arquivo de teste ''/app/count_sync_guard.cc''::
+^::__Listagem 51:__ Arquivo de teste ''/app/count_sync_guard.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
@@ -2470,7 +2511,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 48:__ Arquivo ''/app/fas_test.cc''::
+^::__Listagem 52:__ Arquivo ''/app/fas_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 <1>: MMU is disabled! :<1>
@@ -2499,7 +2540,7 @@ The last thread has exited!
 
 !!!count_sync_uncoordinated.cc [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 O que se espera deste teste, ao contrário do teste anterior, é que a contagem final de errada, pois nenhuma primitiva de sincronização é utilizada, assim tem-se que a operação de incremento, que não é atômica, seja interrompida pelo metade, e no fim o resultado fique errado.
-^::__Listagem 49:__ Arquivo de teste ''/app/count_sync_uncoordinated.cc''::
+^::__Listagem 53:__ Arquivo de teste ''/app/count_sync_uncoordinated.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
@@ -2563,7 +2604,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 50:__ Arquivo ''/app/count_sync_uncoordinated.cc''::
+^::__Listagem 54:__ Arquivo ''/app/count_sync_uncoordinated.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 <1>: MMU is disabled! :<1>
@@ -2669,7 +2710,7 @@ Resultado da execução:
 
 !!!count_sync_semaphore.cc [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Neste teste, utiliza-se os mecanismo de sincronização do semáforo, e ao contrário do teste anterior ''count_sync_uncoordinated.cc'', deste teste espera-se que a contagem seja correta, pois utiliza-se o mecanismo de sincronização do semáforo para garantir a atomicidade da operação de adição.
-^::__Listagem 51:__ Arquivo de teste ''/app/count_sync_semaphore.cc''::
+^::__Listagem 55:__ Arquivo de teste ''/app/count_sync_semaphore.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
@@ -2725,7 +2766,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 52:__ Arquivo ''/app/count_sync_semaphore.cc''::
+^::__Listagem 56:__ Arquivo ''/app/count_sync_semaphore.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 <1>: MMU is disabled! :<1>
@@ -2839,6 +2880,28 @@ Resultado da execução:
 # https://stackoverflow.com/questions/12464633/is-it-safe-to-privately-inherit-from-a-class-with-a-non-virtual-destructor
 # https://stackoverflow.com/questions/2004820/inherit-interfaces-which-share-a-method-name
 # https://stackoverflow.com/questions/10535667/does-it-make-any-sense-to-use-inline-keyword-with-templates
+# https://stackoverflow.com/questions/3531060/how-to-initialize-a-static-const-member-in-c
+# https://stackoverflow.com/questions/34222703/how-to-override-static-method-of-template-class-in-derived-class
+# https://stackoverflow.com/questions/11761506/inheritance-function-that-returns-self-type
+# https://stackoverflow.com/questions/115703/storing-c-template-function-definitions-in-a-cpp-file
+# https://stackoverflow.com/questions/19884494/too-few-template-parameter-lists-error
+# https://stackoverflow.com/questions/5901300/how-do-i-view-previous-diff-commits-using-git
+# https://stackoverflow.com/questions/2721846/alternative-to-c-static-virtual-methods
+# https://stackoverflow.com/questions/34222703/how-to-override-static-method-of-template-class-in-derived-class
+# https://stackoverflow.com/questions/137038/how-do-you-get-assembler-output-from-c-c-source-in-gcc
+# https://stackoverflow.com/questions/34842152/compare-and-exchange-on-x86-cpu
+# https://stackoverflow.com/questions/47981/how-do-you-set-clear-and-toggle-a-single-bit
+# https://stackoverflow.com/questions/2064692/how-to-print-function-pointers-with-cout
+# https://stackoverflow.com/questions/8747005/backporting-nullptr-to-c-pre-c0x-programs
+# https://stackoverflow.com/questions/10496824/how-to-define-nullptr-for-supporting-both-c03-and-c11
+# https://stackoverflow.com/questions/2741708/makefile-contains-string
+# https://stackoverflow.com/questions/3531060/how-to-initialize-a-static-const-member-in-c
+# https://stackoverflow.com/questions/11761506/inheritance-function-that-returns-self-type
+# https://stackoverflow.com/questions/4673720/private-inheritance-using-directive-overloads
+# https://stackoverflow.com/questions/656224/when-should-i-use-c-private-inheritance
+# https://stackoverflow.com/questions/24609872/delete-virtual-function-from-a-derived-class
+# https://stackoverflow.com/questions/18469818/class-inheritance-error-private-member
+# https://stackoverflow.com/questions/9055778/initializing-a-reference-to-member-to-null-in-c
 
 !!Referências  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 #Stefan Reif and Wolfgang Schröder-Preikschat, "Predictable Synchronisation Algorithms for Asynchronous Critical Sections,” Friedrich-Alexander-Universität Erlangen-Nürnberg, Dept. of Computer Science, Technical Reports, CS-2018-03, February 2018.
