@@ -15,10 +15,9 @@ Guard::~Guard() {
 
 Guard::Element * Guard::vouch(Element * item)
 {
-    CPU::finc(_size);
     DB( Synchronizer, TRC, "Guard::vouch(this=" << this
             << " head=" << _head << " tail=" << _tail
-            << " item=" << item << ", size=" << _size )
+            << " item=" << item << ", size=" << CPU::finc(_size) + 1 )
 
     item->next(reinterpret_cast<Element *>(NULL));
     Element * last = CPU::fas(_tail, item);
@@ -37,10 +36,9 @@ Guard::Element * Guard::vouch(Element * item)
 
 Guard::Element * Guard::clear()
 {
-    CPU::fdec(_size);
     DB( Synchronizer, TRC, "Guard::clear(this=" << this
             << " head=" << _head << " tail=" << _tail
-            << ", size=" << _size )
+            << ", size=" << CPU::fdec(_size) - 1 )
 
     Element * item = _head;
     Element * next = CPU::fas(item->_next, reinterpret_cast<Element *>(DONE));

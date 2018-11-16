@@ -570,16 +570,13 @@ Além das operações vouch, clear e a operação de criação da guarda (setup)
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // Object Methods
-Guard::Guard(): _head(0), _tail(0)
-{
-   db<Synchronizer>(TRC)   << "Guard(head=" << _head
-                           << ", tail=" << _tail
-                           << ") => " << this << endl;
+Guard::Guard(): _head(0), _tail(0) {
+    DB( Synchronizer, TRC, "Guard(head=" << _head << ", tail=" << _tail
+            << ") => " << this << endl )
 }
 
-Guard::~Guard()
-{
-   db<Synchronizer>(TRC) << "~Guard(this=" << this << ")" << endl;
+Guard::~Guard() {
+    DB( Synchronizer, TRC, "~Guard(this=" << this << ")" << endl )
 }
 
 void Guard::submit(Closure * cs)
@@ -600,34 +597,44 @@ Uma adição importante foi a deleção de seções críticas que já foram exec
 {DIV(type="pre" bg="#CCFFFF")}~np~
 Guard::Element * Guard::vouch(Element * item)
 {
-   db<Synchronizer>(TRC) << "Guard::vouch(this=" << this << " head= " << _head
-            << " tail= " << _tail <<  ")" << endl;
+    DB( Synchronizer, TRC, "Guard::vouch(this=" << this
+            << " head=" << _head << " tail=" << _tail
+            << " item=" << item << ", size=" << CPU::finc(_size) + 1 )
 
-   item->next(NULL);
-   Element * last = CPU::fas(_tail, item);
-   if (last){
-       if (CPU::cas(last->_next, reinterpret_cast<Element *>(NULL), item) == NULL)
-           return NULL;
-       delete item->object();
-   }
-   _head = item;
-   return item;
+    item->next(reinterpret_cast<Element *>(NULL));
+    Element * last = CPU::fas(_tail, item);
+    DB( Synchronizer, TRC, ", last=" << last << ")" << endl )
+
+    if (last) {
+        if (CPU::cas(last->_next, reinterpret_cast<Element *>(NULL), item)
+                    == reinterpret_cast<Element *>(NULL))
+
+            return reinterpret_cast<Element *>(NULL);
+        delete item->object();
+    }
+    _head = item;
+    return item;
 }
 
 Guard::Element * Guard::clear()
 {
-   db<Synchronizer>(TRC) << "Guard::clear(this=" << this << " head= " << _head
-            << " tail= " << _tail <<  ")" << endl;
+    DB( Synchronizer, TRC, "Guard::clear(this=" << this
+            << " head=" << _head << " tail=" << _tail
+            << ", size=" << CPU::fdec(_size) - 1 )
 
-   Element * item = _head;
-   Element * next = CPU::fas(item->_next, reinterpret_cast<Element *>(DONE));
-   bool mine = true;
-   if (!next)
-       mine = CPU::cas(_tail, item, reinterpret_cast<Element *> (NULL)) == item;
-   CPU::cas(_head, item, next);
-   if (mine)
-       delete item->object();
-   return next;
+    Element * item = _head;
+    Element * next = CPU::fas(item->_next, reinterpret_cast<Element *>(DONE));
+    DB( Synchronizer, TRC, ", next=" << next << ")" << endl )
+
+    bool mine = true;
+    if (!next)
+        mine = CPU::cas(_tail, item, reinterpret_cast<Element *> (NULL)) == item;
+
+    CPU::cas(_head, item, next);
+    if (mine)
+        delete item->object();
+
+    return next;
 }
 ~/np~{DIV}
 {DIV}^
@@ -1563,7 +1570,9 @@ Uma vez que a future é resolvida, i.e., seu método ''resolve()'' é chamado e 
 #ifndef __future_h
 #define __future_h
 
+#include <semaphore.h>
 #include <condition.h>
+#include <utility/debug_sync.h>
 
 __BEGIN_UTIL
 
@@ -1572,42 +1581,54 @@ class Future
 {
 public:
     Future(): _condition(), _is_resolved() {
-        db<Synchronizer>(WRN)   << "Future(_is_resolved=" << _is_resolved
-                                << ", _condition=" << _condition.size()
-                                << ") => " << this << endl;
+        DB( Synchronizer, TRC, "Future(_is_resolved=" << _is_resolved
+                  << ", _condition=" << _condition.size()
+                  << ") => " << this << endl )
     }
 
     ~Future() {
-        db<Synchronizer>(WRN) << "~Future(this=" << this << ")" << endl;
+        DB( Synchronizer, TRC, "~Future(this=" << this << ")" << endl );
     }
 
     FutureType get_value() {
-        db<Synchronizer>(WRN) << "Future::get_value(this=" << this
+        DB( Synchronizer, TRC, "Future::get_value(this=" << this
                               << " _is_resolved=" << _is_resolved
                               << " _condition=" << _condition.size()
-                              <<  ")" << endl;
-        if(!_is_resolved) _condition.wait();
+                              <<  ")" << endl )
+        _lock.lock();
+
+        if(!_is_resolved) {
+            _lock.unlock();
+            _condition.wait();
+        }
+        else {
+            _lock.unlock();
+        }
         return _value;
     }
 
     void resolve(FutureType value) {
-        db<Synchronizer>(WRN) << "Future::resolve(this=" << this
+        DB( Synchronizer, TRC, "Future::resolve(this=" << this
                               << " _is_resolved=" << _is_resolved
                               << " _condition=" << _condition.size()
-                              <<  ")" << endl;
+                              <<  ")" << endl )
+        _lock.lock();
         assert(!_is_resolved);
         // If `resolve()` was called and the instruction pointer got until here,
         // and the thread is unscheduled, and another thread call `resolve()`,
-        // then, the `assert` above will not work.
+        // then, the `assert` will not work, if the resolve() call is not atomic.
         _value = value;
         _is_resolved = true;
         _condition.broadcast();
+        _lock.unlock();
     }
 
 private:
     bool _is_resolved;
-    FutureType _value;
+    Semaphore _lock;
+
     Condition _condition;
+    FutureType _value;
 };
 
 __END_UTIL
@@ -1783,15 +1804,15 @@ class Critical_Section_Base
 
 public:
     Critical_Section_Base(): _link(this) {
-        db<Synchronizer>(TRC) << "Critical_Section_Base(_link=" << &_link
-                << ") => " << this << endl;
+        DB( Synchronizer, TRC, "Critical_Section_Base(_link=" << &_link
+                << ") => " << this << endl )
     }
 
     /// This must to be virtual otherwise the derived classes objects destructor
     /// method would not be called when accessed by a base class pointer.
     virtual ~Critical_Section_Base() {
-        db<Synchronizer>(TRC) << "~Critical_Section_Base(this=" << this
-                << " _link=" << &_link << ")" << endl;
+        DB( Synchronizer, TRC, "~Critical_Section_Base(this=" << this
+                << " _link=" << &_link << ")" << endl )
     }
 
     /// Returns void because the base class Critical_Section_Base() cannot be a
@@ -1820,9 +1841,11 @@ class Critical_Section: public Critical_Section_Base, private Closure<void( Tn..
     using Closure<void( Tn... )>::run;
 
 public:
-    Critical_Section(void(*_entry)(Tn ...), Tn ... an)
-            : Closure<void( Tn... )>::Closure( _entry, an ... )
+    Critical_Section(void(*_entry)(Tn ...), Tn ... an) :
+            Closure<void( Tn... )>::Closure( _entry, an ... )
     {
+        DB( Synchronizer, TRC, "Critical_Section(_entry="
+                << reinterpret_cast<void *>(_entry) << ") => " << this << endl )
     }
 
     inline void start() {
@@ -1905,6 +1928,7 @@ Segue o meta programa que implementa closures ou functors de parâmetros variád
 ^::__Listagem 41:__ Implementação da Closure meta programa, arquivo ''/include/utility/closure.h''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
+// https://stackoverflow.com/questions/34957810/variadic-templates-parameter-pack
 template<typename Tn>
 class Closure;
 
@@ -1923,10 +1947,10 @@ private:
 public:
     Closure(Function _entry, Tn ... an): _entry(_entry)
     {
-        db<Synchronizer>(WRN) << "Closure::Closure(_entry=" << &_entry
+        DB( Synchronizer, TRC, "Closure(_entry=" << reinterpret_cast<void *>(_entry)
                 << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
                 << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH
-                << ", sizeof=" << sizeof(*this) << ") => " << this << endl;
+                << ", sizeof=" << sizeof(*this) << ") => " << this << endl )
 
         if(PARAMETERS_LENGTH)
             _parameters = new char[PARAMETERS_LENGTH];
@@ -1935,10 +1959,11 @@ public:
     }
 
     ~Closure() {
-        db<Synchronizer>(WRN) << "Closure::~Closure(this=" << this
-                << ", _entry=" << &_entry << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
+        DB( Synchronizer, TRC, "~Closure(this=" << this
+                << ", _entry=" << reinterpret_cast<void *>(_entry)
+                << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
                 << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH
-                << ", sizeof=" << sizeof(*this) << ")" << endl;
+                << ", sizeof=" << sizeof(*this) << ")" << endl )
 
         if(PARAMETERS_LENGTH)
             delete _parameters;
@@ -1957,17 +1982,17 @@ private:
     template<int ...Sequence>
     inline ReturnType _unpack_and_run(MetaSequenceOfIntegers<Sequence...>)
     {
-        db<Synchronizer>(WRN) << "Closure::_unpack_and_run(this=" << this << ")" << endl;
+        DB( Synchronizer, TRC, "Closure::_unpack_and_run(this=" << this << ")" << endl )
         return _entry( unpack_helper<Sequence, Tn>()... );
     }
 
     template<const int position, typename T>
     inline T unpack_helper()
     {
-        db<Synchronizer>(WRN) << "Closure::unpack_helper(Head=" << sizeof( T )
+        DB( Synchronizer, TRC, "Closure::unpack_helper(Head=" << sizeof( T )
                 << ", address=" << reinterpret_cast<int *>(_parameters + position)
                 << "(" << reinterpret_cast<int *>(_parameters) << ")"
-                << ", position=" << position << ")" << endl;
+                << ", position=" << position << ")" << endl )
 
         return *reinterpret_cast<T *>( _parameters + position );
     }
@@ -1976,8 +2001,8 @@ public:
     template<typename Head, typename ... Tail>
     static void pack_helper(char* pointer_address, Head head, Tail ... tail)
     {
-        db<Synchronizer>(WRN) << "Closure::pack_helper(Head=" << sizeof( Head )
-                << ", address=" << reinterpret_cast<int *>(pointer_address) << ")" << endl;
+        DB( Synchronizer, TRC, "Closure::pack_helper(Head=" << sizeof( Head )
+                << ", address=" << reinterpret_cast<int *>(pointer_address) << ")" << endl )
 
         *reinterpret_cast<Head *>(pointer_address) = head;
         pack_helper(pointer_address + sizeof( Head ), tail ...);
