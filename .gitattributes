@@ -7,6 +7,7 @@ epos2trunk/LICENSE -text
 epos2trunk/app/future_simple_test.cc eol=lf
 epos2trunk/include/utility/stringstream.h eol=lf
 epos2trunk/app/guard_semaphore_test.cc eol=lf
+epos2trunk/README.md eol=lf
 epos2trunk/app/cas_test.cc eol=lf
 epos2trunk/app/compile_remotely.sh eol=lf
 epos2trunk/app/future_guard_test.cc eol=lf
