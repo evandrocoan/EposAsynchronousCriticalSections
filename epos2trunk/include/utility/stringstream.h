@@ -39,6 +39,8 @@ public:
         return _buffer;
     }
 
+    using OStream_Base<StringStream>::operator<<;
+
     StringStream & operator<<(const StringStream & stream) {
         OStream_Base<StringStream>::print(stream.buffer());
         return *this;
@@ -74,19 +76,6 @@ public:
         DB( Synchronizer, TRC, ", _last_position=" << that->_last_position
                 << ", _buffer=" << that->_buffer << endl )
     }
-
-public:
-    StringStream & operator<<(const Begl & begl) {
-        return *this;
-    }
-
-    StringStream & operator<<(const Endl & endl) {
-        OStream_Base<StringStream>::print("\n");
-        _set_base(10);
-        return *this;
-    }
-
-    using OStream_Base<StringStream>::operator<<;
 };
 
 __END_UTIL

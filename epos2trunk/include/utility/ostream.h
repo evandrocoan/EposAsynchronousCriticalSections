@@ -17,9 +17,6 @@ template<class StreamType>
 class OStream_Base
 {
 public:
-    struct Begl {};
-    struct Endl {};
-
     struct Hex {};
     struct Dec {};
     struct Oct {};
@@ -253,6 +250,8 @@ const char OStream_Base<OStream>::_digits[] = "0123456789abcdef";
 class OStream : public OStream_Base<OStream>
 {
 public:
+    struct Begl {};
+    struct Endl {};
     struct Err {};
 
 public:
@@ -292,6 +291,7 @@ private:
 
 extern OStream::Begl begl;
 extern OStream::Endl endl;
+
 extern OStream::Hex hex;
 extern OStream::Dec dec;
 extern OStream::Oct oct;
