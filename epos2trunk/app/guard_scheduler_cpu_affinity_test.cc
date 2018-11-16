@@ -30,6 +30,9 @@ void think(unsigned long long n);
 void eat(unsigned long long n);
 unsigned long long busy_wait(unsigned long long n);
 
+// Fix `error: undefined reference to endl` when compiling with hysterically_debugged = true
+EPOS::S::U::OStream::Endl EPOS::S::U::endl;
+
 #ifdef CONSOLE_MODE
     #define LVL WRN
 #else
