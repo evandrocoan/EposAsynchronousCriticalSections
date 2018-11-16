@@ -1,37 +1,55 @@
 // EPOS Scheduler Test Program
 
 #include <utility/ostream.h>
+#include <utility/stringstream.h>
+#include <utility/guard.h>
+#include <utility/future.h>
 #include <machine.h>
 #include <display.h>
 #include <thread.h>
-#include <semaphore.h>
-#include <alarm.h>
 
 using namespace EPOS;
 
+#if !defined(nullptr)
+    #define nullptr 0
+#endif
+
 const int iterations = 10;
-
-Semaphore table;
-
-Thread * phil[5];
-Semaphore * chopstick[5];
-
 OStream cout;
+
+Guard table;
+Thread * phil[5];
+
+bool is_chopstick_free[5];
+Future<int>* locked_futures[5];
 
 int philosopher(int n, int l, int c);
 void think(unsigned long long n);
 void eat(unsigned long long n);
 unsigned long long busy_wait(unsigned long long n);
 
-int main()
+void show_message(const char * message, int line, int column) {
+    Display::position( line, column );
+    cout << message;
+}
+
+void show_message(StringStream * message, int line, int column) {
+    Display::position( line, column );
+    cout << message;
+    delete message;
+}
+
+void setup_program()
 {
-    table.p();
     Display::clear();
     Display::position(0, 0);
     cout << "The Philosopher's Dinner:" << endl;
 
     for(int i = 0; i < 5; i++)
-        chopstick[i] = new Semaphore;
+    {
+        is_chopstick_free[i] = true;
+        locked_futures[i] = nullptr;
+    }
 
     phil[0] = new Thread(&philosopher, 0,  5, 30);
     phil[1] = new Thread(&philosopher, 1, 10, 44);
@@ -54,68 +72,101 @@ int main()
     Display::position(19, 0);
 
     cout << "The dinner is served ..." << endl;
-    table.v();
+}
+
+int main()
+{
+    table.submit( &setup_program );
 
     for(int i = 0; i < 5; i++) {
         int ret = phil[i]->join();
-        table.p();
-        Display::position(20 + i, 0);
-        cout << "Philosopher " << i << " ate " << ret << " times " << endl;
-        table.v();
+        StringStream* stream = new StringStream(100);
+
+        *stream << "Philosopher " << i << " ate " << ret << " times\n";
+        table.submit( &show_message, stream, 20 + i, 0 );
     }
 
-    for(int i = 0; i < 5; i++)
-        delete chopstick[i];
     for(int i = 0; i < 5; i++)
         delete phil[i];
 
     cout << "The end!" << endl;
-
     return 0;
 }
 
-int philosopher(int n, int l, int c)
+void release_chopstick(int philosopher_index, int chopstick_index,
+        Future<int>* future_chopstick, const char* which_chopstick)
 {
-    int first = (n < 4)? n : 0;
-    int second = (n < 4)? n + 1 : 4;
+    is_chopstick_free[chopstick_index] = true;
+    delete future_chopstick;
+
+    if( locked_futures[chopstick_index] ) {
+        auto old = locked_futures[chopstick_index];
+
+        locked_futures[chopstick_index] = nullptr;
+        old->resolve(1);
+    }
+    else {
+        assert( locked_futures[chopstick_index] == nullptr );
+    }
+}
+
+void get_chopstick(int philosopher_index, int chopstick_index,
+        Future<int>* future_chopstick, const char* which_chopstick)
+{
+    if( is_chopstick_free[chopstick_index] )
+    {
+        is_chopstick_free[chopstick_index] = false;
+        future_chopstick->resolve(1);
+    }
+    else {
+        assert( locked_futures[chopstick_index] == nullptr );
+        locked_futures[chopstick_index] = future_chopstick;
+    }
+}
+
+int philosopher(int philosopher_index, int line, int column)
+{
+    int first = (philosopher_index < 4)? philosopher_index : 0;
+    int second = (philosopher_index < 4)? philosopher_index + 1 : 4;
 
     for(int i = iterations; i > 0; i--) {
-
-        table.p();
-        Display::position(l, c);
-        cout << "thinking[" << Machine::cpu_id() << "]";
-        table.v();
-
+        StringStream* stream1 = new StringStream{100};
+        *stream1 << "thinking[" << Machine::cpu_id() << "]";
+        table.submit( &show_message, stream1, line, column );
         think(1000000);
 
-        table.p();
-        Display::position(l, c);
-        cout << "  hungry[" << Machine::cpu_id() << "]";
-        table.v();
+        StringStream* stream2 = new StringStream{100};
+        *stream2 << "  hungry[" << Machine::cpu_id() << "]";
+        table.submit( &show_message, stream2, line, column );
 
-        chopstick[first]->p();   // get first chopstick
-        chopstick[second]->p();  // get second chopstick
+        // Get the first chopstick
+        Future<int>* chopstick1 = new Future<int>();
+        table.submit( &get_chopstick, philosopher_index, first, chopstick1, "FIRST " );
+        chopstick1->get_value();
 
-        table.p();
-        Display::position(l, c);
-        cout << " eating[" << Machine::cpu_id() << "] ";
-        table.v();
+        // Get the second chopstick
+        Future<int>* chopstick2 = new Future<int>();
+        table.submit( &get_chopstick, philosopher_index, second, chopstick2, "SECOND" );
+        chopstick2->get_value();
+
+        StringStream* stream3 = new StringStream{100};
+        *stream3 << " eating[" << Machine::cpu_id() << "] ";
+        table.submit( &show_message, stream3, line, column );
 
         eat(500000);
 
-        table.p();
-        Display::position(l, c);
-        cout << "    ate[" << Machine::cpu_id() << "]";
-        table.v();
+        StringStream* stream4 = new StringStream{100};
+        *stream4 << "    ate[" << Machine::cpu_id() << "]";
+        table.submit( &show_message, stream4, line, column );
 
-        chopstick[first]->v();   // release first chopstick
-        chopstick[second]->v();  // release second chopstick
+        // Release the chopsticks
+        table.submit( &release_chopstick, philosopher_index, second, chopstick2, "SECOND" );
+        table.submit( &release_chopstick, philosopher_index, first, chopstick1, "FIRST " );
     }
 
-    table.p();
-    Display::position(l, c);
-    cout << "  done[" << Machine::cpu_id() << "]  ";
-    table.v();
+    StringStream* stream5 = new StringStream{100};
+    *stream5 << "  done[" << Machine::cpu_id() << "]  ";
+    table.submit( &show_message, stream5, line, column );
 
     return iterations;
 }
