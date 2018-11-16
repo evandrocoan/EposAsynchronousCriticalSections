@@ -682,44 +682,363 @@ private:
     virtual void print(const char * s) { _print(s); }
 ~/np~{DIV}
 {DIV}^
-Foi necessário tornar o método ''print()'' da classe ''OStream'' virtual e para facilitar o uso, também permitiu-se que classe ''OStream'' possa imprimir diretamente ponteiros do tipo ''StringStream''.
+Foi necessário tornar o método ''print()'' da classe ''OStream'' virtual e para facilitar o uso, também permitiu-se que classe ''OStream'' possa imprimir diretamente ponteiros do tipo ''StringStream''. Entretanto, depois de declarar o método ''print()'' com o modificador ''virtual'', faz-se com que não se tenha nenhuma saída de texto ao executar a aplicação.
 
+No exemplo a seguir, vê-se a execução de uma aplicação no modo ''hysterically_debugged = true'' após adicionar-se o modificador ''virtual'' na assinatura da função ''void print(const char * s) { _print(s); }''.
+^::__Listagem 20:__ Saída da execução de uma aplicação com ''hysterically_debugged = true''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+EPOS bootable image tool
+
+  EPOS mode: library
+  Machine: pc
+  Model: legacy_pc
+  Processor: ia32 (32 bits, little-endian)
+  Memory: 262144 KBytes
+  Boot Length: 512 - 512 (min - max) KBytes
+  Node id: will get from the network
+  EPOS Image UUID: 7bb9c483078f0692
+  Creating EPOS bootable image in "scheduler_cpu_affinity_test.img":
+    Adding boot strap "/home/linux/OperatingSystems/Epos2x86/img/pc_boot": done.
+    Adding setup "/home/linux/OperatingSystems/Epos2x86/img/pc_setup": done.
+    Adding application "scheduler_cpu_affinity_test": done.
+    Adding system info: done.
+
+  Adding specific boot features of "pc": done.
+
+  Image successfully generated (172868 bytes)!
+
+make[2]: Leaving directory '/home/linux/OperatingSystems/Epos2x86/img'
+(cd img && make --print-directory run)
+make[2]: Entering directory '/home/linux/OperatingSystems/Epos2x86/img'
+# qemu-system-i386 -smp 2 -m 262144k -nographic -no-reboot -drive format=raw,index=0,if=floppy,file=scheduler_cpu_affinity_test.img | tee scheduler_cpu_affinity_test.out
+qemu-system-i386 -smp 2 -m 262144k -nographic -no-reboot -drive format=raw,index=0,if=floppy,file=scheduler_cpu_affinity_test.img
+<0>: make[2]: Leaving directory '/home/linux/OperatingSystems/Epos2x86/img'
+make[1]: Leaving directory '/home/linux/OperatingSystems/Epos2x86'
+~/np~{DIV}
+{DIV}^
+Percebe-se que ao compilar e executar a aplicação ''guard_scheduler_cpu_affinity_test.cc'', em modo debug histérico, a única coisa que foi impresso no tela foi a primeira parte ''<0>: '' da mensagem que indica qual CPU está executando aquela mensagem. Mas basta remover-ser o identificador ''virtual'' da função ''OStream::print'', que tudo volta a funcionar normalmente.
+
+Portando, devido ao bug com o uso da identificador ''virtual'', fez-se o uso de outra alternativa mais agressiva do que o polimorfismo permitido pelo identificador ''virtual''. Após muita pesquisa, chegou-se a uma implementação que faz uso de muitos ''static_cast'''s e utiliza-se métodos estáticos para permitir que o objeto que derivam da super classe possam funcionar correta, 'imitando' o funcionamento que se obtém-se com o uso do identificador ''virtual''.
+
+Agora, tem-se uma nova super classe meta programada chamada ''OStream_Base'', que será base de todas os tipos de stream, incluindo ''OStream'' e o novo tipo ''StringStream''. A seguir encontra-se a sua implementação:
+^::__Listagem 20:__ Arquivo ''/include/utility/ostream.h''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+template<class StreamType>
+class OStream_Base
+{
+public:
+    struct Begl {};
+    struct Endl {};
+
+    struct Hex {};
+    struct Dec {};
+    struct Oct {};
+    struct Bin {};
+
+public:
+    OStream_Base(): _base(10) {}
+
+    StreamType& operator<<(const Hex & hex) {
+        _set_base(16);
+        return *static_cast<StreamType*>(this);
+    }
+    StreamType& operator<<(const Dec & dec) {
+        _set_base(10);
+        return *static_cast<StreamType*>(this);
+    }
+    StreamType& operator<<(const Oct & oct) {
+        _set_base(8);
+        return *static_cast<StreamType*>(this);
+    }
+    StreamType& operator<<(const Bin & bin) {
+        _set_base(2);
+        return *static_cast<StreamType*>(this);
+    }
+
+    StreamType& operator<<(char c) {
+        char buf[2];
+        buf[0] = c;
+        buf[1] = '\0';
+        print(buf);
+        return *static_cast<StreamType*>(this);
+    }
+    StreamType& operator<<(unsigned char c) {
+        return operator<<(static_cast<unsigned int>(c));
+    }
+
+    StreamType& operator<<(int i) {
+        char buf[64];
+        buf[itoa(i, buf)] = '\0';
+        print(buf);
+        return *static_cast<StreamType*>(this);
+    }
+    StreamType& operator<<(short s) {
+        return operator<<(static_cast<int>(s));
+    }
+    StreamType& operator<<(long l) {
+        return operator<<(static_cast<int>(l));
+    }
+
+    StreamType& operator<<(unsigned int u) {
+        char buf[64];
+        buf[utoa(u, buf)] = '\0';
+        print(buf);
+        return *static_cast<StreamType*>(this);
+    }
+    StreamType& operator<<(unsigned short s) {
+        return operator<<(static_cast<unsigned int>(s));
+    }
+    StreamType& operator<<(unsigned long l) {
+        return operator<<(static_cast<unsigned int>(l));
+    }
+
+    StreamType& operator<<(long long int u) {
+        char buf[64];
+        buf[llitoa(u, buf)] = '\0';
+        print(buf);
+        return *static_cast<StreamType*>(this);
+    }
+
+    StreamType& operator<<(unsigned long long int u) {
+        char buf[64];
+        buf[llutoa(u, buf)] = '\0';
+        print(buf);
+        return *static_cast<StreamType*>(this);
+    }
+
+    StreamType& operator<<(const void * p) {
+        char buf[64];
+        buf[ptoa(p, buf)] = '\0';
+        print(buf);
+        return *static_cast<StreamType*>(this);
+    }
+
+    StreamType& operator<<(const char * s) {
+        print(s);
+        return *static_cast<StreamType*>(this);
+    }
+
+    StreamType& operator<<(float f) {
+        if(f < 0.0001f && f > -0.0001f)
+            (*this) << "0.0000";
+
+        int b = 0;
+        int m = 0;
+
+        float x = f;
+        if(x >= 0.0001f) {
+            while(x >= 1.0000f) {
+                x -= 1.0f;
+                b++;
+            }
+            (*this) << b << ".";
+            for(int i = 0; i < 3; i++) {
+                m = 0;
+                x *= 10.0f;
+                while(x >= 1.000f) {
+                    x -= 1.0f;
+                    m++;
+                }
+                (*this) << m;
+            }
+        } else {
+            while(x <= -1.000f) {
+                x += 1.0f;
+                b++;
+            }
+            (*this) << "-" << b << ".";
+            for(int i = 0; i < 3; i++) {
+                m = 0;
+                x *= 10.0f;
+                while(x <= -1.000f) {
+                    x += 1.0f;
+                    m++;
+                }
+                (*this) << m;
+            }
+        }
+        return *static_cast<StreamType*>(this);
+    }
+
+protected:
+    int itoa(int v, char * s)
+    {
+        unsigned int i = 0;
+
+        if(v < 0) {
+            v = -v;
+            s[i++] = '-';
+        }
+
+        return utoa(static_cast<unsigned int>(v), s, i);
+    }
+
+    int utoa(unsigned int v, char * s, unsigned int i = 0)
+    {
+        unsigned int j;
+
+        if(!v) {
+            s[i++] = '0';
+            return i;
+        }
+
+        if(v > 256) {
+            if(_base == 8 || _base == 16)
+                s[i++] = '0';
+            if(_base == 16)
+                s[i++] = 'x';
+        }
+
+        for(j = v; j != 0; i++, j /= _base);
+        for(j = 0; v != 0; j++, v /= _base)
+            s[i - 1 - j] = _digits[v % _base];
+
+        return i;
+    }
+
+    int llitoa(long long int v, char * s)
+    {
+        unsigned int i = 0;
+
+        if(v < 0) {
+            v = -v;
+            s[i++] = '-';
+        }
+
+        return llutoa(static_cast<unsigned long long int>(v), s, i);
+    }
+
+    int llutoa(unsigned long long int v, char * s, unsigned int i = 0)
+    {
+        unsigned long long int j;
+
+        if(!v) {
+            s[i++] = '0';
+            return i;
+        }
+
+        if(v > 256) {
+            if(_base == 8 || _base == 16)
+                s[i++] = '0';
+            if(_base == 16)
+                s[i++] = 'x';
+        }
+
+        for(j = v; j != 0; i++, j /= _base);
+        for(j = 0; v != 0; j++, v /= _base)
+            s[i - 1 - j] = _digits[v % _base];
+
+        return i;
+    }
+
+    int ptoa(const void * p, char * s)
+    {
+        unsigned int j, v = reinterpret_cast<unsigned int>(p);
+
+        s[0] = '0';
+        s[1] = 'x';
+
+        for(j = 0; j < sizeof(void *) * 2; j++, v >>= 4)
+            s[2 + sizeof(void *) * 2 - 1 - j]
+                = _digits[v & 0xf];
+
+        return j + 2;
+    }
+
+    // https://stackoverflow.com/questions/34222703/how-to-override-static-method
+    inline void print(const char * s)
+        { StreamType::print(static_cast<StreamType*>(this), s); }
+
+    inline void _set_base(int v) { _base = v; }
+
+    int _base;
+    static const char _digits[];
+};
+
+// Class Attributes
+// https://stackoverflow.com/questions/3531060/how-to-initialize-a-static-const-member
+template<class OStream>
+const char OStream_Base<OStream>::_digits[] = "0123456789abcdef";
+~/np~{DIV}
+{DIV}^
+Como por padrão o operator de stream ''operator<<'' returna um objeto o mesmo tipo que a classe atual, e não da classe derivada, tem-se o problema de perder-se o tipo do objeto quando utiliza-se os métodos herdados da super classe. Por isso a classe base, agora é uma meta classe, e realiza a conversão do retorno de todos os seus operadores de stream ''operator<<''.
+
+Para contornar o problema de não poder-se utilizar o identificador ''virtual'' no método ''inline void print(const char * s)'' logo acima, faz-se uso da meta programação com template ''StreamType'', para acessar diretamente o método estático da classe derivada passando como primeiro parâmetro o ponteiro para o objeto do tipo da classe derivada, após realizar sua conversão ''StreamType::print(static_cast<StreamType*>(this), s)''.
+
+Assim, após refatorar-se todo o conteúdo da antiga ''OStream'', tem-se uma nova ''OStream'' que deriva da super classe ''OStream_Base'':
+^::__Listagem 20:__ Arquivo ''/include/utility/ostream.h''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+// https://stackoverflow.com/questions/11761506/inheritance-function-that-returns-self-type
+class OStream : public OStream_Base<OStream>
+{
+public:
+    struct Err {};
+
+public:
+    OStream(): _error(false) {}
+
+    // Implemented on `ostream.cc`, because `stringstream.h` includes `ostream.h`,
+    // hence, `ostream.h` cannot include `stringstream.h` back (cyclic reference)
+    OStream & operator<<(const StringStream * stream);
+
+    OStream & operator<<(const Begl & begl) {
+        if(Traits<System>::multicore)
+            _print_preamble();
+        return *this;
+    }
+
+    OStream & operator<<(const Endl & endl) {
+        if(Traits<System>::multicore)
+            _print_trailler(_error);
+        OStream_Base<OStream>::print("\n");
+        _set_base(10);
+        return *this;
+    }
+
+    OStream & operator<<(const Err & err) {
+        _error = true;
+        return *this;
+    }
+
+    using OStream_Base<OStream>::operator<<;
+
+    // Adding virtual to the print() function caused EPOS to completely break
+    static void print(OStream* that, const char * s) { _print(s); }
+
+private:
+    volatile bool _error;
+};
+~/np~{DIV}
+{DIV}^
+Agora, a implementação do novo tipo ''StringStream'' resume-se ao seguinte:
 ^::__Listagem 20:__ Arquivo ''/include/utility/stringstream.h''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
-// EPOS StringStream Interface
-
-#include <utility/ostream.h>
-#include <utility/string.h>
-
-#ifndef __stringstream_h
-#define __stringstream_h
-
-__BEGIN_UTIL
-
-class StringStream: public OStream
+class StringStream : public OStream_Base<StringStream>
 {
+private:
     char* _buffer;
     unsigned int _last_position;
     const unsigned int _buffer_size;
 
 public:
-    using OStream::operator<<;
-
     StringStream(const unsigned int _buffer_size) :
-            OStream::OStream(), _last_position(0), _buffer_size(_buffer_size)
+            _last_position(0), _buffer_size(_buffer_size)
     {
         assert(_buffer_size > 0);
-        db<StringStream>(TRC) << "StringStream::StringStream(_buffer_size="
-                << _buffer_size << ") => " << reinterpret_cast<int *>(this) << endl;
+        DB( Synchronizer, TRC, "StringStream::StringStream(_buffer_size="
+                << _buffer_size << ") => " << reinterpret_cast<int *>(this) << endl )
 
         _buffer = new char[_buffer_size];
     }
 
     ~StringStream() {
-        db<StringStream>(TRC) << "StringStream::~StringStream(this="
+        DB( Synchronizer, TRC, "StringStream::~StringStream(this="
                 << reinterpret_cast<int *>(this) << ", _buffer="
-                << reinterpret_cast<int *>(_buffer) << ")" << endl;
+                << reinterpret_cast<int *>(_buffer) << ")" << endl )
 
         delete _buffer;
     }
@@ -729,44 +1048,59 @@ public:
     }
 
     StringStream & operator<<(const StringStream & stream) {
-        print(stream.buffer());
+        OStream_Base<StringStream>::print(stream.buffer());
+        return *this;
+    }
+    StringStream & operator<<(const StringStream * stream) {
+        OStream_Base<StringStream>::print(stream->buffer());
         return *this;
     }
 
-    void print(const char* string) {
-        db<StringStream>(TRC) << "StringStream::print(this="
-                << reinterpret_cast<int *>(this)
-                << "), string=" << string << ", ";
+    static void print(StringStream* that, const char* string) {
+        DB( Synchronizer, TRC, "StringStream::print(this="
+                << reinterpret_cast<int *>(that)
+                << "), string=" << string << ", " )
 
         unsigned int string_size = strlen(string);
-        unsigned int total_size = string_size + _last_position;
+        unsigned int total_size = string_size + that->_last_position;
 
-        db<StringStream>(TRC) << "string_size=" << string_size << ", "
-                << "total_size=" << total_size;
+        DB( Synchronizer, TRC, "string_size=" << string_size << ", "
+                << "total_size=" << total_size )
 
         // https://linux.die.net/man/3/strncpy
-        if( total_size >= _buffer_size ) {
-            total_size = _buffer_size - 1;
+        if( total_size >= that->_buffer_size ) {
+            total_size = that->_buffer_size - 1;
 
-            strncpy(&_buffer[_last_position], string, total_size - _last_position);
-            _buffer[total_size] = '\0';
+            strncpy(&that->_buffer[that->_last_position],
+                    string, total_size - that->_last_position);
+
+            that->_buffer[total_size] = '\0';
         }
         else {
-            strcpy(&_buffer[_last_position], string);
+            strcpy(&that->_buffer[that->_last_position], string);
         }
 
-        _last_position = total_size;
-        db<StringStream>(TRC) << ", _last_position=" << _last_position
-                << ", _buffer=" << _buffer << endl;
+        that->_last_position = total_size;
+        DB( Synchronizer, TRC, ", _last_position=" << that->_last_position
+                << ", _buffer=" << that->_buffer << endl )
     }
+
+public:
+    StringStream & operator<<(const Begl & begl) {
+        return *this;
+    }
+
+    StringStream & operator<<(const Endl & endl) {
+        OStream_Base<StringStream>::print("\n");
+        _set_base(10);
+        return *this;
+    }
+
+    using OStream_Base<StringStream>::operator<<;
 };
-
-__END_UTIL
-
-#endif
 ~/np~{DIV}
 {DIV}^
-Veja agora, alguns testes de uso, quando o buffer está quase cheio:
+Segue-se alguns testes de extremo de uso da ''StringStream'', quando o buffer está quase cheio:
 ^::__Listagem 21:__ Arquivo ''/app/stringstream_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
@@ -937,7 +1271,7 @@ index 23e2476..83b045b 100644
 -#define assert(expr)    (static_cast<void>(0))
 +#define assert(expr)    ((expr) ? static_cast<void>(0) : Assert::fail (#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__))
 +// #define assert(expr)    (static_cast<void>(0))
- 
+
  //============================================================================
  // CONFIGURATION
 
@@ -957,7 +1291,7 @@ index 6508d48..ade97f7 100644
 +        db<void>(ERR) << endl << endl << "Assertion fail: " << __assertion << ", function=" << __function << ", file=" << __file << ", line=" << __line << endl << endl;
      }
  };
- 
+
 
 Date:   Tue Nov 13 16:51:29 2018 -0200
     Fixed tstp.h:1255: error: incomplete type 'EPOS::S::Cipher' used in
@@ -968,9 +1302,9 @@ index cd593d1..8cbfbc3 100644
 --- a/include/tstp.h
 +++ b/include/tstp.h
 @@ -1251,7 +1251,8 @@ public:
- 
+
              db<TSTP>(INF) << "Node ID: " << _id << endl;
- 
+
 -            assert(Cipher::KEY_SIZE == sizeof(Node_ID));
 +            // There is not cipher.h header
 +            // assert(Cipher::KEY_SIZE == sizeof(Node_ID));
@@ -997,7 +1331,7 @@ index 49c8f00..4aabea4 100644
 +        unsigned int index = i >= INTS ? INTS - 1 : i;
 +        _int_vector[index] = h;
      }
- 
+
      static void enable() {
 
 
@@ -1011,12 +1345,12 @@ index e8f7cc7..7184c17 100644
 +++ b/include/architecture/ia32/pmu.h
 @@ -599,7 +599,7 @@ public:
      Intel_Sandy_Bridge_PMU() {}
- 
+
      static bool config(const Channel & channel, const Event & event, const Flags & flags = NONE) {
 -        assert((channel < CHANNELS) && (event < EVENTS));
 +        assert((channel < CHANNELS) && (static_cast<unsigned int>(event) < EVENTS));
          db<PMU>(TRC) << "PMU::config(c=" << channel << ",e=" << event << ",f=" << flags << ")" << endl;
- 
+
          if(((channel == 0) && (event != INSTRUCTION)) || ((channel == 1) && (event != DVS_CLOCK)) || ((channel == 2) && (event != CLOCK))) {
 
 
@@ -1028,16 +1362,16 @@ index a85fbcb..49c8f00 100644
 --- a/include/machine/pc/ic.h
 +++ b/include/machine/pc/ic.h
 @@ -505,7 +505,7 @@ public:
- 
+
      static void enable() {
          db<IC>(TRC) << "IC::enable()" << endl;
 -        assert(i < INTS);
 +        // assert(i < INTS);
          Engine::enable();
      }
- 
+
 @@ -517,7 +517,7 @@ public:
- 
+
      static void disable() {
          db<IC>(TRC) << "IC::disable()" << endl;
 -        assert(i < INTS);
@@ -1056,7 +1390,7 @@ index d6d51d2..1ced73e 100644
 @@ -313,8 +313,29 @@ public:
      static Hertz clock() { return _cpu_clock; }
      static Hertz bus_clock() { return _bus_clock; }
- 
+
 -    static void int_enable() { ASM("sti"); }
 -    static void int_disable() { ASM("cli"); }
 +    static void int_enable()
@@ -1084,10 +1418,10 @@ index d6d51d2..1ced73e 100644
 +
      static bool int_enabled() { return (flags() & FLAG_IF); }
      static bool int_disabled() { return !int_enabled(); }
- 
+
 @@ -624,6 +645,7 @@ private:
      static void init();
- 
+
  private:
 +    static int _not_reenable;
      static unsigned int _cpu_clock;
@@ -1099,12 +1433,12 @@ index 8357fa0..e712aa2 100644
 +++ b/src/architecture/ia32/cpu.cc
 @@ -8,6 +8,7 @@ extern "C" { void _exec(void *); }
  __BEGIN_SYS
- 
+
  // Class attributes
 +int CPU::_not_reenable = 0;
  unsigned int CPU::_cpu_clock;
  unsigned int CPU::_bus_clock;
- 
+
 diff --git a/src/component/thread.cc b/src/component/thread.cc
 index 9495641..27dd942 100644
 --- a/src/component/thread.cc
@@ -1112,7 +1446,7 @@ index 9495641..27dd942 100644
 @@ -26,6 +26,7 @@ void Thread::constructor_prologue(const Color & color, unsigned int stack_size)
      _thread_count++;
      _scheduler.insert(this);
- 
+
 +    // Somewhere on the new operator, it is being called enable() and disable() CPU interrupt
      if(Traits<MMU>::colorful && color != WHITE)
          _stack = new (color) char[stack_size];
@@ -1120,7 +1454,7 @@ index 9495641..27dd942 100644
 @@ -50,10 +51,14 @@ void Thread::constructor_epilogue(const Log_Addr & entry, unsigned int stack_siz
      if((_state != READY) && (_state != RUNNING))
          _scheduler.suspend(this);
- 
+
 -    if(preemptive && (_state == READY) && (_link.rank() != IDLE))
 +    if(preemptive && (_state == READY) && (_link.rank() != IDLE)) {
 +        db<Scheduler<Thread> >(TRC) << "Thread::constructor_epilogue(locked=" << locked() << ")" << endl;
@@ -1132,11 +1466,11 @@ index 9495641..27dd942 100644
          unlock();
 +    }
  }
- 
- 
+
+
 @@ -124,6 +129,9 @@ void Thread::priority(const Priority & c)
      }
- 
+
      if(preemptive) {
 +        db<Scheduler<Thread> >(TRC) << "Thread::priority(locked=" << locked() << ")" << endl;
 +        assert(locked());
@@ -1149,11 +1483,11 @@ index 9495641..27dd942 100644
  {
      db<Scheduler<Thread> >(TRC) << "Thread::reschedule()" << endl;
 +    db<Scheduler<Thread> >(TRC) << "Thread::reschedule(locked=" << locked() << ")" << endl;
- 
+
      // lock() must be called before entering this method
      assert(locked());
 @@ -325,6 +334,10 @@ void Thread::reschedule()
- 
+
  void Thread::reschedule(unsigned int cpu)
  {
 +    db<Scheduler<Thread> >(TRC) << "Thread::reschedule(cpu=" << cpu << ")" << endl;
@@ -1169,7 +1503,7 @@ index 9495641..27dd942 100644
      lock();
 +    // if( Traits<IC>::dispatch_debugged )
 +    db<Synchronizer>(TRC) << "Thread::rescheduler(interrupt=" << interrupt << ")" << endl;
- 
+
      reschedule();
  }
 ~/np~{DIV}
