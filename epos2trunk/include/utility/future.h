@@ -28,14 +28,9 @@ public:
                               << " _is_resolved=" << _is_resolved
                               << " _condition=" << _condition.size()
                               <<  ")" << endl )
-        _lock.lock();
 
         if(!_is_resolved) {
-            _lock.unlock();
             _condition.wait();
-        }
-        else {
-            _lock.unlock();
         }
         return _value;
     }
@@ -45,7 +40,6 @@ public:
                               << " _is_resolved=" << _is_resolved
                               << " _condition=" << _condition.size()
                               <<  ")" << endl )
-        _lock.lock();
         assert(!_is_resolved);
         // If `resolve()` was called and the instruction pointer got until here,
         // and the thread is unscheduled, and another thread call `resolve()`,
@@ -53,12 +47,10 @@ public:
         _value = value;
         _is_resolved = true;
         _condition.broadcast();
-        _lock.unlock();
     }
 
 private:
     bool _is_resolved;
-    Semaphore _lock;
 
     Condition _condition;
     FutureType _value;
