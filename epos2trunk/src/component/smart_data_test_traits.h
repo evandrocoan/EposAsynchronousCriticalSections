@@ -167,7 +167,7 @@ template<> struct Traits<Segment>: public Traits<void>
 
 template<> struct Traits<Alarm>: public Traits<void>
 {
-    static const bool visible = hysterically_debugged;
+    static const bool visible = false;
 };
 
 template<> struct Traits<Synchronizer>: public Traits<void>
