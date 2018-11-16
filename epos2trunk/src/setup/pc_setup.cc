@@ -50,8 +50,8 @@ extern "C" {
 }
 
 __BEGIN_UTIL
-OStream::Endl endl;
 OStream::Begl begl;
+OStream::Endl endl;
 __END_UTIL
 
 __BEGIN_SYS
