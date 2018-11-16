@@ -3,9 +3,7 @@
 
 #include <utility/ostream.h>
 #include <utility/debug_sync.h>
-#include <semaphore.h>
 #include <thread.h>
-#include <machine.h>
 #include <cpu.h>
 
 using namespace EPOS;

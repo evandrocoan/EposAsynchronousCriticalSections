@@ -2,7 +2,6 @@
 
 #include <utility/ostream.h>
 #include <thread.h>
-#include <semaphore.h>
 #include <alarm.h>
 #include <guard.h>
 #include <future.h>

@@ -6,7 +6,6 @@
 #include <utility/guard.h>
 #include <utility/future.h>
 #include <thread.h>
-#include <semaphore.h>
 #include <alarm.h>
 #include <display.h>
 

@@ -1258,7 +1258,7 @@ clean:
 clean_multithread:
 ~/np~{DIV}
 {DIV}^
-Para ''make veryclean'' funcionar paralelamente, foi preciso remover a definição ''MAKECLEAN'' no arquivo principal ''makedefs'' [https://github.com/evandrocoan/asynchronous_critical_sections/commit/a020ccdb4216bb8131e7d86e3c99c6b95d726d0a|4237faf] && [https://github.com/evandrocoan/asynchronous_critical_sections/commit/5dfd5d7a53ebbf77c33816beec785201c8d7a1c5|e4faae6], por que para que o comando ''-j'' de paralelização do ''Makefile'' funcione, as chamadas recursivas de makefile precisam ser feitas utilizando a variável ''${MAKE}'' ao contrário de chamar o make file diretamente como ''MAKECLEAN := make -i clean'' fazia.
+Para ''make veryclean'' funcionar paralelamente, foi preciso remover a definição ''MAKECLEAN'' no arquivo principal ''makedefs'' [https://github.com/evandrocoan/asynchronous_critical_sections/commit/a020ccdb4216bb8131e7d86e3c99c6b95d726d0a|4237faf] && [https://github.com/evandrocoan/asynchronous_critical_sections/commit/5dfd5d7a53ebbf77c33816beec785201c8d7a1c5|e4faae6], por que para que o comando ''-j'' de paralelização do ''Makefile'' funcione, as chamadas recursivas de makefile precisam ser feitas utilizando a variável ''${MAKE}'' ao contrário de chamar o ''Makefile'' diretamente como ''MAKECLEAN := make -i clean'' fazia.
 
 !!!Assert
 Durante o desenvolvimento do trabalho, foi habilitado as instruções de assert do EPOS, no arquivo ''/include/system/config.h''. Entretanto, ao fazer isso, foram relevados alguns erros de compilação e de execução do EPOS.
@@ -1645,7 +1645,6 @@ Agora ve-sê um simples programa que demonstra o uso de futures:
 
 #include <thread.h>
 #include <utility/future.h>
-#include <semaphore.h>
 #include <alarm.h>
 
 using namespace EPOS;
@@ -1714,7 +1713,6 @@ A seguir vê-se um simples exemplo de uso de futures. Nesse exemplo, evolve-se v
 #include <thread.h>
 #include <utility/guard.h>
 #include <utility/future.h>
-#include <semaphore.h>
 #include <alarm.h>
 
 using namespace EPOS;
@@ -2393,9 +2391,7 @@ Aqui testa-se a implementação nova de FAS feita, repetidamente fazendo a troca
 
 #include <utility/ostream.h>
 #include <utility/debug_sync.h>
-#include <semaphore.h>
 #include <thread.h>
-#include <machine.h>
 #include <cpu.h>
 
 using namespace EPOS;

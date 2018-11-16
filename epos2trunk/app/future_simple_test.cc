@@ -3,7 +3,6 @@
 
 #include <thread.h>
 #include <utility/future.h>
-#include <semaphore.h>
 #include <alarm.h>
 
 using namespace EPOS;
