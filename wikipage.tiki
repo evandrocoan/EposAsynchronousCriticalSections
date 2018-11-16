@@ -2814,7 +2814,7 @@ Resultado da execução:
 ~/np~{DIV}
 {DIV}^
 
-!!!guard_semaphore_test.cc (semaphore_test.cc)  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+!!!guard_semaphore_test.cc  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Trata-se do mesmo programa original do EPOS chamada ''semaphore_test.cc'', também conhecido como ''Philosophers Dinner''. A diferença, é que esta versão utiliza um ''Guarda'' e várias variáveis ''Future'', ao contrário de utilizar alguns semáforos para sincronização.
 
 Sua implementação com o algoritmo do ''Guarda'' foi muito mais complexa do que a implementação original com semáforos. Para efeitos de desenvolvimento, foram utilizadas macros do ''preprocessador C'' para simultaneamente criar-se dois programas, dependendo das diretivas passadas ao ''preprocessador C''. Ao definir-se macro ''#define CONSOLE_MODE'', tem-se uma versão do programa que não utiliza de artefatos gráficos, i.e., desenhar uma mesa simulando uma janta de filósofos visualmente. No modo ''CONSOLE_MODE'', mostra-se em detalhes várias mensagem de log, que mostram o funcionamento interno do programa.
