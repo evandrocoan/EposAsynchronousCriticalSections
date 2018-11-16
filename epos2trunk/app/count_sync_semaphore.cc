@@ -37,6 +37,7 @@ int main()
 {
     LOG( endl )
     LOG( "main: begin (counter = " << counter << ")" << endl )
+
     Thread * p1 = new Thread(&mythread, 'A');
     Thread * p2 = new Thread(&mythread, 'B');
     Thread * p3 = new Thread(&mythread, 'C');

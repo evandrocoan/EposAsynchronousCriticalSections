@@ -1146,14 +1146,16 @@ Segue-se alguns testes de extremo de uso da ''StringStream'', quando o buffer es
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Semaphore Component Test Program
-#include <utility/stringstream.h>
+#define DEBUG_SYNC
 
+#include <utility/stringstream.h>
 using namespace EPOS;
-#define log(argument) db<Synchronizer>(WRN) << argument;
 
 int main()
 {
-    log( endl << "Welcome to the `stringstream.h` test program" << endl )
+    LOG( endl )
+    LOG( "Welcome to the `stringstream.h` test program" << endl )
+
     StringStream stream48chars{50};
     StringStream stream49chars{50};
     StringStream stream50chars{50};
@@ -1164,10 +1166,10 @@ int main()
     stream50chars << "66666666666666666666666666666666666666666666000050";
     stream51chars << "666666666666666666666666666666666666666666660000051";
 
-    log( &stream48chars << endl )
-    log( &stream49chars << endl )
-    log( &stream50chars << endl )
-    log( &stream51chars << endl << endl )
+    LOG( &stream48chars << endl )
+    LOG( &stream49chars << endl )
+    LOG( &stream50chars << endl )
+    LOG( &stream51chars << endl << endl )
 
     StringStream base23chars{50};
     StringStream stream48chars2{50};
@@ -1181,10 +1183,10 @@ int main()
     stream50chars2 << base23chars << "888888888888888888888000050";
     stream51chars2 << base23chars << "8888888888888888888880000051";
 
-    log( &stream48chars2 << endl )
-    log( &stream49chars2 << endl )
-    log( &stream50chars2 << endl )
-    log( &stream51chars2 << endl )
+    LOG( &stream48chars2 << endl )
+    LOG( &stream49chars2 << endl )
+    LOG( &stream50chars2 << endl )
+    LOG( &stream51chars2 << endl )
 
     return 0;
 }
@@ -1618,6 +1620,7 @@ Agora ve-sê um simples programa que demonstra o uso de futures:
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
+#define DEBUG_SYNC
 
 #include <thread.h>
 #include <utility/future.h>
@@ -1625,30 +1628,31 @@ Agora ve-sê um simples programa que demonstra o uso de futures:
 #include <alarm.h>
 
 using namespace EPOS;
-Semaphore display_lock;
-
-// #define log(arg) display_lock.p(); db<Synchronizer>(WRN) << arg; display_lock.v();
-#define log(argument) db<Synchronizer>(WRN) << argument;
 
 int producerFunction(Future<int>* future) {
-    log( "producerFunction ()" << endl )
+    LOG( "producerFunction ()" << endl )
     Delay thinking(1000000);
     future->resolve(10);
 
-    log( "producerFunction (resolving future=" << future << " to 10)" << endl )
+    LOG( "producerFunction (resolving future=" << future << " to 10)" << endl )
     return 0;
 }
 
 int consumerFunction(Future<int>* future) {
-    log( "consumerFunction ()" << endl )
-    log( "consumerFunction (result=" << future->get_value() << ")" << endl )
-    log( "consumerFunction (result=" << future->get_value() << ")" << endl )
+    LOG( "consumerFunction ()" << endl )
+
+    auto value = future->get_value();
+    LOG( "consumerFunction (result=" << value << ")" << endl )
+
+    value = future->get_value();
+    LOG( "consumerFunction (result=" << value << ")" << endl )
     return 0;
 }
 
 int main()
 {
-    log( endl << "Starting main application..." << endl )
+    LOG( endl )
+    LOG( "Starting main application..." << endl )
     Future<int>* future = new Future<int>();
 
     Thread* consumer = new Thread(&consumerFunction, future);
@@ -1657,7 +1661,7 @@ int main()
     consumer->join();
     producer->join();
 
-    log( "Exiting main application..." << endl )
+    LOG( "Exiting main application..." << endl )
     return 0;
 }
 ~/np~{DIV}
@@ -1684,6 +1688,7 @@ A seguir vê-se um simples exemplo de uso de futures. Nesse exemplo, evolve-se v
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
+#define DEBUG_SYNC
 
 #include <thread.h>
 #include <utility/guard.h>
@@ -1695,38 +1700,41 @@ using namespace EPOS;
 static volatile int counter = 0;
 
 Guard guard;
-Semaphore display_lock;
-
-// #define log(arg) display_lock.p(); db<Synchronizer>(WRN) << arg; display_lock.v();
-#define log(argument) db<Synchronizer>(WRN) << argument;
 
 void increment_counter(Future<int>* future) {
     Delay thinking(1000000);
     counter = counter + 1;
-    log( "increment_counter (counter=" << counter << ")" << endl )
+
+    LOG( "increment_counter (counter=" << counter << ")" << endl )
     future->resolve(counter);
 }
 
 int functionA() {
-    log( "functionA ()" << endl )
+    LOG( "functionA ()" << endl )
     Future<int>* future = new Future<int>();
 
     guard.submit(&increment_counter, future);
-    log( "functionA (result=" << future->get_value() << ")" << endl )    return 0;
+    auto value = future->get_value();
+
+    LOG( "functionA (result=" << value << ")" << endl )
+    return 0;
 }
 
 int functionB() {
-    log( "functionB ()" << endl )
+    LOG( "functionB ()" << endl )
     Future<int>* future = new Future<int>();
 
     guard.submit(&increment_counter, future);
-    log( "functionB (result=" << future->get_value() << ")" << endl )
+    auto value = future->get_value();
+
+    LOG( "functionB (result=" << value << ")" << endl )
     return 0;
 }
 
 int main()
 {
-    log( endl << "Starting main application..." << endl )
+    LOG( endl )
+    LOG( "Starting main application..." << endl )
 
     Thread* producer = new Thread(&functionA);
     Thread* consumer = new Thread(&functionB);
@@ -1734,7 +1742,7 @@ int main()
     consumer->join();
     producer->join();
 
-    log( "Exiting main application..." << endl )
+    LOG( "Exiting main application..." << endl )
     return 0;
 }
 ~/np~{DIV}
@@ -2000,17 +2008,16 @@ Veja um exemplo completo de teste/uso das closures meta programadas:
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
+#define DEBUG_SYNC
 
 #include <utility/closure.h>
-
 using namespace EPOS;
-#define log(argument) db<Synchronizer>(WRN) << argument;
 
 template<typename ReturnType, typename ... Tn>
 Closure< ReturnType(Tn ...) > create_closure( ReturnType(*_entry)( Tn ... ), Tn ... an )
 {
     auto closure = new Closure< ReturnType(Tn ...) >( _entry, an ... );
-    log( "create_closure " << closure << endl )
+    LOG( "create_closure " << closure << endl )
     return *closure;
 }
 
@@ -2018,41 +2025,43 @@ template<typename ... Tn>
 void test_closure(Tn ... an) {
     auto closure = create_closure(an ...);
     closure();
-    log( "    void" << endl << endl )
+    LOG( "    void" << endl << endl )
 }
 
 template<typename ... Tn>
 void test_closure_with_return(Tn ... an) {
     auto closure = create_closure(an ...);
-    log( "    " << closure() << endl << endl )
+    auto return_value = closure();
+    LOG( "    " << return_value << endl << endl )
 }
 
 char test_function1(char arg1, int arg2, bool arg3) {
-    log( "test_function1 " << arg1 << ", " <<  arg2 << ", " << arg3 << endl )
+    LOG( "test_function1 " << arg1 << ", " <<  arg2 << ", " << arg3 << endl )
     return 'A';
 }
 
 char test_function2(const char* arg1, const char* arg2, char arg3) {
-    log( "test_function2 " << arg1 << ", " <<  arg2 << ", " << arg3 << endl )
+    LOG( "test_function2 " << arg1 << ", " <<  arg2 << ", " << arg3 << endl )
     return 'B';
 }
 
 char test_function3() {
-    log( "test_function3 " << endl )
+    LOG( "test_function3 " << endl )
     return 'C';
 }
 
 void test_function4() {
-    log( "test_function4 " << endl )
+    LOG( "test_function4 " << endl )
 }
 
 void test_function5(const char* arg1) {
-    log( "test_function5 " << arg1 << endl )
+    LOG( "test_function5 " << arg1 << endl )
 }
 
 int main()
 {
-    log( endl << "main: begin()" << endl )
+    LOG( endl )
+    LOG( "main: begin()" << endl )
 
     test_closure_with_return( &test_function1, 'a', 10, false );
     test_closure_with_return( &test_function2, "test1", "test2", 'b' );
@@ -2062,7 +2071,7 @@ int main()
     test_closure( &test_function5, "Testa 3" );
     test_closure( &test_function5, "Testa 4" );
 
-    log( "main: exiting()" << endl )
+    LOG( "main: exiting()" << endl )
     return 0;
 }
 ~/np~{DIV}
@@ -2261,31 +2270,32 @@ Agora mostra-se um exemplo de uso de closures e do algoritmo do Guarda.
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
+#define DEBUG_SYNC
 
 #include <thread.h>
 #include <machine.h>
 #include <utility/guard.h>
+#include <utility/debug_sync.h>
 #include <alarm.h>
 
 using namespace EPOS;
-#define log(argument) db<Synchronizer>(WRN) << argument;
-
 Guard counter_guard;
 
 void show(char char1, const char* text1, const char* text2,
             bool bool1, bool bool2, const char* text3, int int1) {
-    log( "    char1=" << char1 << ", text1=" << text1 \
-        << ", text2=" << text2 << ", bool1=" << bool1 << ", bool2=" << bool2 \
-        << ", text3=" << text3 << ", int1="  << int1  << endl << endl )
+    LOG( "    char1=" << char1 << ", text1=" << text1
+        << ", text2=" << text2 << ", bool1=" << bool1 << ", bool2=" << bool2
+        << ", text3=" << text3 << ", int1="  << int1  << endl )
 }
 
 int main()
 {
-    log( endl << "main: begin()" << endl )
+    LOG( endl )
+    LOG( "main: begin()" << endl )
     counter_guard.submit(&show, 'A', "Test 1", "Test 2", true, false, "Test 3", 10);
     counter_guard.submit(&show, 'B', "Test 4", "Test 5", false, false, "Test 6", 20);
 
-    log( "main: exiting()" << endl )
+    LOG( "main: exiting()" << endl )
     return 0;
 }
 ~/np~{DIV}
@@ -2354,19 +2364,16 @@ Aqui testa-se a implementação nova de FAS feita, repetidamente fazendo a troca
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
+#define DEBUG_SYNC
 
 #include <utility/ostream.h>
+#include <utility/debug_sync.h>
 #include <semaphore.h>
 #include <thread.h>
 #include <machine.h>
 #include <cpu.h>
 
 using namespace EPOS;
-Semaphore display_lock;
-
-// #define log(arg) display_lock.p(); db<Synchronizer>(WRN) << arg; display_lock.v();
-#define log(argument) db<Synchronizer>(WRN) << argument;
-
 static const int iterations = 1e5;
 
 int old = 0;
@@ -2374,7 +2381,7 @@ int current = 10;
 int next = 11;
 
 #define check(thread, name) \
-    log( thread << name \
+    LOG( thread << name \
             << ", old=" << old \
             << ", current=" << current \
             << ", next=" << next \
@@ -2411,7 +2418,8 @@ int myThread2() {
 
 int main()
 {
-    log( "iterations=" << iterations << endl )
+    LOG( endl )
+    LOG( "iterations=" << iterations << endl )
     Thread p1(&myThread1);
     Thread p2(&myThread2);
 
@@ -2449,6 +2457,7 @@ Neste teste, utiliza-se a implementação do guarda para controlar o acesso a se
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
+#define DEBUG_SYNC
 
 #include <thread.h>
 #include <machine.h>
@@ -2456,7 +2465,6 @@ Neste teste, utiliza-se a implementação do guarda para controlar o acesso a se
 #include <alarm.h>
 
 using namespace EPOS;
-#define log(argument) db<Synchronizer>(WRN) << argument;
 
 static volatile int counter = 0;
 static const int iterations = 1e3;
@@ -2466,12 +2474,12 @@ Guard display_guard;
 Thread * pool[5];
 
 void show(char arg, const char * type) {
-    log( arg << ": " << type << " (counter=" << counter << ")" << endl )
+    LOG( arg << ": " << type << " (counter=" << counter << ")" << endl )
 }
 
 void increment_counter() {
     counter = counter + 1;
-    // log( "increment_counter (counter=" << counter << ")" << endl )
+    LOG( "increment_counter (counter=" << counter << ")" << endl )
 }
 
 int mythread(char arg) {
@@ -2488,7 +2496,8 @@ int mythread(char arg) {
 
 int main()
 {
-    log( endl << "main: begin (counter=" << counter << ")" << endl )
+    LOG( endl )
+    LOG( "main: begin (counter=" << counter << ")" << endl )
 
     pool[0] = new Thread(&mythread, 'A');
     pool[1] = new Thread(&mythread, 'B');
@@ -2496,16 +2505,21 @@ int main()
     pool[3] = new Thread(&mythread, 'D');
     pool[4] = new Thread(&mythread, 'E');
 
-    log( "main: start joining the threads (counter=" << counter << ")" << endl )
-    for(int i = 0; i < 5; i++) {
-        pool[i]->join();
-    }
+    LOG( "main: start joining the threads (counter=" << counter << ")" << endl )
+    pool[0]->join();
+    pool[1]->join();
+    pool[2]->join();
+    pool[3]->join();
+    pool[4]->join();
 
-    log( "main: done with both (counter=" << counter << ")" << endl )
-    for(int i = 0; i < 5; i++)
-        delete pool[i];
+    LOG( "main: done with both (counter=" << counter << ")" << endl )
+    delete pool[0];
+    delete pool[1];
+    delete pool[2];
+    delete pool[3];
+    delete pool[4];
 
-    log( "main: exiting (counter=" << counter << ")" << endl )
+    LOG( "main: exiting (counter=" << counter << ")" << endl )
     return 0;
 }
 ~/np~{DIV}
@@ -2544,8 +2558,10 @@ O que se espera deste teste, ao contrário do teste anterior, é que a contagem 
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
+#define DEBUG_SYNC
 
 #include <semaphore.h>
+#include <utility/debug_sync.h>
 #include <thread.h>
 #include <machine.h>
 #include <alarm.h>
@@ -2553,26 +2569,22 @@ O que se espera deste teste, ao contrário do teste anterior, é que a contagem 
 using namespace EPOS;
 int counter = 0;
 
-Semaphore display_lock;
-Semaphore counter_lock;
-#define log(arg) display_lock.p(); db<Synchronizer>(WRN) << arg; display_lock.v();
-
 // mythread()
 // Simply adds 1 to counter repeatedly, in a loop
 // No, this is not how you would add 10,000,000 to
 // a counter, but it shows the problem nicely.
 int mythread(char arg) {
-    log( arg << ": begin : " << endl)
+    LOG( arg << ": begin : " << endl)
 
     for (int i = 0; i < 1e6; i++) {
         if (counter%100000 == 0){
-            log( arg << " : " << counter << endl )
+            LOG( arg << " : " << counter << endl )
         }
         counter = counter + 1;
-        // log( "Counting " << counter << endl )
+        // LOG( "Counting " << counter << endl )
     }
 
-    log( arg << ": done" << endl )
+    LOG( arg << ": done" << endl )
     return 0;
 }
 
@@ -2581,7 +2593,8 @@ int mythread(char arg) {
 // and then waits for them (pthread_join)
 int main()
 {
-    log( "main: begin (counter = " << counter << ")" << endl )
+    LOG( endl )
+    LOG( "main: begin (counter = " << counter << ")" << endl )
 
     Thread * p1 = new Thread(&mythread, 'A');
     Thread * p2 = new Thread(&mythread, 'B');
@@ -2598,7 +2611,7 @@ int main()
     p5->join();
     p6->join();
 
-    log( "main: done with both (counter = " << counter << ")"<< endl )
+    LOG( "main: done with both (counter = " << counter << ")"<< endl )
     return 0;
 }
 ~/np~{DIV}
@@ -2708,40 +2721,37 @@ Resultado da execução:
 ~/np~{DIV}
 {DIV}^
 
-!!!count_sync_semaphore.cc [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+!!!count_sync_semaphore_simple.cc [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Neste teste, utiliza-se os mecanismo de sincronização do semáforo, e ao contrário do teste anterior ''count_sync_uncoordinated.cc'', deste teste espera-se que a contagem seja correta, pois utiliza-se o mecanismo de sincronização do semáforo para garantir a atomicidade da operação de adição.
-^::__Listagem 55:__ Arquivo de teste ''/app/count_sync_semaphore.cc''::
+^::__Listagem 55:__ Arquivo de teste ''/app/count_sync_semaphore_simple.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
+#define DEBUG_SYNC
 
-#include <utility/ostream.h>
+#include <utility/debug_sync.h>
 #include <semaphore.h>
 #include <thread.h>
 #include <machine.h>
 
 using namespace EPOS;
+static volatile int counter = 0;
 
-int counter = 0;
-
-Semaphore display_lock;
 Semaphore counter_lock;
-#define log(arg) display_lock.p(); db<Synchronizer>(WRN) << arg; display_lock.v();
 
 // mythread()
 // Simply adds 1 to counter repeatedly, in a loop
 // No, this is not how you would add 10,000,000 to
 // a counter, but it shows the problem nicely.
 int mythread(char arg) {
-    log( arg << ": begin" << endl )
-
+    LOG( arg << ": begin" << endl )
     for (int i = 0; i < 1e4; i++) {
         counter_lock.p();
         counter = counter + 1;
         counter_lock.v();
     }
 
-    log( arg << ": done" << endl )
+    LOG( arg << ": done" << endl )
     return 0;
 }
 
@@ -2750,23 +2760,23 @@ int mythread(char arg) {
 // and then waits for them (pthread_join)
 int main()
 {
-    log( "main: begin (counter = " << counter << ")" << endl )
-    Thread * p1 = new Thread(&mythread, 'A');
-    Thread * p2 = new Thread(&mythread, 'B');
+    LOG( endl )
+    LOG( "main: begin (counter = " << counter << ")" << endl )
+
+    Thread p1(&mythread, 'A');
+    Thread p2(&mythread, 'B');
 
     // join waits for the threads to finish
-    p1->join();
-    p2->join();
-    log( "main: done with both (counter = " << counter << ")"<< endl )
+    p1.join();
+    p2.join();
 
-    delete p1;
-    delete p2;
+    LOG( "main: done with both (counter = " << counter << ")"<< endl )
     return 0;
 }
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 56:__ Arquivo ''/app/count_sync_semaphore.cc''::
+^::__Listagem 56:__ Arquivo ''/app/count_sync_semaphore_simple.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 <1>: MMU is disabled! :<1>

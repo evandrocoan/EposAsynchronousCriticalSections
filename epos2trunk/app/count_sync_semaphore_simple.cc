@@ -32,11 +32,11 @@ int mythread(char arg) {
 // and then waits for them (pthread_join)
 int main()
 {
-    Thread p1(&mythread, 'A');
-    Thread p2(&mythread, 'B');
-
     LOG( endl )
     LOG( "main: begin (counter = " << counter << ")" << endl )
+
+    Thread p1(&mythread, 'A');
+    Thread p2(&mythread, 'B');
 
     // join waits for the threads to finish
     p1.join();
