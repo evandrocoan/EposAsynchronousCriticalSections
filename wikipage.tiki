@@ -475,7 +475,7 @@ Para a implementação do algoritmo das guardas no EPOS foram definidas três no
 
 Neste capítulo será descrito como ocorreu o processo de implementação das novas classes que implementam o algoritmo das guardas, assim como os testes realizados para validação da implementação.
 
-!!!Critical_Section [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+!!!Critical_Section  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Assim como ocorre com os algoritmos de sincronização tradicionais, uma das bases dos algoritmos de sincronização baseados em delegação é o conceito de seções críticas. Dessa forma, foi definida uma nova classe para representar essas entidades.
 
 A classe que representa seções críticas  foi criada com base na classe Function_Handler e recebeu o nome de ''Critical_Section''. Essa classe possui apenas dois atributos, _handler e _link. O atributo _handler representa a função relacionada à seção crítica e o atributo _link representa um elemento de lista simples. Além desses dois atributos, a classe ''Critical_Section'' também implementa o método público run(), que é utilizado pelo sequencer para executar uma seção crítica, que na verdade é o mesmo trabalho realizado pelo operator “()”, que deixava o código pouco intuitivo. A Listagem 5 exibe o código da classe ''Critical_Section''.
@@ -506,7 +506,7 @@ private:
 {DIV}^
 Exemplos da utilização da classe ''Critical_Section'' durante a submissão de seções críticas à guarda estão na seção sobre os testes realizados.
 
-!!!Element [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+!!!Element  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Como elementos da guarda são elementos de lista simples, com apenas um nível de encadeamento, optou-se por utilizar a classe List_Elements::Singly_Linked, Listagem 6, definida no arquivo ''list.h'', para representá-los.
 
 No entanto, foi necessário adicionar uma relação de amizade entre a classe Singly_Linked e a classe Guard, para que as operações CAS e FAS dos métodos vouch e clear da classe guardam possam acessar diretamente o atributo _next do elemento de lista. Isso porque, não é possível efetuar as operações CAS e FAS utilizando getters.
@@ -537,7 +537,7 @@ private:
 ~/np~{DIV}
 {DIV}^
 
-!!!Guarda [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+!!!Guarda  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 O código onde da classe Guard, definida no arquivo ''utility/guard.h'', é mostrado na Listagem 7. Essa classe implementa a estrutura da guarda descrita no capítulo de fundamentação teórica.
 ^::__Listagem 15:__ Definição da interface do Guarda::
 {DIV(type="span")}
@@ -639,7 +639,7 @@ Guard::Element * Guard::clear()
 ~/np~{DIV}
 {DIV}^
 
-!!!FAS [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+!!!FAS  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 A operação FAS, uma das duas primitivas atômicas utilizados no algoritmo das guardas, ainda não havia sido implementada no EPOS, Dessa forma, foi adicionada ao arquivo ''/include/archtecture/ia_32/cpu.h'', onde estão implementadas as primitivas atômicas de sincronização no EPOS, uma nova implementação para FAS.
 
 O código de FAS foi inspirado no código das outras operações atômicas e nas descrições das instruções atômicas nos manuais da Intel.
@@ -665,7 +665,7 @@ static int fas(volatile int & value, volatile int & replacement) {
 ~/np~{DIV}
 {DIV}^
 
-!!!debug_sync.h [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+!!!debug_sync.h  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Para auxiliar e melhorar o entendimento das aplicações multithread, foi criado uma macro especial para realizar o debug das aplicações e novos componentes do EPOS criados, como ''closure.h'', ''guard.h'' e ''stringstream.h''.
 
 Sua implementação baseia-se somente em semáforo global uma simples macro que replica seu uso. Ela pode ser desativada completamente, não adicionando a diretiva ''#define DEBUG_SYNC'' do pré-processador C que realiza sua ativação.
@@ -706,7 +706,7 @@ __END_UTIL
 ~/np~{DIV}
 {DIV}^
 
-!!!stringstream.h [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+!!!stringstream.h  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Para auxiliar o uso do algoritmo do ''Guarda'', e permite que faça-se a formatação prévia de strings antes de envia-las para a seção crítica, criou-se uma nova class auxiliar chamada ''StringStream'' criada no arquivo ''stringstream.h''. Ela é uma extensão simples da classe ''OStream'' do EPOS, que já sabe como fazer a formatação de vários tipos. Assim, na implementação do ''stringstream.h'' somente implementou-se um wrapper sobre a manipulação de todas as strings que já foram formatadas pela super classe ''OStream''.
 ^::__Listagem 20:__ Modificações do arquivo ''/include/utility/ostream.h''::
 {DIV(type="span")}
@@ -1216,7 +1216,7 @@ Welcome to the `stringstream.h` test program
 ~/np~{DIV}
 {DIV}^
 
-!!!Parallel Makefile [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+!!!Parallel Makefile  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Para auxiliar o desenvolvimento, reduzindo o tempo de espera pela compilação completa do EPOS com um ''make veryclean'', foi paralelizado a compilação do EPOS alterando alguns ''Makefile'''s:
 # ''src/architecture/makefile''
 # ''src/component/makefile''
@@ -1558,7 +1558,7 @@ index 9495641..27dd942 100644
  }
 ~/np~{DIV}
 {DIV}^
-!!!Futures [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+!!!Futures  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Das 2 implementações distintas de futures apresentadas, realiza-se a implementação do modelo de future bloqueante, apresentado no artigo referência {DIV(type="span")}[{DIV}[#Refer_ncias_|2]]. Como a implementação atual do algoritmo do guarda não suporta passagens de parâmetros variádicos, fez-se a implementação dos métodos para que aceitem vários parâmetros com meta programação. Ver a seção [#Closure_Metaprogramada_|Closure Metaprogramada].
 
 Uma vez que a future é resolvida, i.e., seu método ''resolve()'' é chamado e seu valor é definido, ele não pode ser mais alterado, e qualquer um que tentar obter o valor da future com ''get_value()'' não precisará mais bloquear, pois o valor não é indefinido. Futures são implementadas totalmente no arquivo header ''.h'' por que são meta classes que são instanciadas pelo compilador e seu código é gerado somente caso alguém crie uma especialização com algum tipo de dado.
@@ -1787,7 +1787,7 @@ Exiting main application...
 ~/np~{DIV}
 {DIV}^
 
-!!!Closure Metaprogramada [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+!!!Closure Metaprogramada  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 A ''Critical_Section'' inicialmente descrita não apresenta a possibilidade de definir-se/criar-se funções com um número variado de argumentos. Por isso, essa implementação foi substituída por uma ''Critical_Section'' meta programada, que faz uso de templates variádicos do C++ 11.
 
 A seguir ve-sê a implementação da classe base de todas as ''Critical_Section''. Uma classe base é necessária por que o algoritmo do Guarda implementa uma lista encadeada de seções críticas, que em nosso caso são presentados por ''Closures''. Assim, como a implementação de lista, que o algoritmo do Guarda faz uso, não permite que tipos diferentes sejam adicionados na lista, faz-se uso do polimorfismo para criar um lista com diferentes closures meta programadas.
@@ -2374,14 +2374,14 @@ main: exiting()
 ~/np~{DIV}
 {DIV}^
 
-!!Testes [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+!!Testes  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Cria-se um arquivo de testes baseado no exemplo de http://pages.cs.wisc.edu/~remzi/OSTEP/threads-intro.pdf.
 # Os exemplos com o EPOS multicore, com duas CPUS, variavelmente gerava exceções, que não ocorrem na versão single core. Não pode-se identificar exatamente qual a causa dessas exceções, que são do tipo GPF e PF. Uma constatação importante é que essas exceções ocorrem mesmo em versões minimamente modificadas das aplicações de testes padrões do EPOS.
 # Por duas vezes consegue-se fazer a contagem falhar, ambas vezes utilizando o critério de escalonamento RR. No entanto, nas últimas muitas execuções a contagem voltou a ocorrer corretamente, o que é indesejado, mesmo com a utilização do escalonamento RR. Com duas CPUS.
 # Foram definidos três programas de teste para a aplicação contadora simples: uma sem sincronização, uma utilizando semáforos e outra com guardas.
 Todos os testes a seguir foram realizados utilizando ''static const unsigned int CPUS = 4''.
 
-!!!fas_test.cc [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+!!!fas_test.cc  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Aqui testa-se a implementação nova de FAS feita, repetidamente fazendo a troca de variáveis em duas thread executando em CPUs diferentes.
 ^::__Listagem 49:__ Arquivo de Teste ''/app/fas_test.cc''::
 {DIV(type="span")}
@@ -2472,7 +2472,7 @@ Resultado da execução:
 ~/np~{DIV}
 {DIV}^
 
-!!!count_sync_guard.cc [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+!!!count_sync_guard.cc  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Neste teste, utiliza-se a implementação do guarda para controlar o acesso a seção crítica ''increment_counter()'', que simplesmente soma um contador. No final da execução, espera-se que resultado da conta seja precisamente o número de iterações feita.
 ^::__Listagem 51:__ Arquivo de teste ''/app/count_sync_guard.cc''::
 {DIV(type="span")}
@@ -2573,7 +2573,7 @@ The last thread has exited!
 ~/np~{DIV}
 {DIV}^
 
-!!!count_sync_uncoordinated.cc [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+!!!count_sync_uncoordinated.cc  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 O que se espera deste teste, ao contrário do teste anterior, é que a contagem final de errada, pois nenhuma primitiva de sincronização é utilizada, assim tem-se que a operação de incremento, que não é atômica, seja interrompida pelo metade, e no fim o resultado fique errado.
 ^::__Listagem 53:__ Arquivo de teste ''/app/count_sync_uncoordinated.cc''::
 {DIV(type="span")}
@@ -2742,7 +2742,7 @@ Resultado da execução:
 ~/np~{DIV}
 {DIV}^
 
-!!!count_sync_semaphore_simple.cc [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+!!!count_sync_semaphore_simple.cc  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Neste teste, utiliza-se os mecanismo de sincronização do semáforo, e ao contrário do teste anterior ''count_sync_uncoordinated.cc'', deste teste espera-se que a contagem seja correta, pois utiliza-se o mecanismo de sincronização do semáforo para garantir a atomicidade da operação de adição.
 ^::__Listagem 55:__ Arquivo de teste ''/app/count_sync_semaphore_simple.cc''::
 {DIV(type="span")}
@@ -2814,7 +2814,7 @@ Resultado da execução:
 ~/np~{DIV}
 {DIV}^
 
-!!!O que aprendemos com os testes [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+!!!O que aprendemos com os testes  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 # Executar aplicações com mais de 1 CPU ativa variavelmente gera exceções (GPF). Isso acontece mesmo com a aplicação do jantar dos filósofos, se os delays forem removidos.
 # Quando requisições são enviadas ao sequencer em uma taxa maior do que ele consegue executar, a memória enche e exceções (PF) ocorrem.
 # Com o KVM não funciona o relógio e o escalonador não era chamado.
