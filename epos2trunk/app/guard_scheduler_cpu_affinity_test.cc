@@ -1,4 +1,5 @@
 // EPOS Scheduler Test Program
+#define DEBUG_SYNC
 
 #include <utility/ostream.h>
 #include <utility/stringstream.h>
@@ -14,6 +15,7 @@ using namespace EPOS;
     #define nullptr 0
 #endif
 
+#define CONSOLE_MODE
 const int iterations = 10;
 OStream cout;
 
@@ -28,14 +30,28 @@ void think(unsigned long long n);
 void eat(unsigned long long n);
 unsigned long long busy_wait(unsigned long long n);
 
+#ifdef CONSOLE_MODE
+    #define LVL WRN
+#else
+    #define LVL FFF
+#endif
+
 void show_message(const char * message, int line, int column) {
+#ifdef CONSOLE_MODE
+    DB( Synchronizer, LVL, message << "(" << line << ")" << endl )
+#else
     Display::position( line, column );
     cout << message;
+#endif
 }
 
 void show_message(StringStream * message, int line, int column) {
+#ifdef CONSOLE_MODE
+    DB( Synchronizer, LVL, message )
+#else
     Display::position( line, column );
     cout << message;
+#endif
     delete message;
 }
 
@@ -96,31 +112,49 @@ int main()
 void release_chopstick(int philosopher_index, int chopstick_index,
         Future<int>* future_chopstick, const char* which_chopstick)
 {
+    DB( Synchronizer, LVL, "Philosopher=" << philosopher_index
+            << ", release chopstick=" << chopstick_index
+            << ", is_chopstick_free=" << is_chopstick_free[chopstick_index]
+            << ", future_chopstick=" << future_chopstick
+            << ", locked_futures=" << locked_futures[chopstick_index]
+            << ", " << which_chopstick )
+
     is_chopstick_free[chopstick_index] = true;
     delete future_chopstick;
 
     if( locked_futures[chopstick_index] ) {
-        auto old = locked_futures[chopstick_index];
+        DB( Synchronizer, LVL, endl )
 
+        auto old = locked_futures[chopstick_index];
         locked_futures[chopstick_index] = nullptr;
         old->resolve(1);
     }
     else {
         assert( locked_futures[chopstick_index] == nullptr );
+        DB( Synchronizer, LVL, endl )
     }
 }
 
 void get_chopstick(int philosopher_index, int chopstick_index,
         Future<int>* future_chopstick, const char* which_chopstick)
 {
-    if( is_chopstick_free[chopstick_index] )
-    {
+    DB( Synchronizer, LVL, "Philosopher=" << philosopher_index
+            << ", getting chopstick=" << chopstick_index
+            << ", is_chopstick_free=" << is_chopstick_free[chopstick_index]
+            << ", " << which_chopstick )
+
+    if( is_chopstick_free[chopstick_index] ) {
         is_chopstick_free[chopstick_index] = false;
+
+        DB( Synchronizer, LVL, ", future_chopstick=" << future_chopstick << endl )
         future_chopstick->resolve(1);
     }
     else {
         assert( locked_futures[chopstick_index] == nullptr );
         locked_futures[chopstick_index] = future_chopstick;
+
+        DB( Synchronizer, LVL, ", locked_futures="
+                << locked_futures[chopstick_index] << endl )
     }
 }
 
@@ -129,14 +163,18 @@ int philosopher(int philosopher_index, int line, int column)
     int first = (philosopher_index < 4)? philosopher_index : 0;
     int second = (philosopher_index < 4)? philosopher_index + 1 : 4;
 
+#ifdef CONSOLE_MODE
+    line = philosopher_index;
+#endif
+
     for(int i = iterations; i > 0; i--) {
         StringStream* stream1 = new StringStream{100};
-        *stream1 << "thinking[" << Machine::cpu_id() << "]";
+        *stream1 << "thinking[" << Machine::cpu_id() << "]" << "\n";
         table.submit( &show_message, stream1, line, column );
         think(1000000);
 
         StringStream* stream2 = new StringStream{100};
-        *stream2 << "  hungry[" << Machine::cpu_id() << "]";
+        *stream2 << "  hungry[" << Machine::cpu_id() << "]" << "\n";
         table.submit( &show_message, stream2, line, column );
 
         // Get the first chopstick
@@ -149,23 +187,39 @@ int philosopher(int philosopher_index, int line, int column)
         table.submit( &get_chopstick, philosopher_index, second, chopstick2, "SECOND" );
         chopstick2->get_value();
 
+    #ifdef CONSOLE_MODE
+        StringStream* stream6 = new StringStream{100};
+        *stream6 << "Philosopher=" << philosopher_index
+                << ", got     the first=" << first
+                << " and second=" << second << " chopstick" << "\n";
+        table.submit( &show_message, stream6, line, column );
+    #endif
+
         StringStream* stream3 = new StringStream{100};
-        *stream3 << " eating[" << Machine::cpu_id() << "] ";
+        *stream3 << " eating[" << Machine::cpu_id() << "] " << "\n";
         table.submit( &show_message, stream3, line, column );
 
         eat(500000);
 
         StringStream* stream4 = new StringStream{100};
-        *stream4 << "    ate[" << Machine::cpu_id() << "]";
+        *stream4 << "    ate[" << Machine::cpu_id() << "]" << "\n";
         table.submit( &show_message, stream4, line, column );
 
         // Release the chopsticks
         table.submit( &release_chopstick, philosopher_index, second, chopstick2, "SECOND" );
         table.submit( &release_chopstick, philosopher_index, first, chopstick1, "FIRST " );
+
+    #ifdef CONSOLE_MODE
+        StringStream* stream7 = new StringStream{100};
+        *stream7 << "Philosopher=" << philosopher_index
+                << ", release the first=" << first
+                << " and second=" << second << " chopstick" << "\n";
+        table.submit( &show_message, stream7, line, column );
+    #endif
     }
 
     StringStream* stream5 = new StringStream{100};
-    *stream5 << "  done[" << Machine::cpu_id() << "]  ";
+    *stream5 << "  done[" << Machine::cpu_id() << "]  " << "\n";
     table.submit( &show_message, stream5, line, column );
 
     return iterations;
