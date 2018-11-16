@@ -20,7 +20,7 @@ public:
     StringStream(const unsigned int _buffer_size) :
             _last_position(0), _buffer_size(_buffer_size)
     {
-        DB( Synchronizer, TRC, "StringStream::StringStream(_buffer_size="
+        DB( Synchronizer, TRC, "StringStream(_buffer_size="
                 << _buffer_size << ") => " << reinterpret_cast<int *>(this) << endl )
 
         assert(_buffer_size > 0);
@@ -28,7 +28,7 @@ public:
     }
 
     ~StringStream() {
-        DB( Synchronizer, TRC, "StringStream::~StringStream(this="
+        DB( Synchronizer, TRC, "~StringStream(this="
                 << reinterpret_cast<int *>(this) << ", _buffer="
                 << reinterpret_cast<int *>(_buffer) << ")" << endl )
 
