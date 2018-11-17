@@ -32,7 +32,7 @@ void Thread::constructor_prologue(const Color & color, unsigned int stack_size)
     else
         _stack = new (SYSTEM) char[stack_size];
 
-    // CPU::int_disable();
+    CPU::int_disable();
 }
 
 
