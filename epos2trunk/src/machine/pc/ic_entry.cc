@@ -801,7 +801,7 @@ void IC::int_not(const Interrupt_Id & i)
 void IC::exc_not(Reg32 eip, Reg32 cs, Reg32 eflags, Reg32 error)
 {
     db<IC,Machine>(WRN) << "IC::exc_not(cs=" << hex << cs << ",ip=" << reinterpret_cast<void *>(eip) << ",fl=" << eflags << ")" << endl;
-    db<IC,Machine>(WRN) << "The running thread will now be terminated!" << endl;
+    db<IC,Machine>(WRN) << endl << endl << endl << "The running thread will now be terminated!" << endl;
     _exit(-1);
 }
 
@@ -860,7 +860,7 @@ void IC::exc_pf(Reg32 eip, Reg32 cs, Reg32 eflags, Reg32 error)
         db<IC,Machine>(WRN) << "R";
     db<IC,Machine>(WRN) << ")" << endl;
 
-    db<IC,Machine>(WRN) << "The running thread will now be terminated!" << endl;
+    db<IC,Machine>(WRN) << endl << endl << endl << "The running thread will now be terminated!" << endl;
     _exit(-1);
 }
 
@@ -868,7 +868,7 @@ void IC::exc_pf(Reg32 eip, Reg32 cs, Reg32 eflags, Reg32 error)
 void IC::exc_gpf(Reg32 eip, Reg32 cs, Reg32 eflags, Reg32 error)
 {
     db<IC,Machine>(WRN) << "IC::exc_gpf(cs=" << hex << cs << ",ip=" << reinterpret_cast<void *>(eip) << ",fl=" << eflags << ")" << endl;
-    db<IC,Machine>(WRN) << "The running thread will now be terminated!" << endl;
+    db<IC,Machine>(WRN) << endl << endl << endl << "The running thread will now be terminated!" << endl;
     _exit(-1);
 }
 
@@ -876,7 +876,7 @@ void IC::exc_gpf(Reg32 eip, Reg32 cs, Reg32 eflags, Reg32 error)
 void IC::exc_fpu(Reg32 eip, Reg32 cs, Reg32 eflags, Reg32 error)
 {
     db<IC,Machine>(WRN) << "IC::exc_fpu(cs=" << hex << cs << ",ip=" << reinterpret_cast<void *>(eip) << ",fl=" << eflags << ")" << endl;
-    db<IC,Machine>(WRN) << "The running thread will now be terminated!" << endl;
+    db<IC,Machine>(WRN) << endl << endl << endl << "The running thread will now be terminated!" << endl;
     _exit(-1);
 }
 
