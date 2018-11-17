@@ -129,11 +129,13 @@ protected:
 
     static void lock() {
         CPU::int_disable();
+        db<Thread>(TRC) << "Thread::lock(this=" << Thread::self() << ", level=" << _lock.level() << ", owner="  << _lock.owner() << ")" << endl;
         if(smp)
             _lock.acquire();
     }
 
     static void unlock() {
+        db<Thread>(TRC) << "Thread::unlock(this=" << Thread::self() << ", level=" << _lock.level() << ", owner="  << _lock.owner() << ")" << endl;
         if(smp)
             _lock.release();
         CPU::int_enable();
