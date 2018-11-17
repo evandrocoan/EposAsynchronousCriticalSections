@@ -56,8 +56,8 @@ private:
         return (time + timer_period() / 2) / timer_period();
     }
 
-    static void lock() { Thread::lock(); }
-    static void unlock() { Thread::unlock(); }
+    static void lock() { db<Synchronizer>(TRC) << "Alarm::lock(size=" << _request.size() << ")" << endl; Thread::lock(); }
+    static void unlock() { db<Synchronizer>(TRC) << "Alarm::unlock(size=" << _request.size() << ")" << endl; Thread::unlock(); }
 
     static void handler(const IC::Interrupt_Id & i);
 
