@@ -3498,6 +3498,353 @@ The end!
 ~/np~{DIV}
 {DIV}^
 
+!!!guard_scheduler_cpu_affinity_test.cc  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+Trata-se do mesmo programa original do EPOS chamada ''scheduler_cpu_affinity_test.cc'', também conhecido como ''Concurrent Philosophers Dinner''. Nesta nova versão utiliza um ''Guarda'' e várias variáveis ''Future'', ao contrário de utilizar alguns semáforos para sincronização.
+^::__Listagem 60:__ Arquivo ''/app/guard_scheduler_cpu_affinity_test.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+// EPOS Scheduler Test Program
+// #define DEBUG_SYNC
+
+#include <utility/ostream.h>
+#include <utility/stringstream.h>
+#include <utility/guard.h>
+#include <utility/future.h>
+#include <machine.h>
+#include <display.h>
+#include <thread.h>
+
+using namespace EPOS;
+
+#if !defined(nullptr)
+    #define nullptr 0
+#endif
+
+#define CONSOLE_MODE
+const int iterations = 10;
+OStream cout;
+
+Guard table;
+Thread * phil[5];
+
+bool is_chopstick_free[5];
+Future<int>* locked_futures[5];
+
+int philosopher(int n, int l, int c);
+void think(unsigned long long n);
+void eat(unsigned long long n);
+unsigned long long busy_wait(unsigned long long n);
+
+// Fix `error: undefined reference to endl` when compiling with hysterically_debugged = true
+EPOS::S::U::OStream::Endl EPOS::S::U::endl;
+
+#ifdef CONSOLE_MODE
+    #define LVL WRN
+#else
+    #define LVL FFF
+#endif
+
+void show_message(const char * message, int line, int column) {
+#ifdef CONSOLE_MODE
+    DB( Synchronizer, LVL, message << "(" << line << ")" << endl )
+#else
+    Display::position( line, column );
+    cout << message;
+#endif
+}
+
+void show_message(StringStream * message, int line, int column) {
+#ifdef CONSOLE_MODE
+    DB( Synchronizer, LVL, message )
+#else
+    Display::position( line, column );
+    cout << message;
+#endif
+    delete message;
+}
+
+void setup_program()
+{
+    Display::clear();
+    Display::position(0, 0);
+    cout << "The Philosopher's Dinner:" << endl;
+
+    for(int i = 0; i < 5; i++)
+    {
+        is_chopstick_free[i] = true;
+        locked_futures[i] = nullptr;
+    }
+
+    phil[0] = new Thread(&philosopher, 0,  5, 30);
+    phil[1] = new Thread(&philosopher, 1, 10, 44);
+    phil[2] = new Thread(&philosopher, 2, 16, 39);
+    phil[3] = new Thread(&philosopher, 3, 16, 21);
+    phil[4] = new Thread(&philosopher, 4, 10, 17);
+
+    cout << "Philosophers are alive and hungry!" << endl;
+
+    Display::position(7, 44);
+    cout << '/';
+    Display::position(13, 44);
+    cout << '\\';
+    Display::position(16, 35);
+    cout << '|';
+    Display::position(13, 27);
+    cout << '/';
+    Display::position(7, 27);
+    cout << '\\';
+    Display::position(19, 0);
+
+    cout << "The dinner is served ..." << endl;
+}
+
+int main()
+{
+    table.submit( &setup_program );
+
+    for(int i = 0; i < 5; i++) {
+        int ret = phil[i]->join();
+        StringStream* stream = new StringStream{100};
+
+        *stream << "Philosopher " << i << " ate " << ret << " times\n";
+        table.submit( &show_message, stream, 20 + i, 0 );
+    }
+
+    for(int i = 0; i < 5; i++)
+        delete phil[i];
+
+    cout << "The end!" << endl;
+    return 0;
+}
+
+void release_chopstick(int philosopher_index, int chopstick_index,
+        Future<int>* future_chopstick, const char* which_chopstick)
+{
+    DB( Synchronizer, LVL, "Philosopher=" << philosopher_index
+            << ", release chopstick=" << chopstick_index
+            << ", is_chopstick_free=" << is_chopstick_free[chopstick_index]
+            << ", future_chopstick=" << future_chopstick
+            << ", locked_futures=" << locked_futures[chopstick_index]
+            << ", " << which_chopstick )
+
+    is_chopstick_free[chopstick_index] = true;
+    delete future_chopstick;
+
+    if( locked_futures[chopstick_index] ) {
+        DB( Synchronizer, LVL, endl )
+
+        auto old = locked_futures[chopstick_index];
+        locked_futures[chopstick_index] = nullptr;
+        old->resolve(1);
+    }
+    else {
+        assert( locked_futures[chopstick_index] == nullptr );
+        DB( Synchronizer, LVL, endl )
+    }
+}
+
+void get_chopstick(int philosopher_index, int chopstick_index,
+        Future<int>* future_chopstick, const char* which_chopstick)
+{
+    DB( Synchronizer, LVL, "Philosopher=" << philosopher_index
+            << ", getting chopstick=" << chopstick_index
+            << ", is_chopstick_free=" << is_chopstick_free[chopstick_index]
+            << ", " << which_chopstick )
+
+    if( is_chopstick_free[chopstick_index] ) {
+        is_chopstick_free[chopstick_index] = false;
+
+        DB( Synchronizer, LVL, ", future_chopstick=" << future_chopstick << endl )
+        future_chopstick->resolve(1);
+    }
+    else {
+        assert( locked_futures[chopstick_index] == nullptr );
+        locked_futures[chopstick_index] = future_chopstick;
+
+        DB( Synchronizer, LVL, ", locked_futures="
+                << locked_futures[chopstick_index] << endl )
+    }
+}
+
+int philosopher(int philosopher_index, int line, int column)
+{
+    int first = (philosopher_index < 4)? philosopher_index : 0;
+    int second = (philosopher_index < 4)? philosopher_index + 1 : 4;
+
+#ifdef CONSOLE_MODE
+    line = philosopher_index;
+#endif
+
+    for(int i = iterations; i > 0; i--) {
+        StringStream* stream1 = new StringStream{101};
+        *stream1 << "thinking[" << Machine::cpu_id() << "]" << " (" << line << ")" << "\n";
+        table.submit( &show_message, stream1, line, column );
+        think(1000000);
+
+        StringStream* stream2 = new StringStream{102};
+        *stream2 << "  hungry[" << Machine::cpu_id() << "]" << " (" << line << ")" << "\n";
+        table.submit( &show_message, stream2, line, column );
+
+        // Get the first chopstick
+        Future<int>* chopstick1 = new Future<int>();
+        table.submit( &get_chopstick, philosopher_index, first, chopstick1, "FIRST " );
+        chopstick1->get_value();
+
+        // Get the second chopstick
+        Future<int>* chopstick2 = new Future<int>();
+        table.submit( &get_chopstick, philosopher_index, second, chopstick2, "SECOND" );
+        chopstick2->get_value();
+
+    #ifdef CONSOLE_MODE
+        StringStream* stream6 = new StringStream{103};
+        *stream6 << "Philosopher=" << philosopher_index
+                << ", got     the first=" << first
+                << " and second=" << second << " chopstick" << "\n";
+        table.submit( &show_message, stream6, line, column );
+    #endif
+
+        StringStream* stream3 = new StringStream{104};
+        *stream3 << " eating[" << Machine::cpu_id() << "] " << "\n";
+        table.submit( &show_message, stream3, line, column );
+
+        eat(500000);
+
+        StringStream* stream4 = new StringStream{105};
+        *stream4 << "    ate[" << Machine::cpu_id() << "]" << " (" << line << ")" << "\n";
+        table.submit( &show_message, stream4, line, column );
+
+        // Release the chopsticks
+        table.submit( &release_chopstick, philosopher_index, first, chopstick1, "FIRST " );
+        table.submit( &release_chopstick, philosopher_index, second, chopstick2, "SECOND" );
+
+    #ifdef CONSOLE_MODE
+        StringStream* stream7 = new StringStream{106};
+        *stream7 << "Philosopher=" << philosopher_index
+                << ", release the first=" << first
+                << " and second=" << second << " chopstick" << "\n";
+        table.submit( &show_message, stream7, line, column );
+    #endif
+    }
+
+    StringStream* stream5 = new StringStream{107};
+    *stream5 << "  done[" << Machine::cpu_id() << "]  "
+            << " (" << philosopher_index << ")" << "\n";
+    table.submit( &show_message, stream5, philosopher_index, column );
+
+    return iterations;
+}
+
+void eat(unsigned long long n) {
+    static unsigned long long v;
+    v = busy_wait(n);
+}
+
+void think(unsigned long long n) {
+    static unsigned long long v;
+    v = busy_wait(n);
+}
+
+unsigned long long busy_wait(unsigned long long n)
+{
+    volatile unsigned long long v;
+    for(long long int j = 0; j < 20 * n; j++)
+        v &= 2 ^ j;
+    return v;
+}
+~/np~{DIV}
+{DIV}^
+Esta versão com o algoritmo do ''Guarda'' apresenta inúmeros problemas e não consegue executar até o fim. Apesar de sua implementação ser basicamente idêntica a implementação de ''guard_semaphore_test.cc'', a maioria das vezes, o programa entra em trava, no momento que o método ''lock()'' da classe ''Thread'' tenta obter o spin lock.
+
+A seguir vê-sê um exemplo de problema de alocação de memória que pode acontece durante a execução da aplicação. Neste exemplo de problema, ocorre uma sobre-escrita de uma memória de um objeto na heap por um objeto na stack de outro objeto na heap.
+#Na linha 1088 ocorre a destruição de um objeto
+#Na linha 1090 vê-se que foi liberado o endereço de memória 0x0007fd65
+#Na linha 1101 vê-se que o endereço liberado anteriormente é alocado para um novo objeto do tipo ''StringStream''
+#Entretanto na linha 1144 vê-se que o endereço do objeto 0x0007fd65 foi colocado como endereço de um objeto _link do tipo ''List_Elements::Singly_Linked<Critical_Section_Base>''
+#Assim, mais tarde na linha 1248, durante a execução do objeto ''StringStream'', vemos que foi mostrado lixo na tela: ''9ý''. Mas o correto deveria ter sido imprimir a mensagem ''thinking[1] (4)''.
+#Também nota-se que durante a chamada do destrutor do objeto ''StringStream'', linha 1248, foram mostrados valores de lixo: ''~StringStream(this=0x0007fd65, _buffer=0x0007fd3d, _buffer_size=523601), _last_position=24624)''. O correto deveria ser ''~StringStream(this=0x0007fd65, _buffer=não conhecido, _buffer_size=102), _last_position=16)''.
+#Log com a execução completa: https://gist.github.com/evandrocoan/52869eb0dae7ec3b40525628ff2be276
+^::__Listagem 61:__ Trecho do log de execução de ''/app/guard_scheduler_cpu_affinity_test.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+1088: <1>: ~Closure(this=0x0007fd85, _entry=0x00006030, PARAMETERS_COUNT=3, PARAMETERS_LENGTH=12, sizeof=8) :<1>
+1089: <1>: Heap::free(this=0x004000b4,ptr=0x0007fd65,bytes=16) :<1>
+1090: <1>: Grouping_List::insert_merging(e=0x0007fd65) :<1>
+1091: <1>: ~Critical_Section_Base(this=0x0007fd79 _link=0x0007fd7d) :<1>
+1092: <1>: Heap::free(this=0x004000b4,ptr=0x0007fd75,bytes=24) :<1>
+1093: <1>: Grouping_List::insert_merging(e=0x0007fd75) :<1>
+1094: <1>: List::remove(e=0x0007fd8d) => {p=0x00093f24,o=0x0007fd8d,n=0x00000000} :<1>
+1095: <1>: List[0x004000b4]::head=0x0001d000 => {p=0x00000000,o=0x0001d<0>: Spin::acquire[SPIN=0x004000c8,ID=0x0008febc]() => {owner=589500,level=1} :<0>
+1096: <0>: Heap::alloc(this=0x004000b4,bytes=16Grouping_List::search_decrementing(s=20) :<0>
+1097: <0>: List[0x004000b4]::head=0x0001d000 => {p=0x00000000,o=0x0001d000,n=0x00100000} :<0>
+1098: <0>: List[0x004000b4]::tail=0x0007fd8d => {p=0x00093f24,o=0x0007fd8d,n=0x00000000} :<0>
+1099: <0>: ) => 0x0007fd65 :<0>
+1100: <0>: Spin::release[SPIN=0x004000c8,ID=589500]() => {owner=0,level=0} :<0>
+1101: <0>: StringStream(_buffer_size=102) => 0x0007fd65 :<0>
+1102: <0>: Spin::acquire[SPIN=0x004000c8,ID=0x0008febc]() => {owner=589500,level=1} :<0>
+1103: <0>: Heap::alloc(this=0x004000b4,bytes=103Grouping_List::search_decrementing(s=107) :<0>
+1104: <0>: List[0x004000b4]::head=0x0001d000 => {p=0x00000000,o=0x0001d000,n=0x00100000} :<0>
+1105: <0>: List[0x004000b4]::tail=0x0007fd8d => {p=0x00093f24,o=0x0007fd8d,n=0x00000000} :<0>
+1106: <0>: ) => 0x0007fcfa :<0>
+1107: <0>: Spin::release[SPIN=0x004000c8,ID=589500]() => {owner=0,level=0} :<0>
+1108: <0>: StringStream::print(this=0x0007fd65), string=  hungry[, string_size=9, total_size=9, _last_position=9, _buffer=  hungry[ :<0>
+1109: <0>: StringStream::print(this=0x0007fd65), string=0, string_size=1, total_size=10, _last_position=10, _buffer=  hungry[0 :<0>
+1110: <0>: StringStream::print(this=0x0007fd65), 000,n=0x00100000} :<1>
+1111: <1>: List[0x004000b4]::tail=0x0007fd8d => {p=0x00093f24,o=0x0007fd8d,n=0x00000000} :<1>
+1112: <1>: List::remove_tail() :<1>
+1113: <1>: List[0x004000b4]::head=0x0001d000 => {p=0x00000000,o=0x0001d000,n=0x00100000} :<1>
+1114: <1>: List[0x004000b4]::tail=0x0007fd8d => {p=0x00093f24,o=0x0007fd8d,n=0x00000000} :<1>
+1115: <1>: List[0x004000b4]::head=0x0001d000 => {p=0x00000000,o=0x0001d000,n=0x00100000} :<1>
+1116: <1>: List[0x004000b4]::tail=0x00093f24 => {p=0x00401000,o=0x00093f24,n=0x00000000} :<1>
+1117: <1>: List[0x004000b4]::head=0x0001d000 => {p=0x00000000,o=0x0001d000,n=0x00100000} :<1>
+1118: <1>: List[0x004000b4]::tail=0x00093f24 => {p=0x00401000,o=0x00093f24,n=0x00000000} :<1>
+1119: <1>: Spin::acquire[SPIN=0x004000c8,ID=0x0008be84]() => {owner=573060,level=1} :<1>
+1120: <1>: Heap::alloc(this=0x004000b4,bytes=20Grouping_List::search_decrementing(s=24) :<1>
+1121: <1>: List[0x004000b4]::head=0x0001d000 => {p=0x00000000,o=0x0001d000,n=0x00100000} :<1>
+1122: <1>: List[0x004000b4]::tail=0x00093f24 => {p=0x00401000,o=0x00093f24,n=0x00000000} :<1>
+1123: <1>: ) => 0x0007fd79 :<1>
+1124: <1>: Spin::release[SPIN=0x004000c8,ID=573060]() => {owner=0,level=0} :<1>
+1125: <1>: Condition(<0>: Alarm::lock(size=0) :<0>
+1126: <0>: Thread::lock(this=0x0008febc, level=0, owner=0) :<0>
+1127: <0>: Spin::acquire[SPIN=0x00400120,ID=0x0008febc]() => {owner=589500,level=1} :<0>
+1128: <0>: Alarm::unlock(size=0) :<0>
+1129: <0>: Thread::unlock(this=0x0008febc, level=1, owner=589500) :<0>
+1130: <0>: Spin::release[SPIN=0x00400120,ID=589500]() => {owner=0,level=0} :<0>
+1131: string=], <0>: string_size=1, total_size=11, _last_position=11, _buffer=  hungry[0] :<0>
+1132: <0>: StringStream::print(this=0x0007fd65), string= (, string_size=2, total_size=13, _last_position=13, _buffer=  hungry[0] ( :<0>
+1133: <0>: StringStream::print(this=0x0007fd65), string=1, string_size=1, total_size=14, _last_position=14, _buffer=  hungry[0] (1 :<0>
+1134: <0>: StringStream::print(this=0x0007fd65), string=), string_size=1, total_size=15, _last_position=15, _buffer=  hungry[0] (1) :<0>
+1135: <0>: StringStream::print(this=0x0007fd65), string=
+1136: , string_size=1, total_size=16, _last_position=16, _buffer=  hungry[0] (1)
+1137:  :<0>
+1138: <0>: Spin::acquire[SPIN=0x004000c8,ID=0x0008febc]() => {owner=589500,level=1} :<0>
+1139: <0>: Heap::alloc(this=0x004000b4,bytes=20Grouping_List::search_decrementing(s=24) :<0>
+1140: <0>: List[0x004000b4]::head=0x0001d000 => {p=0x00000000,o=0x0001d000,n=0x00100000} :<0>
+1141: <0>: List[0x004000b4]::tail=0x00093f24 => {p=0x00401000,o=0x00093f24,n=0x00000000} :<0>
+1142: <0>: ) => 0x0007fd61 :<0>
+1143: <0>: Spin::release[SPIN=0x004000c8,ID=589500]() => {owner=0,level=0} :<0>
+1144: <0>: Critical_Section_Base(_link=0x0007fd65) => 0x0007fd61 :<0>
+1145: <0>: Closure(_entry=0x00006030, PARAMETERS_COUNT=3, PARAMETERS_LENGTH=12, sizeof=8) => 0x0007fd6d :<0>
+1146: <0>: Spin::acquire[SPIN=0x004000c8,ID=0x0008febc]() => {owner=589500,level=1} :<0>
+1147: <0>: Heap::alloc(this=0x004000b4,bytes=12Grouping_List::search_decrementing(s=16) :<0>
+1148: <0>: List[0x004000b4]::head=0x0001d000 => {p=0x00000000,o=0x0001d000,n=0x00100000} :<0>
+1149: <0>: List[0x004000b4]::tail=0x00093f24 => {p=0x00401000,o=0x00093f24,n=0x00000000} :<0>
+1150: <0>: ) => 0x0007fd51 :<0>
+1151: <0>: Spin::release[SPIN=0x004000c8,ID=589500]() => {owner=0,level=0} :<0>
+1152: <0>: Closure::pack_helper(Head=4, address=0x0007fd51) :<0>
+1153: <0>: Closure::pack_helper(Head=4, address=0x0007fd55) :<0>
+1154: <0>: Closure::pack_helper(Head=4, address=0x0007fd59) :<0>
+1155: <0>: Critical_Section(_entry=0x00006030) => 0x0007fd61 :<0>
+1156: <0>: Guard::vouch(this=0x00400050 head=0x00000000 tail=0x00000000 item=0x0007fd65, size=1) => 0x0007fd7d :<1>
+1157: <1>: Future(_is_resolved=0, _condition=0) => 0x0007fd79 :<1>
+~/np~{DIV}
+{DIV}^
+Este programa foi compilado com o mode ''hysterically_debugged = true''. Mas para que ele pudesse funcionar foi adicionado em seu trais a redução da frequência do alarme de usuário para ''static const int FREQUENCY = 10; // Hz'' por que foram adicionados inúmeros novas mensagens de log por todo código do EPOS, incluindo no tratador de interrupções do alarme, o que aumentou simplificativamente o tempo em que ele demora para executar, assim causando com que novas interrupções do timer acontecessem antes que o timer tivesse terminado de imprimir a mensagem atual, causando com que o EPOS morresse após várias interrupções encadeadas.
+
+A seguir, vê-se outro problema encontrado durante outra execução de ''guard_scheduler_cpu_affinity_test.cc''. Na linha 8010 da imagem seguir, encontra-se a liberação de um spin lock que tem ''level'' resultante igual a 0 (zero) e que a thread que era sua dona possui o endereço ''0x0008be84''. Entretanto, magicamente na linha 8148, vê-se que ele algora possui um valor ''level'' de 1 (um) e que sua thread dona continua sendo a thread ''0x0008be84'' que acabou de ter liberado ele. Analisando mais atentamente, percebe-se que tratam-se de objetos de spin lock diferentes, ambos operados pela thread ''0x0008be84''. Mais tarde, o sistema trava durante a aquisição de outro spin lock.
+^::{img fileId="1124"}::
+::__Figura 12:__ Aquisição de spin locks::
+::__Fonte:__: Própria::^
+
 !!!O que aprendemos com os testes  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 # Executar aplicações com mais de 1 CPU ativa variavelmente gera exceções (GPF). Isso acontece mesmo com a aplicação do jantar dos filósofos, se os delays forem removidos.
 # Quando requisições são enviadas ao sequencer em uma taxa maior do que ele consegue executar, a memória enche e exceções (PF) ocorrem.

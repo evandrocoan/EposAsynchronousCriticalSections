@@ -222,7 +222,8 @@ int philosopher(int philosopher_index, int line, int column)
     }
 
     StringStream* stream5 = new StringStream{107};
-    *stream5 << "  done[" << Machine::cpu_id() << "]  " << " (" << philosopher_index << ")" << "\n";
+    *stream5 << "  done[" << Machine::cpu_id() << "]  "
+            << " (" << philosopher_index << ")" << "\n";
     table.submit( &show_message, stream5, philosopher_index, column );
 
     return iterations;
