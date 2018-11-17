@@ -30,15 +30,21 @@ public:
         while(CPU::cas(_owner, 0, me) != me);
         _level++;
 
-        db<Spin>(TRC) << "Spin::acquire[SPIN=" << this << ",ID=" << me << "]() => {owner=" << _owner << ",level=" << _level << "}" << endl;
+        db<Spin>(TRC) << "Spin::acquire[SPIN=" << this << ",ID=" << reinterpret_cast<void *>(me)
+                << "]() => {owner=" << owner() << ",level=" << level() << "}" << endl;
     }
 
     void release() {
+        auto me = owner();
     	if(--_level <= 0)
             _owner = 0;
 
-        db<Spin>(TRC) << "Spin::release[SPIN=" << this << "]() => {owner=" << _owner << ",level=" << _level << "}" << endl;
+        db<Spin>(TRC) << "Spin::release[SPIN=" << this << ",ID=" << me
+                << "]() => {owner=" << owner() << ",level=" << level() << "}" << endl;
     }
+
+    inline const void * owner() const { return reinterpret_cast<void *>(_owner); }
+    inline const int level() const { return _level; }
 
 private:
     volatile int _level;
