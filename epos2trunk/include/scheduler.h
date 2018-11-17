@@ -341,8 +341,8 @@ public:
     	// For threads, we this won't happen (see Thread::init()).
     	// But if you are unsure about your new use of the scheduler,
     	// please, pay the price of the extra "if" bellow.
-//    	return const_cast<T * volatile>((Base::chosen()) ? Base::chosen()->object() : 0);
-    	return const_cast<T * volatile>(Base::chosen()->object());
+   	  return const_cast<T * volatile>((Base::chosen()) ? Base::chosen()->object() : 0);
+    	// return const_cast<T * volatile>(Base::chosen()->object());
     }
 
     void insert(T * obj) {
