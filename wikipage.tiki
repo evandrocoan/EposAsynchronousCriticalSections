@@ -454,7 +454,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 12:__ Arquivo ''/app/cas_test.cc''::
+^::__Listagem 12:__ Exemplo de execução de ''/app/cas_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 Welcome to the CPU::cas() instruction test!
@@ -1200,7 +1200,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 26:__ Arquivo ''/app/stringstream_test.cc''::
+^::__Listagem 26:__ Exemplo de execução de ''/app/stringstream_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 Welcome to the `stringstream.h` test program
@@ -1687,7 +1687,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 34:__ Arquivo ''/app/future_simple_test.cc''::
+^::__Listagem 34:__ Exemplo de execução de ''/app/future_simple_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 Starting main application...
@@ -1767,7 +1767,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 36:__ Arquivo ''/app/future_guard_test.cc''::
+^::__Listagem 36:__ Exemplo de execução de ''/app/future_guard_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 Starting main application...
@@ -2100,7 +2100,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 44:__ Arquivo ''/app/closure_test.cc''::
+^::__Listagem 44:__ Exemplo de execução de ''/app/closure_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 main: begin()
@@ -2269,7 +2269,7 @@ public:
 %%%
 !!!!Integração com Guarda  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Para integrar a nova interface de ''Critical_Section'' no algoritmo do Guarda, foi necessário somente modificar o método ''Guard::submit'', que agora passa a ser um método meta programado:
-^::__Listagem 46:__ Arquivo ''/include/utility/guard.h''::
+^::__Listagem 46:__ Trecho de código de ''/include/utility/guard.h''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 template<typename ... Tn>
@@ -2324,7 +2324,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 48:__ Arquivo ''/app/closure_guard_test.cc''::
+^::__Listagem 48:__ Exemplo de execução de ''/app/closure_guard_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 main: begin()
@@ -2454,7 +2454,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 50:__ Arquivo ''/app/fas_test.cc''::
+^::__Listagem 50:__ Exemplo de execução de ''/app/fas_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 <1>: MMU is disabled! :<1>
@@ -2546,7 +2546,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 52:__ Arquivo ''/app/fas_test.cc''::
+^::__Listagem 52:__ Exemplo de execução de ''/app/fas_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 <1>: MMU is disabled! :<1>
@@ -2638,7 +2638,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 54:__ Arquivo ''/app/count_sync_uncoordinated.cc''::
+^::__Listagem 54:__ Exemplo de execução de ''/app/count_sync_uncoordinated.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 <1>: MMU is disabled! :<1>
@@ -2797,7 +2797,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 56:__ Arquivo ''/app/count_sync_semaphore_simple.cc''::
+^::__Listagem 56:__ Exemplo de execução de ''/app/count_sync_semaphore_simple.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 <1>: MMU is disabled! :<1>
@@ -3031,7 +3031,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução sem o modo ''CONSOLE_MODE'':
-^::__Listagem 58:__ Arquivo ''/app/guard_semaphore_test.cc''::
+^::__Listagem 58:__ Exemplo de execução de ''/app/guard_semaphore_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 The Philosopher's Dinner:
@@ -3062,7 +3062,7 @@ The end!
 ~/np~{DIV}
 {DIV}^
 Resultado da execução com o modo ''CONSOLE_MODE'':
-^::__Listagem 59:__ Arquivo ''/app/guard_semaphore_test.cc''::
+^::__Listagem 59:__ Exemplo de execução de ''/app/guard_semaphore_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 The Philosopher's Dinner:
