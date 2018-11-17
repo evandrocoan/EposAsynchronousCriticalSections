@@ -502,7 +502,8 @@ public:
         // When enabling the asserts expressions, the compiler keeps complaining about
         // WARNING: in static member function 'static void EPOS::S::FPGA::init()': error: array subscript is above array bounds
         // Then, do some hack to overrule it  and let the above assert() do its thing on runtime.
-        unsigned int index = i >= INTS ? INTS - 1 : i;
+        // unsigned int index = i >= INTS ? INTS - 1 : i;
+        unsigned int index = i;
         _int_vector[index] = h;
     }
 
