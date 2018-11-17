@@ -156,7 +156,7 @@ template<> struct Traits<Timer>: public Traits<Machine_Common>
     // Meaningful values for the PC's timer frequency range from 100 to
     // 10000 Hz. The choice must respect the scheduler time-slice, i. e.,
     // it must be higher than the scheduler invocation frequency.
-    static const int FREQUENCY = 1000; // Hz
+    static const int FREQUENCY = 10; // Hz
 };
 
 template<> struct Traits<RTC>: public Traits<Machine_Common>
