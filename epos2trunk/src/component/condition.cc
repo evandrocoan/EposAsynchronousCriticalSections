@@ -28,7 +28,7 @@ void Condition::wait() {
 
 
 void Condition::signal() {
-    db<Synchronizer>(TRC) << "Condition::signal(this=" << this << ")" << endl;
+    db<Synchronizer>(TRC) << "Condition::signal(this=" << this << ", size=" << size() << ")" << endl;
 
     begin_atomic();
     wakeup(); // implicit end_atomic()

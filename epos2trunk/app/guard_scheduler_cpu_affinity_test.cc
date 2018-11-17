@@ -209,8 +209,8 @@ int philosopher(int philosopher_index, int line, int column)
         table.submit( &show_message, stream4, line, column );
 
         // Release the chopsticks
-        table.submit( &release_chopstick, philosopher_index, second, chopstick2, "SECOND" );
         table.submit( &release_chopstick, philosopher_index, first, chopstick1, "FIRST " );
+        table.submit( &release_chopstick, philosopher_index, second, chopstick2, "SECOND" );
 
     #ifdef CONSOLE_MODE
         StringStream* stream7 = new StringStream{106};
@@ -222,8 +222,8 @@ int philosopher(int philosopher_index, int line, int column)
     }
 
     StringStream* stream5 = new StringStream{107};
-    *stream5 << "  done[" << Machine::cpu_id() << "]  " << " (" << line << ")" << "\n";
-    table.submit( &show_message, stream5, line, column );
+    *stream5 << "  done[" << Machine::cpu_id() << "]  " << " (" << philosopher_index << ")" << "\n";
+    table.submit( &show_message, stream5, philosopher_index, column );
 
     return iterations;
 }

@@ -258,7 +258,7 @@ void Thread::exit(int status)
 
 void Thread::sleep(Queue * q)
 {
-    db<Thread>(TRC) << "Thread::sleep(running=" << running() << ",q=" << q << ")" << endl;
+    db<Thread>(TRC) << "Thread::sleep(running=" << running() << ",q=" << q << ", size=" << q->size() << ")" << endl;
 
     // lock() must be called before entering this method
     assert(locked());
@@ -275,7 +275,7 @@ void Thread::sleep(Queue * q)
 
 void Thread::wakeup(Queue * q)
 {
-    db<Thread>(TRC) << "Thread::wakeup(running=" << running() << ",q=" << q << ")" << endl;
+    db<Thread>(TRC) << "Thread::wakeup(running=" << running() << ",q=" << q << ", size=" << q->size() << ")" << endl;
 
     // lock() must be called before entering this method
     assert(locked());
@@ -295,7 +295,7 @@ void Thread::wakeup(Queue * q)
 
 void Thread::wakeup_all(Queue * q)
 {
-    db<Thread>(TRC) << "Thread::wakeup_all(running=" << running() << ",q=" << q << ")" << endl;
+    db<Thread>(TRC) << "Thread::wakeup_all(running=" << running() << ",q=" << q << ", size=" << q->size() << ")" << endl;
 
     // lock() must be called before entering this method
     assert(locked());
