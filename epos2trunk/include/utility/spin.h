@@ -44,7 +44,7 @@ public:
     }
 
     inline const void * owner() const { return reinterpret_cast<void *>(_owner); }
-    inline const int level() const { return _level; }
+    inline const volatile int level() const { return _level; }
 
 private:
     volatile int _level;
