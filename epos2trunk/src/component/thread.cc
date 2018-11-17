@@ -31,6 +31,8 @@ void Thread::constructor_prologue(const Color & color, unsigned int stack_size)
         _stack = new (color) char[stack_size];
     else
         _stack = new (SYSTEM) char[stack_size];
+
+    // CPU::int_disable();
 }
 
 
@@ -322,6 +324,10 @@ void Thread::reschedule()
     db<Scheduler<Thread> >(TRC) << "Thread::reschedule()" << endl;
     db<Scheduler<Thread> >(TRC) << "Thread::reschedule(locked=" << locked() << ")" << endl;
 
+    db<Thread>(TRC) << "Thread::reschedule(this=" << Thread::self()
+            << ", level=" << _lock.level()
+            << ", owner=" << _lock.owner() << ")" << endl;
+
     // lock() must be called before entering this method
     assert(locked());
 
@@ -334,14 +340,20 @@ void Thread::reschedule()
 
 void Thread::reschedule(unsigned int cpu)
 {
-    db<Scheduler<Thread> >(TRC) << "Thread::reschedule(cpu=" << cpu << ")" << endl;
+    db<Scheduler<Thread> >(TRC) << "Thread::reschedule(cpu=" << cpu << ", in)" << endl;
     db<Scheduler<Thread> >(TRC) << "Thread::reschedule(locked=" << locked() << ")" << endl;
+
+    db<Thread>(TRC) << "Thread::reschedule(this=" << Thread::self()
+            << ", level=" << _lock.level()
+            << ", owner=" << _lock.owner() << ")" << endl;
+
+    // lock() must be called before entering this method
     assert(locked());
 
     if(!smp || (cpu == Machine::cpu_id()))
         reschedule();
     else {
-        db<Scheduler<Thread> >(TRC) << "Thread::reschedule(cpu=" << cpu << ")" << endl;
+        db<Scheduler<Thread> >(TRC) << "Thread::reschedule(cpu=" << cpu << ", out)" << endl;
         IC::ipi_send(cpu, IC::INT_RESCHEDULER);
         unlock();
     }
@@ -370,6 +382,15 @@ void Thread::time_slicer(const IC::Interrupt_Id & i)
 
 void Thread::dispatch(Thread * prev, Thread * next, bool charge)
 {
+    db<Scheduler<Thread> >(TRC) << "Thread::dispatch(locked=" << locked() << ")" << endl;
+
+    db<Thread>(TRC) << "Thread::dispatch(this=" << Thread::self()
+            << ", level=" << _lock.level()
+            << ", owner=" << _lock.owner() << ", in)" << endl;
+
+    // lock() must be called before entering this method
+    assert(locked());
+
     if(charge) {
         if(Criterion::timed)
             _timer->reset();
@@ -396,6 +417,9 @@ void Thread::dispatch(Thread * prev, Thread * next, bool charge)
             _lock.release();
 
     // TODO: could this be moved to right after the switch_context?
+    db<Thread>(TRC) << "Thread::dispatch(this=" << Thread::self()
+            << ", level=" << _lock.level()
+            << ", owner=" << _lock.owner() << ", out)" << endl;
     CPU::int_enable();
 }
 
@@ -406,6 +430,7 @@ int Thread::idle()
         if(Traits<Thread>::trace_idle)
             db<Thread>(TRC) << "Thread::idle(CPU=" << Machine::cpu_id() << ",this=" << running() << ")" << endl;
 
+        db<Thread>(TRC) << "Thread::idle(level=" << _lock.level() << ", owner=" << _lock.owner() << ")" << endl;
         CPU::int_enable();
         CPU::halt();
         if(_scheduler.schedulables() > 0) // A thread might have been woken up by another CPU
