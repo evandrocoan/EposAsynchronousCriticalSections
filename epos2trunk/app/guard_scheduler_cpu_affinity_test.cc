@@ -15,7 +15,7 @@ using namespace EPOS;
     #define nullptr 0
 #endif
 
-#define CONSOLE_MODE
+// #define CONSOLE_MODE
 const int iterations = 10;
 OStream cout;
 
@@ -35,8 +35,10 @@ EPOS::S::U::OStream::Endl EPOS::S::U::endl;
 
 #ifdef CONSOLE_MODE
     #define LVL WRN
+    #define EXTRA(arg) arg
 #else
     #define LVL FFF
+    #define EXTRA(arg)
 #endif
 
 void show_message(const char * message, int line, int column) {
@@ -173,12 +175,14 @@ int philosopher(int philosopher_index, int line, int column)
 
     for(int i = iterations; i > 0; i--) {
         StringStream* stream1 = new StringStream{101};
-        *stream1 << "thinking[" << Machine::cpu_id() << "]" << " (" << line << ")" << "\n";
+        *stream1 << "thinking[" << Machine::cpu_id() << "]"
+                EXTRA( << " (" << line << ")" << "\n" );
         table.submit( &show_message, stream1, line, column );
         think(1000000);
 
         StringStream* stream2 = new StringStream{102};
-        *stream2 << "  hungry[" << Machine::cpu_id() << "]" << " (" << line << ")" << "\n";
+        *stream2 << "  hungry[" << Machine::cpu_id() << "]"
+                EXTRA( << " (" << line << ")" << "\n" );
         table.submit( &show_message, stream2, line, column );
 
         // Get the first chopstick
@@ -200,13 +204,14 @@ int philosopher(int philosopher_index, int line, int column)
     #endif
 
         StringStream* stream3 = new StringStream{104};
-        *stream3 << " eating[" << Machine::cpu_id() << "] " << "\n";
+        *stream3 << " eating[" << Machine::cpu_id() << "] " EXTRA( << "\n" );
         table.submit( &show_message, stream3, line, column );
 
         eat(500000);
 
         StringStream* stream4 = new StringStream{105};
-        *stream4 << "    ate[" << Machine::cpu_id() << "]" << " (" << line << ")" << "\n";
+        *stream4 << "    ate[" << Machine::cpu_id() << "]"
+                EXTRA( << " (" << line << ")" << "\n" );
         table.submit( &show_message, stream4, line, column );
 
         // Release the chopsticks
@@ -224,8 +229,8 @@ int philosopher(int philosopher_index, int line, int column)
 
     StringStream* stream5 = new StringStream{107};
     *stream5 << "  done[" << Machine::cpu_id() << "]  "
-            << " (" << philosopher_index << ")" << "\n";
-    table.submit( &show_message, stream5, philosopher_index, column );
+            EXTRA( << " (" << line << ")" << "\n" );
+    table.submit( &show_message, stream5, line, column );
 
     return iterations;
 }
