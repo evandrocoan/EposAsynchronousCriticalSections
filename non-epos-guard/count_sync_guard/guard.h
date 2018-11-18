@@ -1,7 +1,8 @@
 #include <mutex>
 #include <atomic>
-
 #include <cassert>
+
+#include <iomanip>
 #include <iostream>
 #include <condition_variable>
 
@@ -167,23 +168,25 @@ template<typename FutureType>
 class Future
 {
 public:
-    Future(): _condition(), _is_resolved() {
+    Future(): _is_resolved(false), _size(0) {
         DB( "Future(_is_resolved=" << _is_resolved
-                << ", _condition=" << _condition.size()
-                << ") => " << this << endl )
+                << ", _condition=" << _size
+                << ") => " << this << std::endl )
     }
 
     ~Future() {
-        DB( "~Future(this=" << this << ")" << endl );
+        DB( "~Future(this=" << this << ")" << std::endl );
     }
 
     FutureType get_value() {
         DB( "Future::get_value(this=" << this
                 << " _is_resolved=" << _is_resolved
-                << " _condition=" << _condition.size()
-                <<  ")" << endl )
+                << " _condition=" << _size
+                <<  ")" << std::endl )
 
         if(!_is_resolved) {
+            ++_size;
+
             std::unique_lock<std::mutex> lock(_mutex);
             _condition.wait(lock);
         }
@@ -193,8 +196,8 @@ public:
     void resolve(FutureType value) {
         DB( "Future::resolve(this=" << this
                 << " _is_resolved=" << _is_resolved
-                << " _condition=" << _condition.size()
-                <<  ")" << endl )
+                << " _condition=" << _size
+                <<  ")" << std::endl )
         assert(!_is_resolved);
         // If `resolve()` was called and the instruction pointer got until here,
         // and the thread is unscheduled, and another thread call `resolve()`,
@@ -207,6 +210,7 @@ public:
 private:
     bool _is_resolved;
     FutureType _value;
+    std::atomic<int> _size;
 
     std::mutex _mutex;
     std::condition_variable _condition;
@@ -368,6 +372,7 @@ public:
 class Guard
 {
     std::atomic<int> _size;
+    void* _sequencer;
 
     Critical_Section_Base* _head;
     Critical_Section_Base* _tail;
@@ -376,7 +381,7 @@ class Guard
     static const unsigned int DONE = 1;
 
 public:
-    Guard() : _size(0), _head(0), _tail(0)
+    Guard() : _size(0), _sequencer(0), _head(0), _tail(0)
     {
         DB( "Guard(head=" << _head << ", tail=" << _tail
                 << ") => " << this << std::endl )
@@ -394,6 +399,7 @@ public:
 
         Critical_Section_Base * cur = vouch(cs);
         if (cur != reinterpret_cast<Critical_Section_Base *>(NULL)) do {
+            _sequencer = get_thread_id();
             cur->start();
             cur = clear();
         } while (cur != reinterpret_cast<Critical_Section_Base *>(NULL));
@@ -402,13 +408,17 @@ public:
     Critical_Section_Base* vouch(Critical_Section_Base * item)
     {
         DB( "Guard::vouch(this=" << this
-                << " head=" << _head << " tail=" << _tail
-                << " item=" << item << ", size=" << _size + 1 )
+                << " head=" << _head
+                << " tail=" << _tail
+                << " thread=" << get_thread_id()
+                << " sequencer=" << _sequencer
+                << " size=" << _size + 1
+                << " item=" << item )
         ++_size;
 
         item->_next = reinterpret_cast<Critical_Section_Base *>(NULL);
         Critical_Section_Base * last = fas( _tail, item );
-        DB( ", last=" << last << ")" << std::endl )
+        DB( " last=" << last << ")" << std::endl )
 
         if( last ) {
             if( cas( last->_next, reinterpret_cast<Critical_Section_Base *>(NULL), item )
@@ -424,13 +434,16 @@ public:
     Critical_Section_Base * clear()
     {
         DB( "Guard::clear(this=" << this
-                << " head=" << _head << " tail=" << _tail
-                << ", size=" << _size - 1 )
+                << " head=" << _head
+                << " tail=" << _tail
+                << " thread=" << get_thread_id()
+                << " sequencer=" << _sequencer
+                << " size=" << _size - 1 )
         --_size;
 
         Critical_Section_Base * item = _head;
         Critical_Section_Base * next = fas( item->_next, reinterpret_cast<Critical_Section_Base *>(DONE) );
-        DB( ", next=" << next << ")" << std::endl )
+        DB( " next=" << next << ")" << std::endl )
 
         bool mine = true;
         if( !next ) {
@@ -443,4 +456,11 @@ public:
         }
         return next;
     }
+
+    static void* get_thread_id() {
+        std::stringstream ss;
+        ss << std::this_thread::get_id();
+        return reinterpret_cast<void *>( std::stoull( ss.str() ) );
+    }
 };
+

@@ -27,6 +27,7 @@ public:
 
         Critical_Section_Base * cur = vouch(cs);
         if (cur != reinterpret_cast<Critical_Section_Base *>(NULL)) do {
+            _sequencer = Thread::self();
             cur->start();
             cur = clear();
         } while (cur != reinterpret_cast<Critical_Section_Base *>(NULL));
@@ -37,6 +38,7 @@ public:
 
 private:
     int _size;
+    Thread* _sequencer;
 
     Critical_Section_Base * _head;
     Critical_Section_Base * _tail;

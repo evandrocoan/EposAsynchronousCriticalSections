@@ -3957,7 +3957,6 @@ A seguir, vê-se outro problema encontrado durante outra execução de ''guard_s
 # https://stackoverflow.com/questions/19884494/too-few-template-parameter-lists-error
 # https://stackoverflow.com/questions/5901300/how-do-i-view-previous-diff-commits-using-git
 # https://stackoverflow.com/questions/2721846/alternative-to-c-static-virtual-methods
-# https://stackoverflow.com/questions/34222703/how-to-override-static-method-of-template-class-in-derived-class
 # https://stackoverflow.com/questions/137038/how-do-you-get-assembler-output-from-c-c-source-in-gcc
 # https://stackoverflow.com/questions/34842152/compare-and-exchange-on-x86-cpu
 # https://stackoverflow.com/questions/47981/how-do-you-set-clear-and-toggle-a-single-bit
@@ -3965,8 +3964,6 @@ A seguir, vê-se outro problema encontrado durante outra execução de ''guard_s
 # https://stackoverflow.com/questions/8747005/backporting-nullptr-to-c-pre-c0x-programs
 # https://stackoverflow.com/questions/10496824/how-to-define-nullptr-for-supporting-both-c03-and-c11
 # https://stackoverflow.com/questions/2741708/makefile-contains-string
-# https://stackoverflow.com/questions/3531060/how-to-initialize-a-static-const-member-in-c
-# https://stackoverflow.com/questions/11761506/inheritance-function-that-returns-self-type
 # https://stackoverflow.com/questions/4673720/private-inheritance-using-directive-overloads
 # https://stackoverflow.com/questions/656224/when-should-i-use-c-private-inheritance
 # https://stackoverflow.com/questions/24609872/delete-virtual-function-from-a-derived-class
@@ -4013,6 +4010,20 @@ A seguir, vê-se outro problema encontrado durante outra execução de ''guard_s
 # http://www.cplusplus.com/reference/condition_variable/condition_variable/
 # https://en.cppreference.com/w/cpp/thread/unique_lock
 # https://en.cppreference.com/w/cpp/thread/condition_variable/wait
+# https://solarianprogrammer.com/2011/12/16/cpp-11-thread-tutorial/
+# https://stackoverflow.com/questions/19217093/terminate-called-after-throwing-an-instance-of-stdout-of-range
+# https://code.i-harness.com/en/q/7167a4
+# https://stackoverflow.com/questions/5101918/thread-id-vs-thread-handle
+# https://stackoverflow.com/questions/7432100/how-to-get-integer-thread-id-in-c11
+# https://stackoverflow.com/questions/19255137/how-to-convert-stdthreadid-to-string-in-c
+# https://en.cppreference.com/w/cpp/thread/thread/id
+# https://stackoverflow.com/questions/16259257/c11-native-handle-is-not-a-member-of-stdthis-thread
+# https://en.cppreference.com/w/cpp/language/integer_literal
+# https://stackoverflow.com/questions/5760252/how-can-i-print-0x0a-instead-of-0xa-using-cout
+# http://www.cplusplus.com/reference/ios/hex/
+# https://stackoverflow.com/questions/42262750/how-to-get-stdthread-of-current-thread
+# http://www.modernescpp.com/index.php/condition-variables
+# https://stackoverflow.com/questions/43759609/stdcondition-variablenotify-all-i-need-an-example
 
 !!Referências  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 #Stefan Reif and Wolfgang Schröder-Preikschat, "Predictable Synchronisation Algorithms for Asynchronous Critical Sections,” Friedrich-Alexander-Universität Erlangen-Nürnberg, Dept. of Computer Science, Technical Reports, CS-2018-03, February 2018.

@@ -4,7 +4,7 @@
 
 __BEGIN_UTIL
 
-Guard::Guard(): _head(0), _tail(0) {
+Guard::Guard(): _size(0), _sequencer(0), _head(0), _tail(0) {
     DB( Synchronizer, TRC, "Guard(head=" << _head << ", tail=" << _tail
             << ") => " << this << endl )
 }
@@ -16,13 +16,17 @@ Guard::~Guard() {
 Critical_Section_Base* Guard::vouch(Critical_Section_Base * item)
 {
     DB( Synchronizer, TRC, "Guard::vouch(this=" << this
-            << " head=" << _head << " tail=" << _tail
-            << " item=" << item << ", size=" << _size + 1 )
+            << " head=" << _head
+            << " tail=" << _tail
+            << " thread=" << Thread::self()
+            << " sequencer=" << _sequencer
+            << " size=" << _size + 1
+            << " item=" << item )
     CPU::finc(_size);
 
     item->_next = reinterpret_cast<Critical_Section_Base *>(NULL);
     Critical_Section_Base * last = CPU::fas(_tail, item);
-    DB( Synchronizer, TRC, ", last=" << last << ")" << endl )
+    DB( Synchronizer, TRC, " last=" << last << ")" << endl )
 
     if( last ) {
         if( CPU::cas( last->_next, reinterpret_cast<Critical_Section_Base *>(NULL), item )
@@ -38,13 +42,16 @@ Critical_Section_Base* Guard::vouch(Critical_Section_Base * item)
 Critical_Section_Base* Guard::clear()
 {
     DB( Synchronizer, TRC, "Guard::clear(this=" << this
-            << " head=" << _head << " tail=" << _tail
-            << ", size=" << _size - 1 )
+            << " head=" << _head
+            << " tail=" << _tail
+            << " thread=" << Thread::self()
+            << " sequencer=" << _sequencer
+            << " size=" << _size - 1 )
     CPU::fdec(_size);
 
     Critical_Section_Base * item = _head;
     Critical_Section_Base * next = CPU::fas( item->_next, reinterpret_cast<Critical_Section_Base *>(DONE) );
-    DB( Synchronizer, TRC, ", next=" << next << ")" << endl )
+    DB( Synchronizer, TRC, " next=" << next << ")" << endl )
 
     bool mine = true;
     if( !next ) {

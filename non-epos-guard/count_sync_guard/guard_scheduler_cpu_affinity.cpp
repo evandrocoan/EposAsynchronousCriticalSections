@@ -1,13 +1,12 @@
 // Scheduler Test Program
-// #define DEBUG_SYNC
-
 #include <thread>
 #include <sstream>
 #include <sched.h>
 
-#include "guard.h"
-#define CONSOLE_MODE
+// #define DEBUG_SYNC
+// #define CONSOLE_MODE
 
+#include "guard.h"
 const int iterations = 10;
 
 Guard table;
@@ -87,6 +86,7 @@ void setup_program()
 // /\) => (\dx[a-f\d]{8,8})/ /Philosopher=\d/ \bGuard::vouch\b \bGuard::clear\b \bchopstick=2\b
 int main()
 {
+    DB( "main() => " << Guard::get_thread_id() << std::endl )
     table.submit( &setup_program );
 
     for(int i = 0; i < 5; i++) {
@@ -158,6 +158,8 @@ void get_chopstick(int philosopher_index, int chopstick_index,
 
 void philosopher(int philosopher_index, int line, int column, Future<int>* result)
 {
+    DB( "philosopher(index=" << philosopher_index << ") => " << Guard::get_thread_id() << std::endl )
+
     int first = (philosopher_index < 4)? philosopher_index : 0;
     int second = (philosopher_index < 4)? philosopher_index + 1 : 4;
 
