@@ -1261,7 +1261,7 @@ clean_multithread:
 Para ''make veryclean'' funcionar paralelamente, foi preciso remover a definição ''MAKECLEAN'' no arquivo principal ''makedefs'' [https://github.com/evandrocoan/asynchronous_critical_sections/commit/a020ccdb4216bb8131e7d86e3c99c6b95d726d0a|4237faf] && [https://github.com/evandrocoan/asynchronous_critical_sections/commit/5dfd5d7a53ebbf77c33816beec785201c8d7a1c5|e4faae6], por que para que o comando ''-j'' de paralelização do ''Makefile'' funcione, as chamadas recursivas de makefile precisam ser feitas utilizando a variável ''${MAKE}'' ao contrário de chamar o ''Makefile'' diretamente como ''MAKECLEAN := make -i clean'' fazia.
 
 Note que, aleatoriamente durante algumas vezes no final do processo de compilação, quando será feita a ligação entre o código do EPOS e aplicação compilada, pode-se ter um ou vários erros de ligação sobre símbolos faltando. Para resolver isso, basta somente pedir para compilar de novo. Algumas outras vezes muito raras, pode ser necessário pedir para compilar até 3 vezes, antes que o linker consiga encontrar todos os símbolos.
-^::__Listagem 28:__ Exemplo de falho do linker para ''make veryclean APPLICATION=guard_semaphore_test''::
+^::__Listagem 29:__ Exemplo de falho do linker para ''make veryclean APPLICATION=guard_semaphore_test''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 (cd app && make --print-directory)
@@ -1286,7 +1286,7 @@ Depois de ter um erro desse, é importante não executar o ''make veryclean APPL
 Durante o desenvolvimento do trabalho, foi habilitado as instruções de assert do EPOS, no arquivo ''/include/system/config.h''. Entretanto, ao fazer isso, foram relevados alguns erros de compilação e de execução do EPOS.
 
 Um dos erros relevados pelos asserts foi construtor da classe ''Thread'', que deixa de ser atômico quando compila-se o EPOS para várias CPU's. Ao executar o trecho de código do construtor da classe ''Thread'' a seguir, as interrupções são ligadas pelo operator new. Isso, é um problema por que o construtor da classe ''Thread'' inicia com um ''lock()'' e termina com um ''unlock()'', portanto, não pode-se ter alguém no meio do processo reativando as interrupções.
-^::__Listagem 29:__ Trecho do construtor de ''/src/component/thread.cc''::
+^::__Listagem 30:__ Trecho do construtor de ''/src/component/thread.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // Somewhere on the new operator, it is being called enable() and disable() CPU interrupt
@@ -1297,7 +1297,7 @@ else
 ~/np~{DIV}
 {DIV}^
 Para resolver-se esse problema, tentou-se estudar o código do operador de new, para encontrar onde tal anomalia estava acontecendo. Entretanto, mesmo que descoberto onde isso esteja acontecendo, tentar alterar ou modificar tal código, seria muito problemático. Portanto, ao contrario de lutar contra o problema, abraçou-se ele. Assim, modificou-se arquivo ''cpu.h'' adicionado-se o suporte a uma pilha de chamadas ''lock()'' e ''unlock()''. Assim, pode-se recursivamente chamar funções que precisa ser atómicas, garantido que a chamada mais externa continuará sempre atômica.
-^::__Listagem 30:__ Mudanças no arquivo ''/include/architecture/ia32/cpu.h''::
+^::__Listagem 31:__ Mudanças no arquivo ''/include/architecture/ia32/cpu.h''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 static void int_enable()
@@ -1325,7 +1325,7 @@ static void int_disable()
 ~/np~{DIV}
 {DIV}^
 A seguir, vê-se um resumo das commits com errors relacionadas a ativação do assert.
-^::__Listagem 31:__ Lista de commits criadas pela ativação do ''assert()''::
+^::__Listagem 32:__ Lista de commits criadas pela ativação do ''assert()''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 Date:   Tue Nov 13 16:55:14 2018 -0200
@@ -1584,7 +1584,7 @@ index 9495641..27dd942 100644
 Das 2 implementações distintas de futures apresentadas, realiza-se a implementação do modelo de future bloqueante, apresentado no artigo referência {DIV(type="span")}[{DIV}[#Refer_ncias_|2]]. Como a implementação atual do algoritmo do guarda não suporta passagens de parâmetros variádicos, fez-se a implementação dos métodos para que aceitem vários parâmetros com meta programação. Ver a seção [#Closure_Metaprogramada_|Closure Metaprogramada].
 
 Uma vez que a future é resolvida, i.e., seu método ''resolve()'' é chamado e seu valor é definido, ele não pode ser mais alterado, e qualquer um que tentar obter o valor da future com ''get_value()'' não precisará mais bloquear, pois o valor não é indefinido. Futures são implementadas totalmente no arquivo header ''.h'' por que são meta classes que são instanciadas pelo compilador e seu código é gerado somente caso alguém crie uma especialização com algum tipo de dado.
-^::__Listagem 32:__ Implementação de future em ''/include/utility/future.h''::
+^::__Listagem 33:__ Implementação de future em ''/include/utility/future.h''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Guard Component Declarations
@@ -1651,7 +1651,7 @@ __END_UTIL
 ~/np~{DIV}
 {DIV}^
 Agora ve-sê um simples programa que demonstra o uso de futures:
-^::__Listagem 33:__ Arquivo de Teste ''/app/future_simple_test.cc''::
+^::__Listagem 34:__ Arquivo de Teste ''/app/future_simple_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
@@ -1701,7 +1701,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 34:__ Exemplo de execução de ''/app/future_simple_test.cc''::
+^::__Listagem 35:__ Exemplo de execução de ''/app/future_simple_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 Starting main application...
@@ -1718,7 +1718,7 @@ Exiting main application...
 ~/np~{DIV}
 {DIV}^
 A seguir vê-se um simples exemplo de uso de futures. Nesse exemplo, evolve-se varias classes to EPOS, fazendo seu uso em conjunto com o algoritmo do guarda.
-^::__Listagem 35:__ Arquivo de Teste ''/app/future_guard_test.cc''::
+^::__Listagem 36:__ Arquivo de Teste ''/app/future_guard_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
@@ -1781,7 +1781,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 36:__ Exemplo de execução de ''/app/future_guard_test.cc''::
+^::__Listagem 37:__ Exemplo de execução de ''/app/future_guard_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 Starting main application...
@@ -1805,7 +1805,7 @@ Exiting main application...
 A ''Critical_Section'' inicialmente descrita não apresenta a possibilidade de definir-se/criar-se funções com um número variado de argumentos. Por isso, essa implementação foi substituída por uma ''Critical_Section'' meta programada, que faz uso de templates variádicos do C++ 11.
 
 A seguir ve-sê a implementação da classe base de todas as ''Critical_Section''. Uma classe base é necessária por que o algoritmo do Guarda implementa uma lista encadeada de seções críticas, que em nosso caso são presentados por ''Closures''. Assim, como a implementação de lista, que o algoritmo do Guarda faz uso, não permite que tipos diferentes sejam adicionados na lista, faz-se uso do polimorfismo para criar um lista com diferentes closures meta programadas.
-^::__Listagem 37:__ Base de todas ''Closures'' meta programadas, Arquivo: ''/include/utility/critical_section.h''::
+^::__Listagem 38:__ Base de todas ''Closures'' meta programadas, Arquivo: ''/include/utility/critical_section.h''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 class Critical_Section_Base
@@ -1843,7 +1843,7 @@ private:
 ~/np~{DIV}
 {DIV}^
 A implementação da ''Critical_Section'' meta programada é simplesmente a herança privada da implementação de ''Closure'', mais a herança da classe base de todas as seções críticas, a ''Critical_Section_Base''.
-^::__Listagem 38:__ Definição da ''Critical_Section'' meta programada baseada na implementação de ''Closures''::
+^::__Listagem 39:__ Definição da ''Critical_Section'' meta programada baseada na implementação de ''Closures''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 template<typename... Tn>
@@ -1868,7 +1868,7 @@ public:
 %%%
 !!!!Argumentos Variádicos  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Para poder-se criar Closures com um número variado do parâmetros, fez-se uso de um meta programa que calcula, recursivamente as posições dos parâmetros da closures.
-^::__Listagem 39:__ Cálculo do index dos parâmetros da seção crítica dentro da closure::
+^::__Listagem 40:__ Cálculo do index dos parâmetros da seção crítica dentro da closure::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 template<int ...>
@@ -1904,7 +1904,7 @@ struct GeneratorOfIntegerSequence<AccumulatedSize, Grouper(), GeneratedSequence.
 ~/np~{DIV}
 {DIV}^
 Este programa é executado em tempo de compilação, e para uma dada entrada, como por exemplo ''GeneratorOfIntegerSequence< 0, int(char, int, char) >::type()'', gera o seguinte código, que calcula o pacote de parâmetros ''<0, 1, 5>'', que significa que o primeiro parâmetro da função, que é o tipo ''char'', está na posição 0, enquanto o segundo parâmetro do tipo ''int'' está na posição 1, que e o último parâmetro, ''char'' está na posição 5. Tais valores devem-se aos respectivos tamanhos de ''char'' e ''int'' serem 1 e 4:
-^::__Listagem 40:__ Trecho de código gerado pelo meta programa, obtido com compilador ''LLVM Clang''::
+^::__Listagem 41:__ Trecho de código gerado pelo meta programa, obtido com compilador ''LLVM Clang''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 $ clang++ -Xclang -ast-print -fsyntax-only \
@@ -1936,7 +1936,7 @@ template<> struct GeneratorOfIntegerSequence<6, int (), <0, 1, 5>>
 ~/np~{DIV}
 {DIV}^
 Segue o meta programa que implementa closures ou functors de parâmetros variádicos:
-^::__Listagem 41:__ Implementação da Closure meta programa, arquivo ''/include/utility/closure.h''::
+^::__Listagem 42:__ Implementação da Closure meta programa, arquivo ''/include/utility/closure.h''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // https://stackoverflow.com/questions/34957810/variadic-templates-parameter-pack
@@ -2025,7 +2025,7 @@ public:
 ~/np~{DIV}
 {DIV}^
 Em tempo de compilação, ao detectar a criação de um Objeto closure, o compilador irá criar uma definição específica para a classe Closure de acordo com os argumentos ''(function, arg1, …, argN)''. Algo similar ao exemplo a seguir:
-^::__Listagem 42:__ Ilustração de um meta programa depois de compilado::
+^::__Listagem 43:__ Ilustração de um meta programa depois de compilado::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 class Closure<funcReturntype(char, …, int), char, …, int>{
@@ -2041,7 +2041,7 @@ Em tempo de execução, o construtor da classe Closure irá:
 %%%
 !!!!Exemplo de Uso  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Veja um exemplo completo de teste/uso das closures meta programadas:
-^::__Listagem 43:__ Arquivo ''/app/closure_test.cc''::
+^::__Listagem 44:__ Arquivo ''/app/closure_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
@@ -2114,7 +2114,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 44:__ Exemplo de execução de ''/app/closure_test.cc''::
+^::__Listagem 45:__ Exemplo de execução de ''/app/closure_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 main: begin()
@@ -2193,7 +2193,7 @@ main: exiting()
 {DIV}^
 
 Dada a função ''test_function2'' do exemplo anterior como tendo a seguinte assinatura, ''char test_function2(const char *, const char *, char)'', tem-se o seguinte código meta programado, gerado durante a compilação, para criar a ''Closure'' da ''test_function2'':
-^::__Listagem 45:__ Trecho de código gerado pelo meta programa, obtido com compilador ''LLVM Clang''::
+^::__Listagem 46:__ Trecho de código gerado pelo meta programa, obtido com compilador ''LLVM Clang''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 $ clang++ -Xclang -ast-print -fsyntax-only closure_test.cpp > expanded.cpp
@@ -2283,7 +2283,7 @@ public:
 %%%
 !!!!Integração com Guarda  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Para integrar a nova interface de ''Critical_Section'' no algoritmo do Guarda, foi necessário somente modificar o método ''Guard::submit'', que agora passa a ser um método meta programado:
-^::__Listagem 46:__ Trecho de código de ''/include/utility/guard.h''::
+^::__Listagem 47:__ Trecho de código de ''/include/utility/guard.h''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 class Guard
@@ -2387,7 +2387,7 @@ Critical_Section_Base* Guard::clear()
 Obrigatoriamente a nossa closure que representa a seção crítica, tem que retornar ''void'', pois no contexto de execução do algoritmo do guarda, uma vez que a ''Closure'' começa a executar, a única forma que ela tem para se comunicar com a thread original é através de uma memória compartilhada, que em nosso caso é utilizado o mecanismo de ''Futures'', como já explicado.
 
 Agora mostra-se um exemplo de uso de closures e do algoritmo do Guarda.
-^::__Listagem 47:__ Arquivo ''/app/closure_guard_test.cc''::
+^::__Listagem 48:__ Arquivo ''/app/closure_guard_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
@@ -2422,7 +2422,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 48:__ Exemplo de execução de ''/app/closure_guard_test.cc''::
+^::__Listagem 49:__ Exemplo de execução de ''/app/closure_guard_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 main: begin()
@@ -2476,7 +2476,7 @@ main: exiting()
 A seguir, encontra-se uma reimplementação de todos os algoritmos já apresentados, mas com a diferença que tratam-se de uma versão dos mesmos componentes para uma máquina nativa Linux. Tal reimplementação foi feita por que uma das aplicações de teste não conseguia funcionar no EPOS devido algum problema desconhecido. Veja a seção veja a seção [#guard_scheduler_cpu_affinity_test.cc_|guard_scheduler_cpu_affinity_test.cc].
 
 Para compilar um programa que que incluí essa implementação, você utilizar um linha de comando parecida com a seguinte: ''g++ -ggdb -O0 -o test application.cpp -m32 --std=c++11 -lpthread && ./test''
-^::__Listagem 56:__ Arquivo ''/non-epos-guard/count_sync_guard/guard.h''::
+^::__Listagem 50:__ Arquivo ''/non-epos-guard/count_sync_guard/guard.h''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 #include <mutex>
@@ -2971,7 +2971,7 @@ Todos os testes a seguir foram realizados utilizando ''static const unsigned int
 
 !!!fas_test.cc  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Aqui testa-se a implementação nova de FAS feita, repetidamente fazendo a troca de variáveis em duas thread executando em CPUs diferentes.
-^::__Listagem 49:__ Arquivo de Teste ''/app/fas_test.cc''::
+^::__Listagem 51:__ Arquivo de Teste ''/app/fas_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
@@ -3042,7 +3042,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 50:__ Exemplo de execução de ''/app/fas_test.cc''::
+^::__Listagem 52:__ Exemplo de execução de ''/app/fas_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 <1>: MMU is disabled! :<1>
@@ -3062,7 +3062,7 @@ Resultado da execução:
 
 !!!count_sync_guard.cc  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Neste teste, utiliza-se a implementação do guarda para controlar o acesso a seção crítica ''increment_counter()'', que simplesmente soma um contador. No final da execução, espera-se que resultado da conta seja precisamente o número de iterações feita.
-^::__Listagem 51:__ Arquivo de teste ''/app/count_sync_guard.cc''::
+^::__Listagem 53:__ Arquivo de teste ''/app/count_sync_guard.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
@@ -3134,7 +3134,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 52:__ Exemplo de execução de ''/app/fas_test.cc''::
+^::__Listagem 54:__ Exemplo de execução de ''/app/fas_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 <1>: MMU is disabled! :<1>
@@ -3163,7 +3163,7 @@ The last thread has exited!
 
 !!!count_sync_uncoordinated.cc  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 O que se espera deste teste, ao contrário do teste anterior, é que a contagem final de errada, pois nenhuma primitiva de sincronização é utilizada, assim tem-se que a operação de incremento, que não é atômica, seja interrompida pelo metade, e no fim o resultado fique errado.
-^::__Listagem 53:__ Arquivo de teste ''/app/count_sync_uncoordinated.cc''::
+^::__Listagem 55:__ Arquivo de teste ''/app/count_sync_uncoordinated.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
@@ -3226,7 +3226,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 54:__ Exemplo de execução de ''/app/count_sync_uncoordinated.cc''::
+^::__Listagem 56:__ Exemplo de execução de ''/app/count_sync_uncoordinated.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 <1>: MMU is disabled! :<1>
@@ -3332,7 +3332,7 @@ Resultado da execução:
 
 !!!count_sync_semaphore_simple.cc  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Neste teste, utiliza-se os mecanismo de sincronização do semáforo, e ao contrário do teste anterior ''count_sync_uncoordinated.cc'', deste teste espera-se que a contagem seja correta, pois utiliza-se o mecanismo de sincronização do semáforo para garantir a atomicidade da operação de adição.
-^::__Listagem 55:__ Arquivo de teste ''/app/count_sync_semaphore_simple.cc''::
+^::__Listagem 57:__ Arquivo de teste ''/app/count_sync_semaphore_simple.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
@@ -3385,7 +3385,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução:
-^::__Listagem 56:__ Exemplo de execução de ''/app/count_sync_semaphore_simple.cc''::
+^::__Listagem 58:__ Exemplo de execução de ''/app/count_sync_semaphore_simple.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 <1>: MMU is disabled! :<1>
@@ -3406,7 +3406,7 @@ Resultado da execução:
 Trata-se do mesmo programa original do EPOS chamada ''semaphore_test.cc'', também conhecido como ''Philosophers Dinner''. A diferença, é que esta versão utiliza um ''Guarda'' e várias variáveis ''Future'', ao contrário de utilizar alguns semáforos para sincronização.
 
 Sua implementação com o algoritmo do ''Guarda'' foi muito mais complexa do que a implementação original com semáforos. Para efeitos de desenvolvimento, foram utilizadas macros do ''preprocessador C'' para simultaneamente criar-se dois programas, dependendo das diretivas passadas ao ''preprocessador C''. Ao definir-se macro ''#define CONSOLE_MODE'', tem-se uma versão do programa que não utiliza de artefatos gráficos, i.e., desenhar uma mesa simulando uma janta de filósofos visualmente. No modo ''CONSOLE_MODE'', mostra-se em detalhes várias mensagem de log, que mostram o funcionamento interno do programa.
-^::__Listagem 57:__ Arquivo de teste ''/app/guard_semaphore_test.cc''::
+^::__Listagem 59:__ Arquivo de teste ''/app/guard_semaphore_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Semaphore Component Test Program
@@ -3619,7 +3619,7 @@ int main()
 ~/np~{DIV}
 {DIV}^
 Resultado da execução sem o modo ''CONSOLE_MODE'':
-^::__Listagem 58:__ Exemplo de execução de ''/app/guard_semaphore_test.cc''::
+^::__Listagem 60:__ Exemplo de execução de ''/app/guard_semaphore_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 The Philosopher's Dinner:
@@ -3650,7 +3650,7 @@ The end!
 ~/np~{DIV}
 {DIV}^
 Resultado da execução com o modo ''CONSOLE_MODE'':
-^::__Listagem 59:__ Exemplo de execução de ''/app/guard_semaphore_test.cc''::
+^::__Listagem 61:__ Exemplo de execução de ''/app/guard_semaphore_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 The Philosopher's Dinner:
@@ -4088,7 +4088,7 @@ The end!
 
 !!!guard_scheduler_cpu_affinity_test.cc  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Trata-se do mesmo programa original do EPOS chamada ''scheduler_cpu_affinity_test.cc'', também conhecido como ''Concurrent Philosophers Dinner''. Nesta nova versão utiliza um ''Guarda'' e várias variáveis ''Future'', ao contrário de utilizar alguns semáforos para sincronização.
-^::__Listagem 60:__ Arquivo ''/app/guard_scheduler_cpu_affinity_test.cc''::
+^::__Listagem 62:__ Arquivo ''/app/guard_scheduler_cpu_affinity_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Scheduler Test Program
@@ -4358,7 +4358,7 @@ A seguir vê-sê um exemplo de problema de alocação de memória que pode acont
 #Assim, mais tarde na linha 1248, durante a execução do objeto ''StringStream'', vemos que foi mostrado lixo na tela: ''9ý''. Mas o correto deveria ter sido imprimir a mensagem ''thinking[1] (4)''.
 #Também nota-se que durante a chamada do destrutor do objeto ''StringStream'', linha 1248, foram mostrados valores de lixo: ''~StringStream(this=0x0007fd65, _buffer=0x0007fd3d, _buffer_size=523601), _last_position=24624)''. O correto deveria ser ''~StringStream(this=0x0007fd65, _buffer=não conhecido, _buffer_size=102), _last_position=16)''.
 #Log com a execução completa: https://gist.github.com/evandrocoan/52869eb0dae7ec3b40525628ff2be276
-^::__Listagem 61:__ Trecho do log de execução de ''/app/guard_scheduler_cpu_affinity_test.cc''::
+^::__Listagem 63:__ Trecho do log de execução de ''/app/guard_scheduler_cpu_affinity_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 1088: <1>: ~Closure(this=0x0007fd85, _entry=0x00006030, PARAMETERS_COUNT=3, PARAMETERS_LENGTH=12, sizeof=8) :<1>
@@ -4441,12 +4441,12 @@ A seguir, vê-se outro problema encontrado durante outra execução de ''guard_s
 ::__Fonte:__: Própria::^
 
 !!!guard_scheduler_cpu_affinity.cc (Linux)  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
-Devido a impossibilidade de conseguir depurar e fazer a aplicação ''guard_scheduler_cpu_affinity_test.cc'' funcionar no EPOS com multicores, foi então realizada toda a implementação dos algoritmos do Guarda e seus mecanismos auxiliares em um Linux nativo. Para encontrar a implementação completa do algoritmo do Guarda e seus mecanismos auxiliares, veja a seção [#guarda_para_linux_|Guarda para Linux].
+Devido a impossibilidade de conseguir depurar e fazer a aplicação ''guard_scheduler_cpu_affinity_test.cc'' funcionar no EPOS com multicores, foi então realizada toda a implementação dos algoritmos do Guarda e seus mecanismos auxiliares em um Linux nativo. Para encontrar a implementação completa do algoritmo do Guarda e seus mecanismos auxiliares, veja a seção [#Guarda_para_Linux_|Guarda para Linux].
 
 A seguir encontrar-e o mesmo programa original implementado na seção anterior chamado de ''guard_scheduler_cpu_affinity_test.cc''. Nesta nova versão utiliza a implementação da ''Guarda'' e seus auxiliares para Linux, junto com as versões equivalentes das demais bibliotecas como ''~np~std::thread~/np~'', ''~np~std::condition_variable~/np~'' e ''~np~std::cout~/np~''.
 
-Para compilar esse programa, você precisa do include ''guard.h'' (seção [#guarda_para_linux_|Guarda para Linux]) e utilizar a seguinte linha de comando ''g++ -ggdb -O0 -o test application.cpp -m32 --std=c++11 -lpthread && ./test''
-^::__Listagem 56:__ Arquivo ''/non-epos-guard/count_sync_guard/guard_scheduler_cpu_affinity.cpp''::
+Para compilar esse programa, você precisa do include ''guard.h'' (seção [#Guarda_para_Linux_|Guarda para Linux]) e utilizar a seguinte linha de comando: ''g++ -ggdb -O0 -o test application.cpp -m32 --std=c++11 -lpthread && ./test''
+^::__Listagem 64:__ Arquivo ''/non-epos-guard/count_sync_guard/guard_scheduler_cpu_affinity.cpp''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // Scheduler Test Program
@@ -4702,7 +4702,7 @@ unsigned long long busy_wait(unsigned long long n)
 ~/np~{DIV}
 {DIV}^
 Para este exemplo, foi comentado a penúltima linha no qual fazia um busy wait e substituída por um thread sleep em milisegundos, por questões de conveniência, pois agora este programa de teste roda diretamente em uma máquina nativa e esse busy wait deixa o computador lendo. Mas você pode tranquilamente reativar o busy wait, se quiser ver com os próprios olhos. Mas note que, dependendo do poder de processamento de sua máquina poderá ser necessário alterar o tamanho máximo do loop busy wait na linha ''j < 120 * n''. Originalmente esse valor era 50 ao contrário de 120, entretanto o valor de 50 era insuficiente para causar algum delay significativo, causando o programa terminar quase que imediatamente. Assim, pode ser necessário aumentar ou diminui esse valor dependendo da velocidade de seu processador.
-^::__Listagem 56:__ Exemplo de execução de ''/non-epos-guard/count_sync_guard/guard_scheduler_cpu_affinity.cpp'' em um processador com 4 núcleos::
+^::__Listagem 65:__ Exemplo de execução de ''/non-epos-guard/count_sync_guard/guard_scheduler_cpu_affinity.cpp'' em um processador com 4 núcleos::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 The Philosopher's Dinner:
@@ -4732,8 +4732,8 @@ Philosopher 4 ate 10 times
 The end!
 ~/np~{DIV}
 {DIV}^
-Agora, veja um execução utilizando o modo ''CONSOLE_MODE'', como apresentado na seção [#guard_semaphore_test_cc_|guard_semaphore_test.cc]. Mas por simplicidade, sem utilizar o modo ''DEBUG'', definido no header ''guard.h'' e exibido pelas macros ''DB()''. Assim, resultando em um log mais limpo e simples do que o log anteriormente apresentado na seção [#guard_semaphore_test_cc_|guard_semaphore_test.cc].
-^::__Listagem 56:__ Exemplo de execução de ''/non-epos-guard/count_sync_guard/guard_scheduler_cpu_affinity.cpp'' em um processador com 4 núcleos::
+Agora, veja um execução utilizando o modo ''CONSOLE_MODE'', como apresentado na seção [#guard_semaphore_test.cc_|guard_semaphore_test.cc]. Mas por simplicidade, sem utilizar o modo ''DEBUG'', definido no header ''guard.h'' e exibido pelas macros ''DB()''. Assim, resultando em um log mais limpo e simples do que o log anteriormente apresentado na seção [#guard_semaphore_test.cc_|guard_semaphore_test.cc].
+^::__Listagem 66:__ Exemplo de execução de ''/non-epos-guard/count_sync_guard/guard_scheduler_cpu_affinity.cpp'' em um processador com 4 núcleos::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 Running the command: g++ -ggdb -O0 -o test \
