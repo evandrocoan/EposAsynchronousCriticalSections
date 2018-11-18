@@ -95,7 +95,8 @@ void setup_program()
     cout << "The dinner is served ..." << endl;
 }
 
-// /\) => (\dx[a-f\d]{8,8})/ /Philosopher=\d/ \bGuard::vouch\b \bGuard::clear\b \bchopstick=2\b \bSpin::acquire\b \bSpin::release\b \bThread::lock\b \bThread::unlock\b \bThread::\b \bThread\(\b
+// Regular expression for plugin: https://github.com/evandroforks/HighlightWords
+// /\) => (\dx[a-f\d]{8,8})/ /Philosopher=\d/ \bGuard::vouch\b \bGuard::clear\b
 int main()
 {
     table.submit( &setup_program );

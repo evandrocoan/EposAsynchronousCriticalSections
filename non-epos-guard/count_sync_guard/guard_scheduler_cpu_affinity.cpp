@@ -82,8 +82,9 @@ void setup_program()
     LOG( "The dinner is served ..." << std::endl )
 }
 
-// g++ -o test simple_guard_test.cpp -lpthread -m32  -ggdb && ./test
-// /\) => (\dx[a-f\d]{8,8})/ /Philosopher=\d/ \bGuard::vouch\b \bGuard::clear\b \bchopstick=2\b
+// g++ -ggdb -O0 -o test application.cpp -m32 --std=c++11 -lpthread && ./test;
+// Regular expression for the plugin: https://github.com/evandroforks/HighlightWords
+// /\) => (\dx[a-f\d]{8,8})/ /Philosopher=\d/ \bGuard::vouch\b \bGuard::clear\b
 int main()
 {
     DB( "main() => " << Guard::get_thread_id() << std::endl )
@@ -158,7 +159,8 @@ void get_chopstick(int philosopher_index, int chopstick_index,
 
 void philosopher(int philosopher_index, int line, int column, Future<int>* result)
 {
-    DB( "philosopher(index=" << philosopher_index << ") => " << Guard::get_thread_id() << std::endl )
+    DB( "philosopher(index=" << philosopher_index
+            << ") => " << Guard::get_thread_id() << std::endl )
 
     int first = (philosopher_index < 4)? philosopher_index : 0;
     int second = (philosopher_index < 4)? philosopher_index + 1 : 4;

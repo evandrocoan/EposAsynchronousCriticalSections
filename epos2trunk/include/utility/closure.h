@@ -112,7 +112,8 @@ public:
     static void pack_helper(char* pointer_address, Head head, Tail ... tail)
     {
         DB( Synchronizer, TRC, "Closure::pack_helper(Head=" << sizeof( Head )
-                << ", address=" << reinterpret_cast<int *>(pointer_address) << ")" << endl )
+                << ", address=" << reinterpret_cast<int *>(pointer_address)
+                << ")" << endl )
 
         *reinterpret_cast<Head *>(pointer_address) = head;
         pack_helper(pointer_address + sizeof( Head ), tail ...);

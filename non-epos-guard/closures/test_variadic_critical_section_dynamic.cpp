@@ -16,11 +16,22 @@ struct MetaSequenceOfIntegers { };
 template<int AccumulatedSize, typename Tn, int... GeneratedSequence>
 struct GeneratorOfIntegerSequence;
 
-template<int AccumulatedSize, typename Grouper, typename Head, typename... Tail, int... GeneratedSequence>
-struct GeneratorOfIntegerSequence< AccumulatedSize, Grouper( Head, Tail... ), GeneratedSequence... >
+template<
+            int AccumulatedSize,
+            typename Grouper,
+            typename Head,
+            typename... Tail,
+            int... GeneratedSequence
+        >
+struct GeneratorOfIntegerSequence<
+        AccumulatedSize, Grouper( Head, Tail... ), GeneratedSequence... >
 {
     typedef typename GeneratorOfIntegerSequence
-            < AccumulatedSize + sizeof(Head), Grouper( Tail... ), GeneratedSequence..., AccumulatedSize
+            <
+                AccumulatedSize + sizeof(Head),
+                Grouper( Tail... ),
+                GeneratedSequence...,
+                AccumulatedSize
             >::type type;
 };
 
@@ -29,6 +40,7 @@ struct GeneratorOfIntegerSequence<AccumulatedSize, Grouper(), GeneratedSequence.
 {
   typedef MetaSequenceOfIntegers<GeneratedSequence...> type;
 };
+
 
 // https://stackoverflow.com/questions/34957810/variadic-templates-parameter-pack-and-its-discussed-ambiguity-in-a-parameter-li
 template<typename Tn>

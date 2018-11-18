@@ -2022,7 +2022,8 @@ public:
     static void pack_helper(char* pointer_address, Head head, Tail ... tail)
     {
         DB( Synchronizer, TRC, "Closure::pack_helper(Head=" << sizeof( Head )
-                << ", address=" << reinterpret_cast<int *>(pointer_address) << ")" << endl )
+                << ", address=" << reinterpret_cast<int *>(pointer_address)
+                << ")" << endl )
 
         *reinterpret_cast<Head *>(pointer_address) = head;
         pack_helper(pointer_address + sizeof( Head ), tail ...);
@@ -2393,6 +2394,496 @@ Closure::unpack_helper(Head=1, address=0x00097f45(0x00097f45), position=0)
 Closure::~Closure(this=0x00097f68,
         _entry=0x00097f68, PARAMETERS_COUNT=7, PARAMETERS_LENGTH=19, sizeof=8)
 main: exiting()
+~/np~{DIV}
+{DIV}^
+
+!!!Guarda para Linux  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+A seguir, encontra-se uma reimplementação de todos os algoritmos já apresentados, mas com a diferença que tratam-se de uma versão dos mesmos componentes para uma máquina nativa Linux. Tal reimplementação foi feita por que uma das aplicações de teste não conseguia funcionar no EPOS devido algum problema desconhecido. Veja a seção veja a seção [#guard_scheduler_cpu_affinity_test.cc_|guard_scheduler_cpu_affinity_test.cc].
+
+Para compilar um programa que que incluí essa implementação, você utilizar um linha de comando parecida com a seguinte: ''g++ -ggdb -O0 -o test application.cpp -m32 --std=c++11 -lpthread && ./test''
+^::__Listagem 56:__ Arquivo ''/non-epos-guard/count_sync_guard/guard.h''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+#include <mutex>
+#include <atomic>
+#include <cassert>
+
+#include <iomanip>
+#include <iostream>
+#include <condition_variable>
+
+#define ASM __asm__ __volatile__
+
+
+// You can define it anywhere before including this file
+// #define DEBUG
+
+#ifdef DEBUG
+    std::recursive_mutex _debug_syncronized_semaphore_lock;
+
+    #define DB(...) do { \
+        _debug_syncronized_semaphore_lock.lock(); \
+            std::cout << __VA_ARGS__ << std::flush; \
+        _debug_syncronized_semaphore_lock.unlock(); } while(0);
+
+    #define LOG(...) DB(__VA_ARGS__)
+
+#else
+    #define DB(...)
+    #define LOG(...) std::cout << __VA_ARGS__ << std::flush;
+
+#endif
+
+
+template<typename T>
+static T fas(T volatile & value, T replacement)
+{
+    ASM("xchg %2, %1"
+            : "=r"(replacement)
+            : "r"(replacement), "m"(value)
+            : "memory");
+    return replacement;
+}
+
+template<typename T>
+static T cas(T volatile & value, T compare, T replacement)
+{
+    ASM("lock cmpxchgl %2, %3\n"
+            : "=a"(compare)
+            : "a"(compare), "r"(replacement), "m"(value) : "memory");
+    return compare;
+}
+
+
+class Display
+{
+private:
+    static const int LINES = 25;
+    static const int COLUMNS = 8000;
+    static const int TAB_SIZE = 8;
+
+    // Special characters
+    enum {
+        ESC  = 0x1b,
+        CR   = 0x0d,
+        LF   = 0x0a,
+        TAB  = 0x09,
+    };
+
+public:
+    Display() {}
+
+    static void clear() {
+        _line = 0;
+        _column = 0;
+        escape();
+        put('2');
+        put('J');
+    };
+
+    static void putc(char c) {
+        switch(c) {
+        case '\n':
+            scroll();
+            _line++;
+            break;
+        case '\t':
+            put(TAB);
+            _column += TAB_SIZE;
+            break;
+        default:
+            _column++;
+            put(c);
+            if(_column >= COLUMNS) scroll();
+        }
+    };
+
+    static void puts(const char * s) {
+        while(*s != '\0')
+            putc(*s++);
+    }
+
+    static void geometry(int * lines, int * columns) {
+        *lines = LINES;
+        *columns = COLUMNS;
+    }
+
+    static void position(int * line, int * column) {
+        *line = _line;
+        *column = _column;
+    }
+    static void position(int line, int column) {
+        _line = line;
+        _column = column;
+        escape();
+        puti(_line);
+        put(';');
+        puti(_column);
+        put('H');
+    }
+
+private:
+    static void put(char c) {
+        std::cout << c;
+    }
+
+    static void escape() {
+        put(ESC);
+        put('[');
+    }
+
+    static void puti(unsigned char value) {
+        unsigned char digit = '0';
+        while(value >= 100) {
+            digit++;
+            value -= 100;
+        }
+        put(digit);
+
+        digit = '0';
+        while(value >= 10) {
+            digit++;
+            value -= 10;
+        }
+        put(digit);
+
+        put('0' + value);
+    }
+
+    static void scroll() {
+        put(CR);
+        put(LF);
+        _column = 0;
+    }
+
+    static void init() {
+        _line = 0;
+        _column = 0;
+    }
+
+private:
+    static int _line;
+    static int _column;
+};
+
+int Display::_line;
+int Display::_column;
+
+
+template<typename FutureType>
+class Future
+{
+public:
+    Future(): _is_resolved(false), _size(0) {
+        DB( "Future(_is_resolved=" << _is_resolved
+                << ", _condition=" << _size
+                << ") => " << this << std::endl )
+    }
+
+    ~Future() {
+        DB( "~Future(this=" << this << ")" << std::endl );
+    }
+
+    FutureType get_value() {
+        DB( "Future::get_value(this=" << this
+                << " _is_resolved=" << _is_resolved
+                << " _condition=" << _size
+                <<  ")" << std::endl )
+
+        if(!_is_resolved) {
+            ++_size;
+
+            std::unique_lock<std::mutex> lock(_mutex);
+            _condition.wait(lock);
+        }
+        return _value;
+    }
+
+    void resolve(FutureType value) {
+        DB( "Future::resolve(this=" << this
+                << " _is_resolved=" << _is_resolved
+                << " _condition=" << _size
+                <<  ")" << std::endl )
+        assert(!_is_resolved);
+        // If `resolve()` was called and the instruction pointer got until here,
+        // and the thread is unscheduled, and another thread call `resolve()`,
+        // then, the `assert` will not work, if the resolve() call is not atomic.
+        _value = value;
+        _is_resolved = true;
+        _condition.notify_all();
+    }
+
+private:
+    bool _is_resolved;
+    FutureType _value;
+    std::atomic<int> _size;
+
+    std::mutex _mutex;
+    std::condition_variable _condition;
+};
+
+
+// SIZEOF Type Package
+template<typename ... Tn>
+struct SIZEOF
+{ static const unsigned int Result = 0; };
+
+template<typename T1, typename ... Tn>
+struct SIZEOF<T1, Tn ...>
+{ static const unsigned int Result = sizeof(T1) + SIZEOF<Tn ...>::Result ; };
+
+// https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function
+template<int ...>
+struct MetaSequenceOfIntegers { };
+
+template<int AccumulatedSize, typename Tn, int... GeneratedSequence>
+struct GeneratorOfIntegerSequence;
+
+template<
+            int AccumulatedSize,
+            typename Grouper,
+            typename Head,
+            typename... Tail,
+            int... GeneratedSequence
+        >
+struct GeneratorOfIntegerSequence<
+        AccumulatedSize, Grouper( Head, Tail... ), GeneratedSequence... >
+{
+    typedef typename GeneratorOfIntegerSequence
+            <
+                AccumulatedSize + sizeof(Head),
+                Grouper( Tail... ),
+                GeneratedSequence...,
+                AccumulatedSize
+            >::type type;
+};
+
+template<int AccumulatedSize, typename Grouper, int... GeneratedSequence>
+struct GeneratorOfIntegerSequence<AccumulatedSize, Grouper(), GeneratedSequence...>
+{
+  typedef MetaSequenceOfIntegers<GeneratedSequence...> type;
+};
+
+
+// https://stackoverflow.com/questions/34957810/variadic-templates-parameter-pack-and-its
+template<typename Tn>
+class Closure;
+
+template<typename ReturnType, typename... Tn>
+class Closure<ReturnType( Tn... )>
+{
+public:
+    typedef ReturnType(*Function)(Tn ...);
+    static const unsigned int PARAMETERS_COUNT = sizeof...( Tn );
+    static const unsigned int PARAMETERS_LENGTH = SIZEOF<Tn ...>::Result;
+
+private:
+    Function _entry;
+    char* _parameters;
+
+public:
+    Closure(Function _entry, Tn ... an): _entry(_entry)
+    {
+        DB( "Closure(_entry=" << reinterpret_cast<void *>(_entry)
+                << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
+                << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH
+                << ", sizeof=" << sizeof(*this) << ") => " << this << std::endl )
+
+        if(PARAMETERS_LENGTH)
+            _parameters = new char[PARAMETERS_LENGTH];
+
+        pack_helper( _parameters, an ... );
+    }
+
+    ~Closure() {
+        DB( "~Closure(this=" << this
+                << ", _entry=" << reinterpret_cast<void *>(_entry)
+                << ", PARAMETERS_COUNT=" << PARAMETERS_COUNT
+                << ", PARAMETERS_LENGTH=" << PARAMETERS_LENGTH
+                << ", sizeof=" << sizeof(*this) << ")" << std::endl )
+
+        if(PARAMETERS_LENGTH)
+            delete _parameters;
+    }
+
+    inline ReturnType run() {
+        return operator()();
+    }
+
+    inline ReturnType operator()() {
+        return _unpack_and_run(
+                typename GeneratorOfIntegerSequence< 0, int(Tn...) >::type() );
+    }
+
+private:
+    template<int ...Sequence>
+    inline ReturnType _unpack_and_run(MetaSequenceOfIntegers<Sequence...>)
+    {
+        DB( "Closure::_unpack_and_run(this=" << this << ")" << std::endl )
+        return _entry( unpack_helper<Sequence, Tn>()... );
+    }
+
+    template<const int position, typename T>
+    inline T unpack_helper()
+    {
+        DB( "Closure::unpack_helper(Head=" << sizeof( T )
+                << ", address=" << reinterpret_cast<int *>(_parameters + position)
+                << "(" << reinterpret_cast<int *>(_parameters) << ")"
+                << ", position=" << position << ")" << std::endl )
+
+        return *reinterpret_cast<T *>( _parameters + position );
+    }
+
+public:
+    template<typename Head, typename ... Tail>
+    static void pack_helper(char* pointer_address, Head head, Tail ... tail)
+    {
+        DB( "Closure::pack_helper(Head=" << sizeof( Head )
+                << ", address=" << reinterpret_cast<int *>(pointer_address)
+                << ")" << std::endl )
+
+        *reinterpret_cast<Head *>(pointer_address) = head;
+        pack_helper(pointer_address + sizeof( Head ), tail ...);
+    }
+
+    static void pack_helper(char* pointer_address) {}
+};
+
+
+class Critical_Section_Base
+{
+    friend class Guard;
+    Critical_Section_Base* _next;
+
+public:
+    Critical_Section_Base(): _next(this) {
+        DB( "Critical_Section_Base(_next=" << _next
+                << ") => " << this << std::endl )
+    }
+
+    virtual ~Critical_Section_Base() {
+        DB( "~Critical_Section_Base(this=" << this
+                << " _next=" << _next << ")" << std::endl )
+    }
+
+    virtual void start() = 0;
+};
+
+template<typename... Tn>
+class Critical_Section: public Critical_Section_Base, private Closure<void( Tn... )>
+{
+    using Closure<void( Tn... )>::run;
+
+public:
+    Critical_Section(void(*_entry)(Tn ...), Tn ... an) :
+            Closure<void( Tn... )>::Closure( _entry, an ... )
+    {
+        DB( "Critical_Section(_entry="
+                << reinterpret_cast<void *>(_entry) << ") => " << this << std::endl )
+    }
+
+    inline void start() {
+        run();
+    }
+};
+
+
+class Guard
+{
+    std::atomic<int> _size;
+    void* _sequencer;
+
+    Critical_Section_Base* _head;
+    Critical_Section_Base* _tail;
+
+    // static const unsigned int NULL = 0;
+    static const unsigned int DONE = 1;
+
+public:
+    Guard() : _size(0), _sequencer(0), _head(0), _tail(0)
+    {
+        DB( "Guard(head=" << _head << ", tail=" << _tail
+                << ") => " << this << std::endl )
+    }
+
+    ~Guard() {
+        DB( "~Guard(this=" << this << ")" << std::endl )
+    }
+
+    template<typename ... Tn>
+    void submit( void(*entry)( Tn ... ), Tn ... an )
+    {
+        // Creates a closure with the critical section parameters
+        Critical_Section<Tn ...>* cs = new Critical_Section<Tn ...>(entry, an ...);
+
+        Critical_Section_Base * cur = vouch(cs);
+        if (cur != reinterpret_cast<Critical_Section_Base *>(NULL)) do {
+            _sequencer = get_thread_id();
+            cur->start();
+            cur = clear();
+        } while (cur != reinterpret_cast<Critical_Section_Base *>(NULL));
+    }
+
+    Critical_Section_Base* vouch(Critical_Section_Base * item)
+    {
+        DB( "Guard::vouch(this=" << this
+                << " head=" << _head
+                << " tail=" << _tail
+                << " thread=" << get_thread_id()
+                << " sequencer=" << _sequencer
+                << " size=" << _size + 1
+                << " item=" << item )
+        ++_size;
+
+        item->_next = reinterpret_cast<Critical_Section_Base *>(NULL);
+        Critical_Section_Base * last = fas( _tail, item );
+        DB( " last=" << last << ")" << std::endl )
+
+        if( last ) {
+            if( cas( last->_next, reinterpret_cast<Critical_Section_Base *>(NULL), item )
+                        == reinterpret_cast<Critical_Section_Base *>(NULL) )
+
+                return reinterpret_cast<Critical_Section_Base *>(NULL);
+            delete last;
+        }
+        _head = item;
+        return item;
+    }
+
+    Critical_Section_Base * clear()
+    {
+        DB( "Guard::clear(this=" << this
+                << " head=" << _head
+                << " tail=" << _tail
+                << " thread=" << get_thread_id()
+                << " sequencer=" << _sequencer
+                << " size=" << _size - 1 )
+        --_size;
+
+        Critical_Section_Base * item = _head;
+        Critical_Section_Base * next = fas( item->_next,
+                reinterpret_cast<Critical_Section_Base *>(DONE) );
+        DB( " next=" << next << ")" << std::endl )
+
+        bool mine = true;
+        if( !next ) {
+            mine = cas( _tail, item, reinterpret_cast<
+                    Critical_Section_Base *> (NULL) ) == item;
+        }
+
+        cas( _head, item, next) ;
+        if( mine ) {
+            delete item;
+        }
+        return next;
+    }
+
+    static void* get_thread_id() {
+        std::stringstream ss;
+        ss << std::this_thread::get_id();
+        return reinterpret_cast<void *>( std::stoull( ss.str() ) );
+    }
+};
 ~/np~{DIV}
 {DIV}^
 
@@ -3622,7 +4113,8 @@ void setup_program()
     cout << "The dinner is served ..." << endl;
 }
 
-// /\) => (\dx[a-f\d]{8,8})/ /Philosopher=\d/ \bGuard::vouch\b \bGuard::clear\b \bchopstick=2\b \bSpin::acquire\b \bSpin::release\b \bThread::lock\b \bThread::unlock\b \bThread::\b \bThread\(\b
+// Regular expression for plugin: https://github.com/evandroforks/HighlightWords
+// /\) => (\dx[a-f\d]{8,8})/ /Philosopher=\d/ \bGuard::vouch\b \bGuard::clear\b
 int main()
 {
     table.submit( &setup_program );
@@ -3868,11 +4360,642 @@ A seguir vê-sê um exemplo de problema de alocação de memória que pode acont
 {DIV}^
 Este programa foi compilado com o mode ''hysterically_debugged = true''. Mas para que ele pudesse funcionar foi adicionado em seu trais a redução da frequência do alarme de usuário para ''static const int FREQUENCY = 10; // Hz'' por que foram adicionados inúmeros novas mensagens de log por todo código do EPOS, incluindo no tratador de interrupções do alarme, o que aumentou simplificativamente o tempo em que ele demora para executar, assim causando com que novas interrupções do timer acontecessem antes que o timer tivesse terminado de imprimir a mensagem atual, causando com que o EPOS morresse após várias interrupções encadeadas.
 
-A seguir, vê-se outro problema encontrado durante outra execução de ''guard_scheduler_cpu_affinity_test.cc''. Na linha 8010 da imagem seguir, encontra-se a liberação de um spin lock que tem ''level'' resultante igual a 0 (zero) e que a thread que era sua dona possui o endereço ''0x0008be84''. Entretanto, magicamente na linha 8148, vê-se que ele algora possui um valor ''level'' de 1 (um) e que sua thread dona continua sendo a thread ''0x0008be84'' que acabou de ter liberado ele. Analisando mais atentamente, percebe-se que tratam-se de objetos de spin lock diferentes, ambos operados pela thread ''0x0008be84''. Mais tarde, o sistema trava durante a aquisição de outro spin lock.
+A seguir, vê-se outro problema encontrado durante outra execução de ''guard_scheduler_cpu_affinity_test.cc''. Na linha 8010 da imagem seguir, encontra-se a liberação de um spin lock que tem ''level'' resultante igual a 0 (zero) e que a thread que era sua dona possui o endereço ''0x0008be84''. Entretanto, magicamente na linha 8148, vê-se que ele algora possui um valor ''level'' de 1 (um) e que sua thread dona continua sendo a thread ''0x0008be84'' que acabou de ter liberado ele. Analisando mais atentamente, percebe-se que tratam-se de objetos de spin lock diferentes, ambos operados pela thread ''0x0008be84''. Mais tarde, o sistema trava durante a aquisição de outro spin lock no método da classe ''Thread::lock()''.
 ^::{img fileId="1124"}::
 ::__Figura 12:__ Aquisição de spin locks::
 ::__Fonte:__: Própria::^
 
+!!!guard_scheduler_cpu_affinity.cc (Linux)  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+Devido a impossibilidade de conseguir depurar e fazer a aplicação ''guard_scheduler_cpu_affinity_test.cc'' funcionar no EPOS com multicores, foi então realizada toda a implementação dos algoritmos do Guarda e seus mecanismos auxiliares em um Linux nativo. Para encontrar a implementação completa do algoritmo do Guarda e seus mecanismos auxiliares, veja a seção [#guarda_para_linux_|Guarda para Linux].
+
+A seguir encontrar-e o mesmo programa original implementado na seção anterior chamado de ''guard_scheduler_cpu_affinity_test.cc''. Nesta nova versão utiliza a implementação da ''Guarda'' e seus auxiliares para Linux, junto com as versões equivalentes das demais bibliotecas como ''~np~std::thread~/np~'', ''~np~std::condition_variable~/np~'' e ''~np~std::cout~/np~''.
+
+Para compilar esse programa, você precisa do include ''guard.h'' (seção [#guarda_para_linux_|Guarda para Linux]) e utilizar a seguinte linha de comando ''g++ -ggdb -O0 -o test application.cpp -m32 --std=c++11 -lpthread && ./test''
+^::__Listagem 56:__ Arquivo ''/non-epos-guard/count_sync_guard/guard_scheduler_cpu_affinity.cpp''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+// Scheduler Test Program
+// #define DEBUG
+
+#include <thread>
+#include <chrono>
+#include <sstream>
+
+#include <sched.h>
+#include "guard.h"
+
+// #define CONSOLE_MODE
+const int iterations = 10;
+
+Guard table;
+std::thread* philosophers[5];
+Future<int>* philosophers_result[5];
+
+bool is_chopstick_free[5];
+Future<int>* locked_futures[5];
+
+void philosopher(int n, int l, int c, Future<int>* r);
+void think(unsigned long long n);
+void eat(unsigned long long n);
+unsigned long long busy_wait(unsigned long long n);
+
+#ifdef CONSOLE_MODE
+    #define EXTRA(arg) arg
+#else
+    #define EXTRA(arg)
+#endif
+
+void show_message(const char * message, int line, int column) {
+#ifdef CONSOLE_MODE
+    LOG( message << "(" << line << ")" << std::endl )
+#else
+    Display::position( line, column );
+    LOG( message )
+#endif
+}
+
+void show_message(std::stringstream * message, int line, int column) {
+#ifndef CONSOLE_MODE
+    Display::position( line, column );
+#endif
+    LOG( message->str() )
+    delete message;
+}
+
+void setup_program()
+{
+    Display::clear();
+    Display::position(0, 0);
+    LOG( "The Philosopher's Dinner:" << std::endl )
+
+    for(int i = 0; i < 5; i++)
+    {
+        is_chopstick_free[i] = true;
+        philosophers_result[i] = new Future<int>();
+        locked_futures[i] = nullptr;
+    }
+
+    philosophers[0] = new std::thread(&philosopher, 0,  5, 30, philosophers_result[0]);
+    philosophers[1] = new std::thread(&philosopher, 1, 10, 44, philosophers_result[1]);
+    philosophers[2] = new std::thread(&philosopher, 2, 16, 39, philosophers_result[2]);
+    philosophers[3] = new std::thread(&philosopher, 3, 16, 21, philosophers_result[3]);
+    philosophers[4] = new std::thread(&philosopher, 4, 10, 17, philosophers_result[4]);
+
+    LOG( "Philosophers are alive and hungry!" << std::endl )
+
+    Display::position(7, 44);
+    LOG( '/' )
+    Display::position(13, 44);
+    LOG( '\\' )
+    Display::position(16, 35);
+    LOG( '|' )
+    Display::position(13, 27);
+    LOG( '/' )
+    Display::position(7, 27);
+    LOG( '\\' )
+    Display::position(19, 0);
+
+    LOG( "The dinner is served ..." << std::endl )
+}
+
+// g++ -ggdb -O0 -o test application.cpp -m32 --std=c++11 -lpthread && ./test;
+// Regular expression for plugin: https://github.com/evandroforks/HighlightWords
+// /\) => (\dx[a-f\d]{8,8})/ /Philosopher=\d/ \bGuard::vouch\b \bGuard::clear\b
+int main()
+{
+    DB( "main() => " << Guard::get_thread_id() << std::endl )
+    table.submit( &setup_program );
+
+    for(int i = 0; i < 5; i++) {
+        philosophers[i]->join();
+        int ret = philosophers_result[i]->get_value();
+        std::stringstream* stream = new std::stringstream();
+
+        *stream << "Philosopher " << i << " ate " << ret << " times\n";
+        table.submit( &show_message, stream, 20 + i, 0 );
+    }
+
+    for(int i = 0; i < 5; i++) {
+        delete philosophers[i];
+        delete philosophers_result[i];
+    }
+
+    LOG( "The end!" << std::endl )
+    return 0;
+}
+
+void release_chopstick(int philosopher_index, int chopstick_index,
+        Future<int>* future_chopstick, const char* which_chopstick)
+{
+    DB( "Philosopher=" << philosopher_index
+            << ", release chopstick=" << chopstick_index
+            << ", is_chopstick_free=" << is_chopstick_free[chopstick_index]
+            << ", future_chopstick=" << future_chopstick
+            << ", locked_futures=" << locked_futures[chopstick_index]
+            << ", " << which_chopstick )
+
+    is_chopstick_free[chopstick_index] = true;
+    delete future_chopstick;
+
+    if( locked_futures[chopstick_index] ) {
+        DB( std::endl )
+
+        auto old = locked_futures[chopstick_index];
+        locked_futures[chopstick_index] = nullptr;
+        old->resolve(1);
+    }
+    else {
+        assert( locked_futures[chopstick_index] == nullptr );
+        DB( std::endl )
+    }
+}
+
+void get_chopstick(int philosopher_index, int chopstick_index,
+        Future<int>* future_chopstick, const char* which_chopstick)
+{
+    DB( "Philosopher=" << philosopher_index
+            << ", getting chopstick=" << chopstick_index
+            << ", is_chopstick_free=" << is_chopstick_free[chopstick_index]
+            << ", " << which_chopstick )
+
+    if( is_chopstick_free[chopstick_index] ) {
+        is_chopstick_free[chopstick_index] = false;
+
+        DB( ", future_chopstick=" << future_chopstick << std::endl )
+        future_chopstick->resolve(1);
+    }
+    else {
+        assert( locked_futures[chopstick_index] == nullptr );
+        locked_futures[chopstick_index] = future_chopstick;
+
+        DB( ", locked_futures="
+                << locked_futures[chopstick_index] << std::endl )
+    }
+}
+
+void philosopher(int philosopher_index, int line, int column, Future<int>* result)
+{
+    DB( "philosopher(index=" << philosopher_index << ") => "
+            << Guard::get_thread_id() << std::endl )
+
+    int first = (philosopher_index < 4)? philosopher_index : 0;
+    int second = (philosopher_index < 4)? philosopher_index + 1 : 4;
+
+#ifdef CONSOLE_MODE
+    line = philosopher_index;
+#endif
+
+    for(int i = iterations; i > 0; i--) {
+        std::stringstream* stream1 = new std::stringstream();
+        *stream1 << "thinking[" << sched_getcpu() << "]"
+                EXTRA( << " (" << line << ")" << "\n" );
+        table.submit( &show_message, stream1, line, column );
+        think(1000000);
+
+        std::stringstream* stream2 = new std::stringstream();
+        *stream2 << "  hungry[" << sched_getcpu() << "]"
+                EXTRA( << " (" << line << ")" << "\n" );
+        table.submit( &show_message, stream2, line, column );
+
+        // Get the first chopstick
+        Future<int>* chopstick1 = new Future<int>();
+        table.submit( &get_chopstick, philosopher_index, first, chopstick1, "FIRST " );
+        chopstick1->get_value();
+
+        // Get the second chopstick
+        Future<int>* chopstick2 = new Future<int>();
+        table.submit( &get_chopstick, philosopher_index, second, chopstick2, "SECOND" );
+        chopstick2->get_value();
+
+    #ifdef CONSOLE_MODE
+        std::stringstream* stream6 = new std::stringstream();
+        *stream6 << "Philosopher=" << philosopher_index
+                << ", got     the first=" << first
+                << " and second=" << second << " chopstick" << "\n";
+        table.submit( &show_message, stream6, line, column );
+    #endif
+
+        std::stringstream* stream3 = new std::stringstream();
+        *stream3 << " eating[" << sched_getcpu() << "] " EXTRA( << "\n" );
+        table.submit( &show_message, stream3, line, column );
+
+        eat(500000);
+
+        std::stringstream* stream4 = new std::stringstream();
+        *stream4 << "    ate[" << sched_getcpu() << "]"
+                EXTRA( << " (" << line << ")" << "\n" );
+        table.submit( &show_message, stream4, line, column );
+
+        // Release the chopsticks
+        table.submit( &release_chopstick, philosopher_index, first, chopstick1, "FIRST " );
+        table.submit( &release_chopstick, philosopher_index, second, chopstick2, "SECOND" );
+
+    #ifdef CONSOLE_MODE
+        std::stringstream* stream7 = new std::stringstream();
+        *stream7 << "Philosopher=" << philosopher_index
+                << ", release the first=" << first
+                << " and second=" << second << " chopstick" << "\n";
+        table.submit( &show_message, stream7, line, column );
+    #endif
+    }
+
+    std::stringstream* stream5 = new std::stringstream();
+    *stream5 << "  done[" << sched_getcpu() << "]  "
+            EXTRA( << " (" << line << ")" << "\n" );
+    table.submit( &show_message, stream5, line, column );
+
+    result->resolve(iterations);
+}
+
+void eat(unsigned long long n) {
+    static unsigned long long v;
+    v = busy_wait(n);
+}
+
+void think(unsigned long long n) {
+    static unsigned long long v;
+    v = busy_wait(n);
+}
+
+unsigned long long busy_wait(unsigned long long n)
+{
+    volatile unsigned long long v;
+    // for(long long int j = 0; j < 120 * n; j++) v &= 2 ^ j;
+    std::this_thread::sleep_for(std::chrono::milliseconds(n/400));
+    return v;
+}
+~/np~{DIV}
+{DIV}^
+Para este exemplo, foi comentado a penúltima linha no qual fazia um busy wait e substituída por um thread sleep em milisegundos, por questões de conveniência, pois agora este programa de teste roda diretamente em uma máquina nativa e esse busy wait deixa o computador lendo. Mas você pode tranquilamente reativar o busy wait, se quiser ver com os próprios olhos. Mas note que, dependendo do poder de processamento de sua máquina poderá ser necessário alterar o tamanho máximo do loop busy wait na linha ''j < 120 * n''. Originalmente esse valor era 50 ao contrário de 120, entretanto o valor de 50 era insuficiente para causar algum delay significativo, causando o programa terminar quase que imediatamente. Assim, pode ser necessário aumentar ou diminui esse valor dependendo da velocidade de seu processador.
+^::__Listagem 56:__ Exemplo de execução de ''/non-epos-guard/count_sync_guard/guard_scheduler_cpu_affinity.cpp'' em um processador com 4 núcleos::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+The Philosopher's Dinner:
+Philosophers are alive and hungry!
+
+
+                               done[2]
+
+                          \                /
+
+
+                  done[0]                    done[3]
+
+
+                          /                \
+
+
+                      done[3]     |     done[2]
+
+
+The dinner is served ...
+Philosopher 0 ate 10 times
+Philosopher 1 ate 10 times
+Philosopher 2 ate 10 times
+Philosopher 3 ate 10 times
+Philosopher 4 ate 10 times
+The end!
+~/np~{DIV}
+{DIV}^
+Agora, veja um execução utilizando o modo ''CONSOLE_MODE'', como apresentado na seção [#guard_semaphore_test_cc_|guard_semaphore_test.cc]. Mas por simplicidade, sem utilizar o modo ''DEBUG'', definido no header ''guard.h'' e exibido pelas macros ''DB()''. Assim, resultando em um log mais limpo e simples do que o log anteriormente apresentado na seção [#guard_semaphore_test_cc_|guard_semaphore_test.cc].
+^::__Listagem 56:__ Exemplo de execução de ''/non-epos-guard/count_sync_guard/guard_scheduler_cpu_affinity.cpp'' em um processador com 4 núcleos::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+Running the command: g++ -ggdb -O0 -o test \
+        count_sync_guard/guard_scheduler_cpu_affinity.cpp \
+        -m32 --std=c++11 -lpthread && ./test;
+The Philosopher's Dinner:
+Philosophers are alive and hungry!
+
+
+
+
+                          \                /
+
+
+
+
+
+                          /                \
+
+
+                                  |
+
+
+The dinner is served ...
+thinking[1] (1)
+thinking[0] (0)
+thinking[1] (2)
+thinking[2] (3)
+thinking[2] (4)
+  hungry[1] (1)
+  hungry[0] (0)
+  hungry[2] (3)
+  hungry[3] (4)
+  hungry[1] (2)
+Philosopher=3, got     the first=3 and second=4 chopstick
+ eating[1]
+Philosopher=0, got     the first=0 and second=1 chopstick
+ eating[0]
+    ate[1] (3)
+    ate[0] (0)
+Philosopher=0, release the first=0 and second=1 chopstick
+thinking[0] (0)
+Philosopher=3, release the first=3 and second=4 chopstick
+thinking[1] (3)
+Philosopher=2, got     the first=2 and second=3 chopstick
+ eating[0]
+Philosopher=4, got     the first=0 and second=4 chopstick
+ eating[0]
+    ate[0] (2)
+Philosopher=2, release the first=2 and second=3 chopstick
+thinking[0] (2)
+Philosopher=1, got     the first=1 and second=2 chopstick
+ eating[0]
+    ate[1] (4)
+Philosopher=4, release the first=0 and second=4 chopstick
+thinking[1] (4)
+  hungry[0] (0)
+  hungry[1] (3)
+Philosopher=0, got     the first=0 and second=1 chopstick
+ eating[0]
+Philosopher=3, got     the first=3 and second=4 chopstick
+    ate[0] (1)
+Philosopher=1, release the first=1 and second=2 chopstick
+thinking[0] (1)
+ eating[1]
+  hungry[1] (4)
+    ate[0] (0)
+Philosopher=0, release the first=0 and second=1 chopstick
+thinking[0] (0)
+    ate[0] (3)
+Philosopher=3, release the first=3 and second=4 chopstick
+thinking[0] (3)
+  hungry[0] (2)
+Philosopher=4, got     the first=0 and second=4 chopstick
+ eating[1]
+Philosopher=2, got     the first=2 and second=3 chopstick
+ eating[0]
+  hungry[0] (1)
+    ate[1] (4)
+    ate[0] (2)
+Philosopher=2, release the first=2 and second=3 chopstick
+thinking[0] (2)
+Philosopher=1, got     the first=1 and second=2 chopstick
+ eating[0]
+Philosopher=4, release the first=0 and second=4 chopstick
+thinking[1] (4)
+  hungry[0] (0)
+  hungry[1] (3)
+Philosopher=3, got     the first=3 and second=4 chopstick
+ eating[1]
+    ate[0] (1)
+Philosopher=1, release the first=1 and second=2 chopstick
+thinking[0] (1)
+Philosopher=0, got     the first=0 and second=1 chopstick
+ eating[1]
+    ate[1] (3)
+  hungry[0] (2)
+Philosopher=3, release the first=3 and second=4 chopstick
+Philosopher=2, got     the first=2 and second=3 chopstick
+ eating[0]
+    ate[0] (0)
+thinking[1] (3)
+Philosopher=0, release the first=0 and second=1 chopstick
+thinking[0] (0)
+  hungry[0] (4)
+Philosopher=4, got     the first=0 and second=4 chopstick
+ eating[0]
+  hungry[0] (1)
+    ate[0] (2)
+    ate[1] (4)
+Philosopher=2, release the first=2 and second=3 chopstick
+thinking[0] (2)
+Philosopher=4, release the first=0 and second=4 chopstick
+thinking[1] (4)
+Philosopher=1, got     the first=1 and second=2 chopstick
+ eating[1]
+  hungry[1] (3)
+Philosopher=3, got     the first=3 and second=4 chopstick
+ eating[1]
+  hungry[0] (0)
+    ate[1] (1)
+Philosopher=1, release the first=1 and second=2 chopstick
+thinking[1] (1)
+Philosopher=0, got     the first=0 and second=1 chopstick
+ eating[1]
+    ate[1] (3)
+  hungry[0] (2)
+Philosopher=3, release the first=3 and second=4 chopstick
+thinking[1] (3)
+  hungry[1] (4)
+Philosopher=2, got     the first=2 and second=3 chopstick
+ eating[0]
+    ate[1] (0)
+Philosopher=0, release the first=0 and second=1 chopstick
+thinking[1] (0)
+Philosopher=4, got     the first=0 and second=4 chopstick
+ eating[1]
+  hungry[1] (1)
+    ate[0] (2)
+Philosopher=2, release the first=2 and second=3 chopstick
+thinking[0] (2)
+Philosopher=1, got     the first=1 and second=2 chopstick
+ eating[1]
+    ate[1] (4)
+Philosopher=4, release the first=0 and second=4 chopstick
+thinking[1] (4)
+  hungry[1] (3)
+Philosopher=3, got     the first=3 and second=4 chopstick
+ eating[1]
+    ate[1] (1)
+Philosopher=1, release the first=1 and second=2 chopstick
+thinking[1] (1)
+  hungry[1] (0)
+Philosopher=0, got     the first=0 and second=1 chopstick
+ eating[1]
+  hungry[0] (2)
+    ate[0] (3)
+Philosopher=3, release the first=3 and second=4 chopstick
+thinking[0] (3)
+Philosopher=2, got     the first=2 and second=3 chopstick
+ eating[0]
+  hungry[0] (4)
+    ate[0] (0)
+Philosopher=0, release the first=0 and second=1 chopstick
+thinking[0] (0)
+Philosopher=4, got     the first=0 and second=4 chopstick
+ eating[0]
+  hungry[1] (1)
+    ate[1] (2)
+Philosopher=2, release the first=2 and second=3 chopstick
+thinking[1] (2)
+Philosopher=1, got     the first=1 and second=2 chopstick
+ eating[1]
+    ate[1] (4)
+Philosopher=4, release the first=0 and second=4 chopstick
+thinking[1] (4)
+  hungry[0] (3)
+Philosopher=3, got     the first=3 and second=4 chopstick
+ eating[0]
+  hungry[0] (0)
+    ate[1] (1)
+Philosopher=0, got     the first=0 and second=1 chopstick
+ eating[1]
+Philosopher=1, release the first=1 and second=2 chopstick
+thinking[1] (1)
+    ate[0] (3)
+  hungry[1] (2)
+Philosopher=3, release the first=3 and second=4 chopstick
+thinking[0] (3)
+Philosopher=2, got     the first=2 and second=3 chopstick
+ eating[0]
+  hungry[0] (4)
+    ate[0] (0)
+Philosopher=0, release the first=0 and second=1 chopstick
+thinking[0] (0)
+Philosopher=4, got     the first=0 and second=4 chopstick
+ eating[0]
+    ate[0] (2)
+Philosopher=2, release the first=2 and second=3 chopstick
+thinking[0] (2)
+  hungry[1] (1)
+Philosopher=1, got     the first=1 and second=2 chopstick
+ eating[1]
+    ate[1] (4)
+Philosopher=4, release the first=0 and second=4 chopstick
+thinking[1] (4)
+  hungry[1] (0)
+  hungry[0] (3)
+Philosopher=3, got     the first=3 and second=4 chopstick
+ eating[1]
+    ate[1] (1)
+Philosopher=0, got     the first=0 and second=1 chopstick
+ eating[1]
+Philosopher=1, release the first=1 and second=2 chopstick
+thinking[1] (1)
+  hungry[0] (2)
+    ate[1] (0)
+Philosopher=0, release the first=0 and second=1 chopstick
+  hungry[0] (4)
+    ate[0] (3)
+Philosopher=3, release the first=3 and second=4 chopstick
+thinking[0] (3)
+Philosopher=2, got     the first=2 and second=3 chopstick
+ eating[0]
+thinking[1] (0)
+Philosopher=4, got     the first=0 and second=4 chopstick
+ eating[0]
+  hungry[1] (1)
+    ate[0] (2)
+Philosopher=2, release the first=2 and second=3 chopstick
+thinking[0] (2)
+Philosopher=1, got     the first=1 and second=2 chopstick
+    ate[0] (4)
+Philosopher=4, release the first=0 and second=4 chopstick
+thinking[0] (4)
+ eating[1]
+  hungry[0] (3)
+  hungry[1] (0)
+Philosopher=3, got     the first=3 and second=4 chopstick
+ eating[0]
+    ate[0] (1)
+Philosopher=0, got     the first=0 and second=1 chopstick
+ eating[0]
+Philosopher=1, release the first=1 and second=2 chopstick
+thinking[0] (1)
+    ate[0] (3)
+Philosopher=3, release the first=3 and second=4 chopstick
+thinking[0] (3)
+  hungry[0] (4)
+  hungry[1] (2)
+Philosopher=2, got     the first=2 and second=3 chopstick
+ eating[1]
+    ate[1] (0)
+Philosopher=0, release the first=0 and second=1 chopstick
+thinking[1] (0)
+Philosopher=4, got     the first=0 and second=4 chopstick
+ eating[1]
+    ate[1] (2)
+  hungry[0] (1)
+Philosopher=2, release the first=2 and second=3 chopstick
+thinking[1] (2)
+Philosopher=1, got     the first=1 and second=2 chopstick
+ eating[1]
+    ate[1] (4)
+Philosopher=4, release the first=0 and second=4 chopstick
+thinking[1] (4)
+  hungry[0] (3)
+Philosopher=3, got     the first=3 and second=4 chopstick
+ eating[0]
+  hungry[1] (0)
+    ate[0] (1)
+Philosopher=1, release the first=1 and second=2 chopstick
+thinking[0] (1)
+Philosopher=0, got     the first=0 and second=1 chopstick
+ eating[1]
+    ate[0] (3)
+Philosopher=3, release the first=3 and second=4 chopstick
+thinking[0] (3)
+    ate[1] (0)
+Philosopher=0, release the first=0 and second=1 chopstick
+thinking[1] (0)
+  hungry[1] (2)
+  hungry[1] (4)
+Philosopher=4, got     the first=0 and second=4 chopstick
+ eating[0]
+Philosopher=2, got     the first=2 and second=3 chopstick
+ eating[1]
+  hungry[0] (1)
+    ate[0] (4)
+Philosopher=4, release the first=0 and second=4 chopstick
+thinking[0] (4)
+    ate[0] (2)
+Philosopher=2, release the first=2 and second=3 chopstick
+thinking[0] (2)
+Philosopher=1, got     the first=1 and second=2 chopstick
+ eating[0]
+  hungry[1] (0)
+  hungry[1] (3)
+Philosopher=3, got     the first=3 and second=4 chopstick
+ eating[1]
+    ate[1] (1)
+Philosopher=0, got     the first=0 and second=1 chopstick
+ eating[1]
+Philosopher=1, release the first=1 and second=2 chopstick
+thinking[1] (1)
+    ate[1] (0)
+  hungry[0] (2)
+  hungry[0] (4)
+    ate[1] (3)
+Philosopher=3, release the first=3 and second=4 chopstick
+  done[1]   (3)
+Philosopher=0, release the first=0 and second=1 chopstick
+  done[1]   (0)
+Philosopher 0 ate 10 times
+Philosopher=2, got     the first=2 and second=3 chopstick
+ eating[1]
+Philosopher=4, got     the first=0 and second=4 chopstick
+ eating[3]
+  hungry[1] (1)
+    ate[1] (2)
+    ate[3] (4)
+Philosopher=4, release the first=0 and second=4 chopstick
+  done[3]   (4)
+Philosopher=2, release the first=2 and second=3 chopstick
+  done[1]   (2)
+Philosopher=1, got     the first=1 and second=2 chopstick
+ eating[3]
+    ate[3] (1)
+Philosopher=1, release the first=1 and second=2 chopstick
+  done[3]   (1)
+Philosopher 1 ate 10 times
+Philosopher 2 ate 10 times
+Philosopher 3 ate 10 times
+Philosopher 4 ate 10 times
+The end!
+~/np~{DIV}
+{DIV}^
 !!!O que aprendemos com os testes  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 # Executar aplicações com mais de 1 CPU ativa variavelmente gera exceções (GPF). Isso acontece mesmo com a aplicação do jantar dos filósofos, se os delays forem removidos.
 # Quando requisições são enviadas ao sequencer em uma taxa maior do que ele consegue executar, a memória enche e exceções (PF) ocorrem.
@@ -3935,7 +5058,6 @@ A seguir, vê-se outro problema encontrado durante outra execução de ''guard_s
 # https://stackoverflow.com/questions/25091436/expand-a-parameter-pack-with-a-counter
 # https://stackoverflow.com/questions/41623422/c-expand-variadic-template-arguments-into-a-statement
 # https://stackoverflow.com/questions/8526598/how-does-stdforward-work
-# https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer/7858971
 # https://stackoverflow.com/questions/31204084/is-it-possible-to-call-static-method-form-variadic-template-type-parameter
 # https://stackoverflow.com/questions/25680461/variadic-template-pack-expansion
 # https://stackoverflow.com/questions/21180346/variadic-template-unpacking-arguments-to-typename

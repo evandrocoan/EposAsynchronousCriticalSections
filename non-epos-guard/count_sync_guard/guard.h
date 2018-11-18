@@ -226,18 +226,29 @@ template<typename T1, typename ... Tn>
 struct SIZEOF<T1, Tn ...>
 { static const unsigned int Result = sizeof(T1) + SIZEOF<Tn ...>::Result ; };
 
-// https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer/7858971
+// https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function
 template<int ...>
 struct MetaSequenceOfIntegers { };
 
 template<int AccumulatedSize, typename Tn, int... GeneratedSequence>
 struct GeneratorOfIntegerSequence;
 
-template<int AccumulatedSize, typename Grouper, typename Head, typename... Tail, int... GeneratedSequence>
-struct GeneratorOfIntegerSequence< AccumulatedSize, Grouper( Head, Tail... ), GeneratedSequence... >
+template<
+            int AccumulatedSize,
+            typename Grouper,
+            typename Head,
+            typename... Tail,
+            int... GeneratedSequence
+        >
+struct GeneratorOfIntegerSequence<
+        AccumulatedSize, Grouper( Head, Tail... ), GeneratedSequence... >
 {
     typedef typename GeneratorOfIntegerSequence
-            < AccumulatedSize + sizeof(Head), Grouper( Tail... ), GeneratedSequence..., AccumulatedSize
+            <
+                AccumulatedSize + sizeof(Head),
+                Grouper( Tail... ),
+                GeneratedSequence...,
+                AccumulatedSize
             >::type type;
 };
 
@@ -248,7 +259,7 @@ struct GeneratorOfIntegerSequence<AccumulatedSize, Grouper(), GeneratedSequence.
 };
 
 
-// https://stackoverflow.com/questions/34957810/variadic-templates-parameter-pack-and-its-discussed-ambiguity-in-a-parameter-li
+// https://stackoverflow.com/questions/34957810/variadic-templates-parameter-pack-and-its
 template<typename Tn>
 class Closure;
 
@@ -294,7 +305,8 @@ public:
     }
 
     inline ReturnType operator()() {
-        return _unpack_and_run( typename GeneratorOfIntegerSequence< 0, int(Tn...) >::type() );
+        return _unpack_and_run(
+                typename GeneratorOfIntegerSequence< 0, int(Tn...) >::type() );
     }
 
 private:
@@ -321,7 +333,8 @@ public:
     static void pack_helper(char* pointer_address, Head head, Tail ... tail)
     {
         DB( "Closure::pack_helper(Head=" << sizeof( Head )
-                << ", address=" << reinterpret_cast<int *>(pointer_address) << ")" << std::endl )
+                << ", address=" << reinterpret_cast<int *>(pointer_address)
+                << ")" << std::endl )
 
         *reinterpret_cast<Head *>(pointer_address) = head;
         pack_helper(pointer_address + sizeof( Head ), tail ...);
@@ -442,12 +455,14 @@ public:
         --_size;
 
         Critical_Section_Base * item = _head;
-        Critical_Section_Base * next = fas( item->_next, reinterpret_cast<Critical_Section_Base *>(DONE) );
+        Critical_Section_Base * next = fas( item->_next,
+                reinterpret_cast<Critical_Section_Base *>(DONE) );
         DB( " next=" << next << ")" << std::endl )
 
         bool mine = true;
         if( !next ) {
-            mine = cas( _tail, item, reinterpret_cast<Critical_Section_Base *> (NULL) ) == item;
+            mine = cas( _tail, item, reinterpret_cast<
+                    Critical_Section_Base *> (NULL) ) == item;
         }
 
         cas( _head, item, next) ;
