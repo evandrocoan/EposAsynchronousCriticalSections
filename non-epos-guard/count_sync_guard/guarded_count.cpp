@@ -24,7 +24,7 @@ public:
 
 // BEGIN # ATOMIC OPERATIONS
 static Critical_Section* fas(Critical_Section * volatile & value, Critical_Section * replacement) {
-    ASM("xchg %2, %1" : "=r"(replacement) : "r"(replacement), "m"(value) : "memory");
+    ASM("lock xchgl %2, %1" : "=r"(replacement) : "r"(replacement), "m"(value) : "memory");
     return replacement;
 }
 static Critical_Section* cas(Critical_Section * volatile & value, Critical_Section * compare, Critical_Section * replacement, bool vouch) {

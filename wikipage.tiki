@@ -406,7 +406,7 @@ No EPOS x86 não hà uma implementação para a operação FAS, uma das duas pri
 {DIV(type="pre" bg="#CCFFFF")}~np~
 template<typename T>
 static T fas(volatile T & value, volatile T replacement) {
-    ASM("lock xchg %0, %2" : "=a"(replacement) : "a"(replacement), "m"(value) : "memory");
+    ASM("lock xchgl %0, %2" : "=a"(replacement) : "a"(replacement), "m"(value) : "memory");
     return replacement;
 }
 ~/np~{DIV}
@@ -652,7 +652,7 @@ Além disso, assim como ocorre com as outras operações atômicas, foi adiciona
 template<typename T>
 static T fas(volatile T & value, volatile T replacement)
 {
-    ASM("lock xchg %0, %2" : "=a"(replacement) : "a"(replacement), "m"(value) : "memory");
+    ASM("lock xchgl %0, %2" : "=a"(replacement) : "a"(replacement), "m"(value) : "memory");
     return replacement;
 }
 
@@ -2513,7 +2513,7 @@ Para compilar um programa que que incluí essa implementação, você utilizar u
 template<typename T>
 static T fas(T volatile & value, T replacement)
 {
-    ASM("xchg %2, %1"
+    ASM("lock xchgl %2, %1"
             : "=r"(replacement)
             : "r"(replacement), "m"(value)
             : "memory");
