@@ -29,7 +29,7 @@ Guard::Element * Guard::vouch(Element * item)
                     == reinterpret_cast<Element *>(NULL) )
 
             return reinterpret_cast<Element *>(NULL);
-        delete item->object();
+        delete last->object();
     }
     _head = item;
     return item;

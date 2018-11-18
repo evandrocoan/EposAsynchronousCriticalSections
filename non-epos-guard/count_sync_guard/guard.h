@@ -250,7 +250,7 @@ public:
                         == reinterpret_cast<Critical_Section_Base *>(NULL) )
 
                 return reinterpret_cast<Critical_Section_Base *>(NULL);
-            delete item;
+            delete last;
         }
         _head = item;
         return item;

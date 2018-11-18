@@ -27,7 +27,7 @@ REMOTE_COMMAND_TO_RUN="
 cd $TARGET_DIRECTORY;
 printf '\nThe current directory is:\n'; pwd;
 printf '\nThe current path is: %s\n' \$PATH;
-printf 'Running the command: g++ -o test $APPLICATION -lpthread -m32 -ggdb && ./test;\n';
+printf 'Running the command: g++ -o test $APPLICATION -m32 -g3 -O0 --std=c++11 && ./test;\n';
 g++ -o test $APPLICATION -lpthread -m32 && ./test;"
 
 sshpass -p $EPOS_COMPILER_MACHINE_PASS ssh $EPOS_COMPILER_MACHINE_ADDRESS $REMOTE_COMMAND_TO_RUN;

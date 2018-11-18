@@ -1,10 +1,10 @@
 
-#define DEBUG_SYNC
+// #define DEBUG_SYNC
 #include <thread>
 #include "guard.h"
 
 int counter = 0;
-static const int iterations = 1e3;
+static const int iterations = 1e7;
 
 Guard counter_guard;
 Guard display_guard;
@@ -19,13 +19,13 @@ void increment_counter() {
 }
 
 int mythread(char arg) {
-    display_guard.submit(&show, arg, "begin");
+    display_guard.submit(show, arg, "begin");
 
     for (int i = iterations; i > 0 ; i--) {
-        counter_guard.submit(&increment_counter);
+        counter_guard.submit(increment_counter);
     }
 
-    display_guard.submit(&show, arg, "end");
+    display_guard.submit(show, arg, "end");
     return 0;
 }
 
