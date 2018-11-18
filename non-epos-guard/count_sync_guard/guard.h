@@ -6,13 +6,26 @@
 
 #define ASM __asm__ __volatile__
 
-std::recursive_mutex _debug_syncronized_semaphore_lock;
 
+// You can define it anywhere before including this file
+// #define DEBUG_SYNC
 
-#define DB(...) do { \
-    _debug_syncronized_semaphore_lock.lock(); \
-        std::cout << __VA_ARGS__; \
-    _debug_syncronized_semaphore_lock.unlock(); } while(0);
+#ifdef DEBUG_SYNC
+    std::recursive_mutex _debug_syncronized_semaphore_lock;
+
+    #define DB(...) do { \
+        _debug_syncronized_semaphore_lock.lock(); \
+            std::cout << __VA_ARGS__; \
+        _debug_syncronized_semaphore_lock.unlock(); } while(0);
+
+    #define LOG(...) DB(__VA_ARGS__)
+
+#else
+    #define DB(...)
+    #define LOG(...) std::cout << __VA_ARGS__;
+
+#endif
+
 
 
 template<typename T>
@@ -256,7 +269,7 @@ public:
 
         bool mine = true;
         if( !next ) {
-            assert(!_size);
+            // assert(!_size);
             mine = cas( _tail, item, reinterpret_cast<Critical_Section_Base *> (NULL) ) == item;
         }
 

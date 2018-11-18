@@ -4,8 +4,7 @@ void example() {
     DB( "Example begin!" << std::endl )
 }
 
-// g++ -o test $APPLICATION -lpthread -m32 && ./test
-// sudo chrt --rr 99 ./guarded_count &> test_guarded.log
+// g++ -o test simple_guard_test.cpp -lpthread -m32 -ggdb && ./test
 int main() {
     DB( "Main begin!" << std::endl )
     Guard guard;
