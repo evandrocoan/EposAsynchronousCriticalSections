@@ -242,7 +242,7 @@ public:
         ++_size;
 
         item->_next = reinterpret_cast<Critical_Section_Base *>(NULL);
-        Critical_Section_Base * last = fas(_tail, item);
+        Critical_Section_Base * last = fas( _tail, item );
         DB( ", last=" << last << ")" << std::endl )
 
         if( last ) {
@@ -269,11 +269,10 @@ public:
 
         bool mine = true;
         if( !next ) {
-            // assert(!_size);
             mine = cas( _tail, item, reinterpret_cast<Critical_Section_Base *> (NULL) ) == item;
         }
 
-        cas(_head, item, next);
+        cas( _head, item, next) ;
         if( mine ) {
             delete item;
         }

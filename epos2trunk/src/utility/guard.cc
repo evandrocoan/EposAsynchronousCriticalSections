@@ -48,11 +48,10 @@ Critical_Section_Base* Guard::clear()
 
     bool mine = true;
     if( !next ) {
-        assert(!_size);
         mine = CPU::cas( _tail, item, reinterpret_cast<Critical_Section_Base *> (NULL) ) == item;
     }
 
-    CPU::cas(_head, item, next);
+    CPU::cas( _head, item, next );
     if( mine ) {
         delete item;
     }
