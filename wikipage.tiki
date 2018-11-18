@@ -1260,6 +1260,8 @@ clean_multithread:
 {DIV}^
 Para ''make veryclean'' funcionar paralelamente, foi preciso remover a definição ''MAKECLEAN'' no arquivo principal ''makedefs'' [https://github.com/evandrocoan/asynchronous_critical_sections/commit/a020ccdb4216bb8131e7d86e3c99c6b95d726d0a|4237faf] && [https://github.com/evandrocoan/asynchronous_critical_sections/commit/5dfd5d7a53ebbf77c33816beec785201c8d7a1c5|e4faae6], por que para que o comando ''-j'' de paralelização do ''Makefile'' funcione, as chamadas recursivas de makefile precisam ser feitas utilizando a variável ''${MAKE}'' ao contrário de chamar o ''Makefile'' diretamente como ''MAKECLEAN := make -i clean'' fazia.
 
+Note que, aleatoriamente durante algumas vezes no final do processo de compilação, quando será feita a ligação entre o código do EPOS e aplicação compilada, pode-se ter um ou vários erros de ligação sobre símbolos faltando. Para resolver isso, basta somente pedir para compilar de novo. Algumas outras vezes muito raras, pode ser necessário pedir para compilar até 3 vezes, antes que o linker consiga encontrar todos os símbolos.
+
 !!!Assert  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Durante o desenvolvimento do trabalho, foi habilitado as instruções de assert do EPOS, no arquivo ''/include/system/config.h''. Entretanto, ao fazer isso, foram relevados alguns erros de compilação e de execução do EPOS.
 
