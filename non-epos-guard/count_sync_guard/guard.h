@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <condition_variable>
 
 #define ASM __asm__ __volatile__
 
@@ -27,7 +28,6 @@
 #endif
 
 
-
 template<typename T>
 static T fas(T volatile & value, T replacement)
 {
@@ -46,6 +46,171 @@ static T cas(T volatile & value, T compare, T replacement)
             : "a"(compare), "r"(replacement), "m"(value) : "memory");
     return compare;
 }
+
+
+class Display
+{
+private:
+    static const int LINES = 25;
+    static const int COLUMNS = 8000;
+    static const int TAB_SIZE = 8;
+
+    // Special characters
+    enum {
+        ESC  = 0x1b,
+        CR   = 0x0d,
+        LF   = 0x0a,
+        TAB  = 0x09,
+    };
+
+public:
+    Display() {}
+
+    static void clear() {
+        _line = 0;
+        _column = 0;
+        escape();
+        put('2');
+        put('J');
+    };
+
+    static void putc(char c) {
+        switch(c) {
+        case '\n':
+            scroll();
+            _line++;
+            break;
+        case '\t':
+            put(TAB);
+            _column += TAB_SIZE;
+            break;
+        default:
+            _column++;
+            put(c);
+            if(_column >= COLUMNS) scroll();
+        }
+    };
+
+    static void puts(const char * s) {
+        while(*s != '\0')
+            putc(*s++);
+    }
+
+    static void geometry(int * lines, int * columns) {
+        *lines = LINES;
+        *columns = COLUMNS;
+    }
+
+    static void position(int * line, int * column) {
+        *line = _line;
+        *column = _column;
+    }
+    static void position(int line, int column) {
+        _line = line;
+        _column = column;
+        escape();
+        puti(_line);
+        put(';');
+        puti(_column);
+        put('H');
+    }
+
+private:
+    static void put(char c) {
+        std::cout << c;
+    }
+
+    static void escape() {
+        put(ESC);
+        put('[');
+    }
+
+    static void puti(unsigned char value) {
+        unsigned char digit = '0';
+        while(value >= 100) {
+            digit++;
+            value -= 100;
+        }
+        put(digit);
+
+        digit = '0';
+        while(value >= 10) {
+            digit++;
+            value -= 10;
+        }
+        put(digit);
+
+        put('0' + value);
+    }
+
+    static void scroll() {
+        put(CR);
+        put(LF);
+        _column = 0;
+    }
+
+    static void init() {
+        _line = 0;
+        _column = 0;
+    }
+
+private:
+    static int _line;
+    static int _column;
+};
+
+int Display::_line;
+int Display::_column;
+
+
+template<typename FutureType>
+class Future
+{
+public:
+    Future(): _condition(), _is_resolved() {
+        DB( "Future(_is_resolved=" << _is_resolved
+                << ", _condition=" << _condition.size()
+                << ") => " << this << endl )
+    }
+
+    ~Future() {
+        DB( "~Future(this=" << this << ")" << endl );
+    }
+
+    FutureType get_value() {
+        DB( "Future::get_value(this=" << this
+                << " _is_resolved=" << _is_resolved
+                << " _condition=" << _condition.size()
+                <<  ")" << endl )
+
+        if(!_is_resolved) {
+            std::unique_lock<std::mutex> lock(_mutex);
+            _condition.wait(lock);
+        }
+        return _value;
+    }
+
+    void resolve(FutureType value) {
+        DB( "Future::resolve(this=" << this
+                << " _is_resolved=" << _is_resolved
+                << " _condition=" << _condition.size()
+                <<  ")" << endl )
+        assert(!_is_resolved);
+        // If `resolve()` was called and the instruction pointer got until here,
+        // and the thread is unscheduled, and another thread call `resolve()`,
+        // then, the `assert` will not work, if the resolve() call is not atomic.
+        _value = value;
+        _is_resolved = true;
+        _condition.notify_all();
+    }
+
+private:
+    bool _is_resolved;
+    FutureType _value;
+
+    std::mutex _mutex;
+    std::condition_variable _condition;
+};
 
 
 // SIZEOF Type Package

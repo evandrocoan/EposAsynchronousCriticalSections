@@ -3989,6 +3989,30 @@ A seguir, vê-se outro problema encontrado durante outra execução de ''guard_s
 # https://stackoverflow.com/questions/14581837/gdb-how-to-print-the-current-line-or-find-the-current-line-number
 # https://stackoverflow.com/questions/37616367/have-gdb-show-the-type-of-a-template-argument
 # https://stackoverflow.com/questions/33661179/debug-c-template-with-gdb
+# https://en.cppreference.com/w/cpp/thread/condition_variable
+# https://stackoverflow.com/questions/9212219/converting-int-to-pointer
+# https://stackoverflow.com/questions/5100718/integer-to-hex-string-in-c
+# https://stackoverflow.com/questions/38770996/linux-moving-the-console-cursor-visual
+# https://stackoverflow.com/questions/40046591/how-do-i-move-the-console-cursor-to-x-y-on-unix
+# https://stackoverflow.com/questions/7686939/c-simple-return-value-from-stdthread
+# https://stackoverflow.com/questions/21531096/can-i-use-stdasync-without-waiting-for-the-future-limitation
+# http://man7.org/linux/man-pages/man3/sched_getcpu.3.html
+# https://eli.thegreenplace.net/2016/c11-threads-affinity-and-hyperthreading/
+# https://stackoverflow.com/questions/16034448/obtaining-thread-core-affinity-in-c-11-through-pthreads
+# https://en.cppreference.com/w/cpp/thread/thread/native_handle
+# https://stackoverflow.com/questions/9358681/how-can-i-get-the-processor-id-of-the-current-process-in-c-in-linux
+# http://man7.org/linux/man-pages/man2/getcpu.2.html
+# https://stackoverflow.com/questions/8042822/how-can-i-find-which-processor-each-thread-is-running-on
+# https://docs.microsoft.com/en-us/windows/desktop/api/processthreadsapi/nf-processthreadsapi-getcurrentprocessornumber
+# https://en.cppreference.com/w/cpp/header/thread
+# https://stackoverflow.com/questions/150355/programmatically-find-the-number-of-cores-on-a-machine
+# https://en.cppreference.com/w/cpp/thread/thread/hardware_concurrency
+# https://solarianprogrammer.com/2012/10/17/cpp-11-async-tutorial/
+# https://stackoverflow.com/questions/42128670/c-stdasync-does-not-spawn-a-new-thread
+# https://thispointer.com/c11-multithreading-part-7-condition-variables-explained/
+# http://www.cplusplus.com/reference/condition_variable/condition_variable/
+# https://en.cppreference.com/w/cpp/thread/unique_lock
+# https://en.cppreference.com/w/cpp/thread/condition_variable/wait
 
 !!Referências  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 #Stefan Reif and Wolfgang Schröder-Preikschat, "Predictable Synchronisation Algorithms for Asynchronous Critical Sections,” Friedrich-Alexander-Universität Erlangen-Nürnberg, Dept. of Computer Science, Technical Reports, CS-2018-03, February 2018.
