@@ -747,8 +747,8 @@ EPOS bootable image tool
   Node id: will get from the network
   EPOS Image UUID: 7bb9c483078f0692
   Creating EPOS bootable image in "scheduler_cpu_affinity_test.img":
-    Adding boot strap "/home/linux/OperatingSystems/Epos2x86/img/pc_boot": done.
-    Adding setup "/home/linux/OperatingSystems/Epos2x86/img/pc_setup": done.
+    Adding boot strap "/Epos2x86/img/pc_boot": done.
+    Adding setup "/Epos2x86/img/pc_setup": done.
     Adding application "scheduler_cpu_affinity_test": done.
     Adding system info: done.
 
@@ -756,12 +756,12 @@ EPOS bootable image tool
 
   Image successfully generated (172868 bytes)!
 
-make[2]: Leaving directory '/home/linux/OperatingSystems/Epos2x86/img'
+make[2]: Leaving directory '/Epos2x86/img'
 (cd img && make --print-directory run)
-make[2]: Entering directory '/home/linux/OperatingSystems/Epos2x86/img'
+make[2]: Entering directory '/Epos2x86/img'
 # qemu-system-i386 -smp 2 -m 262144k -nographic -no-reboot -drive format=raw,index=0,if=floppy,file=scheduler_cpu_affinity_test.img | tee scheduler_cpu_affinity_test.out
 qemu-system-i386 -smp 2 -m 262144k -nographic -no-reboot -drive format=raw,index=0,if=floppy,file=scheduler_cpu_affinity_test.img
-<0>: make[2]: Leaving directory '/home/linux/OperatingSystems/Epos2x86/img'
+<0>: make[2]: Leaving directory '/Epos2x86/img'
 make[1]: Leaving directory '/home/linux/OperatingSystems/Epos2x86'
 ~/np~{DIV}
 {DIV}^
@@ -1261,6 +1261,26 @@ clean_multithread:
 Para ''make veryclean'' funcionar paralelamente, foi preciso remover a definição ''MAKECLEAN'' no arquivo principal ''makedefs'' [https://github.com/evandrocoan/asynchronous_critical_sections/commit/a020ccdb4216bb8131e7d86e3c99c6b95d726d0a|4237faf] && [https://github.com/evandrocoan/asynchronous_critical_sections/commit/5dfd5d7a53ebbf77c33816beec785201c8d7a1c5|e4faae6], por que para que o comando ''-j'' de paralelização do ''Makefile'' funcione, as chamadas recursivas de makefile precisam ser feitas utilizando a variável ''${MAKE}'' ao contrário de chamar o ''Makefile'' diretamente como ''MAKECLEAN := make -i clean'' fazia.
 
 Note que, aleatoriamente durante algumas vezes no final do processo de compilação, quando será feita a ligação entre o código do EPOS e aplicação compilada, pode-se ter um ou vários erros de ligação sobre símbolos faltando. Para resolver isso, basta somente pedir para compilar de novo. Algumas outras vezes muito raras, pode ser necessário pedir para compilar até 3 vezes, antes que o linker consiga encontrar todos os símbolos.
+^::__Listagem 28:__ Exemplo de falho do linker para ''make veryclean APPLICATION=guard_semaphore_test''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+(cd app && make --print-directory)
+make[2]: Entering directory '/Epos2x86/app'
+/Epos2x86/bin/eposcc -Wa,--32 -c -ansi -O2  -o guard_semaphore_test.o guard_semaphore_test.cc
+/Epos2x86/bin/eposcc --library --gc-sections --nmagic -o guard_semaphore_test guard_semaphore_test.o
+/Epos2x86/lib/pc_init_system.o: In function `global constructors keyed to _ZN4EPOS1S11init_systemE':
+init_system.cc:(.text._GLOBAL__I__ZN4EPOS1S11init_systemE+0xe5): undefined reference to `EPOS::S::System::init()'
+makefile:8: recipe for target 'guard_semaphore_test' failed
+make[2]: Leaving directory '/Epos2x86/app'
+make[2]: *** [guard_semaphore_test] Error 1
+makefile:17: recipe for target 'app' failed
+make[1]: Leaving directory '/home/linux/OperatingSystems/Epos2x86'
+make[1]: *** [app] Error 2
+makefile:23: recipe for target 'run' failed
+make: *** [run] Error 2
+~/np~{DIV}
+{DIV}^
+Depois de ter um erro desse, é importante não executar o ''make veryclean APPLICATION=guard_semaphore_test'' novamente, mas somente ''make APPLICATION=guard_semaphore_test', sem o ''veryclean'' por que a aplicação foi totalmente compilada, mas como foi compilada paralelamente, algumas threads ainda não tinham terminado no momento que o linker começou a executar. Assim, falta descobrir como implementar uma barreira faça com que o linker esperar, antes de iniciar o processo de ligação.
 
 !!!Assert  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Durante o desenvolvimento do trabalho, foi habilitado as instruções de assert do EPOS, no arquivo ''/include/system/config.h''. Entretanto, ao fazer isso, foram relevados alguns erros de compilação e de execução do EPOS.
