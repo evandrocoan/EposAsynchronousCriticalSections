@@ -10,13 +10,12 @@ __BEGIN_UTIL
 
 class Critical_Section_Base
 {
-    /// The Guard class requires access to our the _link private attribute
+    /// The Guard class requires access to our the _next private attribute
     friend class Guard;
-    typedef List_Elements::Singly_Linked<Critical_Section_Base> Element;
 
 public:
-    Critical_Section_Base(): _link(this) {
-        DB( Synchronizer, TRC, "Critical_Section_Base(_link=" << &_link
+    Critical_Section_Base(): _next(this) {
+        DB( Synchronizer, TRC, "Critical_Section_Base(_next=" << &_next
                 << ") => " << this << endl )
     }
 
@@ -24,7 +23,7 @@ public:
     /// method would not be called when accessed by a base class pointer.
     virtual ~Critical_Section_Base() {
         DB( Synchronizer, TRC, "~Critical_Section_Base(this=" << this
-                << " _link=" << &_link << ")" << endl )
+                << " _next=" << &_next << ")" << endl )
     }
 
     /// Returns void because the base class Critical_Section_Base() cannot be a
@@ -39,7 +38,7 @@ public:
 
 private:
     // Inspired by the thread code
-    Element _link;
+    Critical_Section_Base* _next;
 };
 
 template<typename... Tn>

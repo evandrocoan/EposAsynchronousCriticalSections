@@ -11,9 +11,6 @@ __BEGIN_UTIL
 
 class Guard
 {
-public:
-    typedef Critical_Section_Base::Element Element;
-
 private:
     static const int NULL = 0;
     static const int DONE = 1;
@@ -28,21 +25,21 @@ public:
         // Creates a closure with the critical section parameters
         Critical_Section<Tn ...>* cs = new Critical_Section<Tn ...>(entry, an ...);
 
-        Element * cur = vouch(&(cs->_link));
-        if (cur != reinterpret_cast<Element *>(NULL)) do {
-            cur->object()->start();
+        Critical_Section_Base * cur = vouch(cs);
+        if (cur != reinterpret_cast<Critical_Section_Base *>(NULL)) do {
+            cur->start();
             cur = clear();
-        } while (cur != reinterpret_cast<Element *>(NULL));
+        } while (cur != reinterpret_cast<Critical_Section_Base *>(NULL));
     }
 
-    Element * vouch(Element * item);
-    Element * clear();
+    Critical_Section_Base * vouch(Critical_Section_Base * item);
+    Critical_Section_Base * clear();
 
 private:
     int _size;
 
-    Element * _head;
-    Element * _tail;
+    Critical_Section_Base * _head;
+    Critical_Section_Base * _tail;
 };
 
 __END_UTIL

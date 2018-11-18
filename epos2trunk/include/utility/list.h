@@ -72,7 +72,6 @@ namespace List_Elements
     class Singly_Linked
     {
     public:
-        friend class _UTIL::Guard;
         typedef T Object_Type;
         typedef Singly_Linked Element;
 
