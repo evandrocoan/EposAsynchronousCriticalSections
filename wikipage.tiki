@@ -3964,6 +3964,23 @@ A seguir, vê-se outro problema encontrado durante outra execução de ''guard_s
 # https://stackoverflow.com/questions/24609872/delete-virtual-function-from-a-derived-class
 # https://stackoverflow.com/questions/18469818/class-inheritance-error-private-member
 # https://stackoverflow.com/questions/9055778/initializing-a-reference-to-member-to-null-in-c
+# http://www.cplusplus.com/reference/cassert/assert/
+# https://en.cppreference.com/w/cpp/atomic/atomic
+# https://stackoverflow.com/questions/31978324/what-exactly-is-stdatomic
+# https://stackoverflow.com/questions/41206861/atomic-increment-and-return-counter
+# https://en.cppreference.com/w/cpp/thread/recursive_mutex
+# https://en.cppreference.com/w/cpp/thread/recursive_mutex/lock
+# https://riptutorial.com/cplusplus/example/30442/std--recursive-mutex
+# https://baptiste-wicht.com/posts/2012/04/c11-concurrency-tutorial-advanced-locking-and-condition-variables.html
+# https://stackoverflow.com/questions/9935190/why-is-a-point-to-volatile-pointer-like-volatile-int-p-useful
+# https://stackoverflow.com/questions/4792449/c0x-has-no-semaphores-how-to-synchronize-threads
+# https://stackoverflow.com/questions/14171955/incorrect-register-rbx-used-withl-suffix
+# https://stackoverflow.com/questions/353180/how-do-i-find-the-name-of-the-calling-function
+# https://stackoverflow.com/questions/3899870/print-call-stack-in-c-or-c
+# https://stackoverflow.com/questions/46425109/access-the-owners-counter-used-by-stdrecursive-mutex
+# https://stackoverflow.com/questions/14581837/gdb-how-to-print-the-current-line-or-find-the-current-line-number
+# https://stackoverflow.com/questions/37616367/have-gdb-show-the-type-of-a-template-argument
+# https://stackoverflow.com/questions/33661179/debug-c-template-with-gdb
 
 !!Referências  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 #Stefan Reif and Wolfgang Schröder-Preikschat, "Predictable Synchronisation Algorithms for Asynchronous Critical Sections,” Friedrich-Alexander-Universität Erlangen-Nürnberg, Dept. of Computer Science, Technical Reports, CS-2018-03, February 2018.
