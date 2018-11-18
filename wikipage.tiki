@@ -4044,6 +4044,8 @@ A seguir, vê-se outro problema encontrado durante outra execução de ''guard_s
 # https://stackoverflow.com/questions/42262750/how-to-get-stdthread-of-current-thread
 # http://www.modernescpp.com/index.php/condition-variables
 # https://stackoverflow.com/questions/43759609/stdcondition-variablenotify-all-i-need-an-example
+# https://stackoverflow.com/questions/4184468/sleep-for-milliseconds
+# https://en.cppreference.com/w/cpp/thread/sleep_for
 
 !!Referências  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 #Stefan Reif and Wolfgang Schröder-Preikschat, "Predictable Synchronisation Algorithms for Asynchronous Critical Sections,” Friedrich-Alexander-Universität Erlangen-Nürnberg, Dept. of Computer Science, Technical Reports, CS-2018-03, February 2018.

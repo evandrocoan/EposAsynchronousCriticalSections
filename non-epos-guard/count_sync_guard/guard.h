@@ -10,21 +10,21 @@
 
 
 // You can define it anywhere before including this file
-// #define DEBUG_SYNC
+// #define DEBUG
 
-#ifdef DEBUG_SYNC
+#ifdef DEBUG
     std::recursive_mutex _debug_syncronized_semaphore_lock;
 
     #define DB(...) do { \
         _debug_syncronized_semaphore_lock.lock(); \
-            std::cout << __VA_ARGS__; \
+            std::cout << __VA_ARGS__ << std::flush; \
         _debug_syncronized_semaphore_lock.unlock(); } while(0);
 
     #define LOG(...) DB(__VA_ARGS__)
 
 #else
     #define DB(...)
-    #define LOG(...) std::cout << __VA_ARGS__;
+    #define LOG(...) std::cout << __VA_ARGS__ << std::flush;
 
 #endif
 

@@ -1,12 +1,14 @@
 // Scheduler Test Program
+// #define DEBUG
+
 #include <thread>
+#include <chrono>
 #include <sstream>
+
 #include <sched.h>
-
-// #define DEBUG_SYNC
-// #define CONSOLE_MODE
-
 #include "guard.h"
+
+// #define CONSOLE_MODE
 const int iterations = 10;
 
 Guard table;
@@ -29,7 +31,7 @@ unsigned long long busy_wait(unsigned long long n);
 
 void show_message(const char * message, int line, int column) {
 #ifdef CONSOLE_MODE
-    DB( message << "(" << line << ")" << std::endl )
+    LOG( message << "(" << line << ")" << std::endl )
 #else
     Display::position( line, column );
     LOG( message )
@@ -37,12 +39,10 @@ void show_message(const char * message, int line, int column) {
 }
 
 void show_message(std::stringstream * message, int line, int column) {
-#ifdef CONSOLE_MODE
-    DB( message )
-#else
+#ifndef CONSOLE_MODE
     Display::position( line, column );
-    LOG( message )
 #endif
+    LOG( message->str() )
     delete message;
 }
 
@@ -242,7 +242,7 @@ void think(unsigned long long n) {
 unsigned long long busy_wait(unsigned long long n)
 {
     volatile unsigned long long v;
-    for(long long int j = 0; j < 20 * n; j++)
-        v &= 2 ^ j;
+    // for(long long int j = 0; j < 120 * n; j++) v &= 2 ^ j;
+    std::this_thread::sleep_for(std::chrono::milliseconds(n/400));
     return v;
 }
