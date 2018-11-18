@@ -4350,6 +4350,8 @@ unsigned long long busy_wait(unsigned long long n)
 {DIV}^
 Esta versão com o algoritmo do ''Guarda'' apresenta inúmeros problemas e não consegue executar até o fim. Apesar de sua implementação ser basicamente idêntica a implementação de ''guard_semaphore_test.cc'', a maioria das vezes, o programa entra em trava, no momento que o método ''lock()'' da classe ''Thread'' tenta obter o spin lock.
 
+Anteriormente, EPOS já apresentou problemas na execução da versão original do programa de teste ''scheduler_cpu_affinity_test.cc'' quando as asserções foram ativadas no arquivo ''config.h''. Veja a seção [#Assert_|Assert]. Depois de se ter problemas com o ''scheduler_cpu_affinity_test.cc'', as mudanças lá propostas foram retiras, restaurando o código do EPOS para sua versão original, sem asserções ou outras modificações, entretanto, esse novo programa de teste que faz uso do Guarda, continua apresentado os mesmos erros.
+
 A seguir vê-sê um exemplo de problema de alocação de memória que pode acontece durante a execução da aplicação. Neste exemplo de problema, ocorre uma sobre-escrita de uma memória de um objeto na heap por um objeto na stack de outro objeto na heap.
 #Na linha 1088 ocorre a destruição de um objeto
 #Na linha 1090 vê-se que foi liberado o endereço de memória 0x0007fd65
@@ -4443,7 +4445,7 @@ A seguir, vê-se outro problema encontrado durante outra execução de ''guard_s
 !!!guard_scheduler_cpu_affinity.cc (Linux)  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Devido a impossibilidade de conseguir depurar e fazer a aplicação ''guard_scheduler_cpu_affinity_test.cc'' funcionar no EPOS com multicores, foi então realizada toda a implementação dos algoritmos do Guarda e seus mecanismos auxiliares em um Linux nativo. Para encontrar a implementação completa do algoritmo do Guarda e seus mecanismos auxiliares, veja a seção [#Guarda_para_Linux_|Guarda para Linux].
 
-A seguir encontrar-e o mesmo programa original implementado na seção anterior chamado de ''guard_scheduler_cpu_affinity_test.cc''. Nesta nova versão utiliza a implementação da ''Guarda'' e seus auxiliares para Linux, junto com as versões equivalentes das demais bibliotecas como ''~np~std::thread~/np~'', ''~np~std::condition_variable~/np~'' e ''~np~std::cout~/np~''.
+A seguir encontrar-e o mesmo programa original implementado na seção anterior ([#guard_scheduler_cpu_affinity_test.cc_|guard_scheduler_cpu_affinity_test.cc]) chamado de ''guard_scheduler_cpu_affinity_test.cc''. Nesta nova versão utiliza a implementação da ''Guarda'' e seus auxiliares para Linux, junto com as versões equivalentes das demais bibliotecas como ''~np~std::thread~/np~'', ''~np~std::condition_variable~/np~'' e ''~np~std::cout~/np~''.
 
 Para compilar esse programa, você precisa do include ''guard.h'' (seção [#Guarda_para_Linux_|Guarda para Linux]) e utilizar a seguinte linha de comando: ''g++ -ggdb -O0 -o test application.cpp -m32 --std=c++11 -lpthread && ./test''
 ^::__Listagem 64:__ Arquivo ''/non-epos-guard/count_sync_guard/guard_scheduler_cpu_affinity.cpp''::
@@ -4732,7 +4734,7 @@ Philosopher 4 ate 10 times
 The end!
 ~/np~{DIV}
 {DIV}^
-Agora, veja um execução utilizando o modo ''CONSOLE_MODE'', como apresentado na seção [#guard_semaphore_test.cc_|guard_semaphore_test.cc]. Mas por simplicidade, sem utilizar o modo ''DEBUG'', definido no header ''guard.h'' e exibido pelas macros ''DB()''. Assim, resultando em um log mais limpo e simples do que o log anteriormente apresentado na seção [#guard_semaphore_test.cc_|guard_semaphore_test.cc].
+Agora, veja um execução utilizando o modo ''#define CONSOLE_MODE'', como apresentado na seção [#guard_semaphore_test.cc_|guard_semaphore_test.cc]. Mas por simplicidade, sem utilizar o modo ''#define DEBUG'', definido no header ''guard.h'' e exibido pela macro ''DB()''. Assim, resultando em um log mais limpo e simples do que o log anteriormente apresentado na seção [#guard_semaphore_test.cc_|guard_semaphore_test.cc].
 ^::__Listagem 66:__ Exemplo de execução de ''/non-epos-guard/count_sync_guard/guard_scheduler_cpu_affinity.cpp'' em um processador com 4 núcleos::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
