@@ -85,7 +85,8 @@ public:
     }
 
     inline ReturnType operator()() {
-        return _unpack_and_run( typename GeneratorOfIntegerSequence< 0, int(Tn...) >::type() );
+        return _unpack_and_run(
+                typename GeneratorOfIntegerSequence< 0, int(Tn...) >::type() );
     }
 
 private:

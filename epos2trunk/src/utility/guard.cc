@@ -50,12 +50,15 @@ Critical_Section_Base* Guard::clear()
     CPU::fdec(_size);
 
     Critical_Section_Base * item = _head;
-    Critical_Section_Base * next = CPU::fas( item->_next, reinterpret_cast<Critical_Section_Base *>(DONE) );
-    DB( Synchronizer, TRC, " next=" << next << ")" << endl )
+    Critical_Section_Base * next = CPU::fas( item->_next,
+            reinterpret_cast<Critical_Section_Base *>(DONE) );
 
+    DB( Synchronizer, TRC, " next=" << next << ")" << endl )
     bool mine = true;
+
     if( !next ) {
-        mine = CPU::cas( _tail, item, reinterpret_cast<Critical_Section_Base *> (NULL) ) == item;
+        mine = CPU::cas( _tail, item, reinterpret_cast<
+                Critical_Section_Base *> (NULL) ) == item;
     }
 
     CPU::cas( _head, item, next );

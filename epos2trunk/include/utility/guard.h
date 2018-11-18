@@ -11,7 +11,12 @@ __BEGIN_UTIL
 
 class Guard
 {
-private:
+    int _size;
+    Thread* _sequencer;
+
+    Critical_Section_Base * _head;
+    Critical_Section_Base * _tail;
+
     static const int NULL = 0;
     static const int DONE = 1;
 
@@ -35,13 +40,6 @@ public:
 
     Critical_Section_Base * vouch(Critical_Section_Base * item);
     Critical_Section_Base * clear();
-
-private:
-    int _size;
-    Thread* _sequencer;
-
-    Critical_Section_Base * _head;
-    Critical_Section_Base * _tail;
 };
 
 __END_UTIL

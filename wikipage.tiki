@@ -610,7 +610,7 @@ Guard::Element * Guard::vouch(Element * item)
                     == reinterpret_cast<Element *>(NULL))
 
             return reinterpret_cast<Element *>(NULL);
-        delete item->object();
+        delete last->object();
     }
     _head = item;
     return item;
@@ -1617,14 +1617,9 @@ public:
                               << " _is_resolved=" << _is_resolved
                               << " _condition=" << _condition.size()
                               <<  ")" << endl )
-        _lock.lock();
 
         if(!_is_resolved) {
-            _lock.unlock();
             _condition.wait();
-        }
-        else {
-            _lock.unlock();
         }
         return _value;
     }
@@ -1634,7 +1629,6 @@ public:
                               << " _is_resolved=" << _is_resolved
                               << " _condition=" << _condition.size()
                               <<  ")" << endl )
-        _lock.lock();
         assert(!_is_resolved);
         // If `resolve()` was called and the instruction pointer got until here,
         // and the thread is unscheduled, and another thread call `resolve()`,
@@ -1642,12 +1636,10 @@ public:
         _value = value;
         _is_resolved = true;
         _condition.broadcast();
-        _lock.unlock();
     }
 
 private:
     bool _is_resolved;
-    Semaphore _lock;
 
     Condition _condition;
     FutureType _value;
@@ -1818,13 +1810,12 @@ A seguir ve-sê a implementação da classe base de todas as ''Critical_Section'
 {DIV(type="pre" bg="#CCFFFF")}~np~
 class Critical_Section_Base
 {
-    /// The Guard class requires access to our the _link private attribute
+    /// The Guard class requires access to our the _next private attribute
     friend class Guard;
-    typedef List_Elements::Singly_Linked<Critical_Section_Base> Element;
 
 public:
-    Critical_Section_Base(): _link(this) {
-        DB( Synchronizer, TRC, "Critical_Section_Base(_link=" << &_link
+    Critical_Section_Base(): _next(this) {
+        DB( Synchronizer, TRC, "Critical_Section_Base(_next=" << &_next
                 << ") => " << this << endl )
     }
 
@@ -1832,7 +1823,7 @@ public:
     /// method would not be called when accessed by a base class pointer.
     virtual ~Critical_Section_Base() {
         DB( Synchronizer, TRC, "~Critical_Section_Base(this=" << this
-                << " _link=" << &_link << ")" << endl )
+                << " _next=" << &_next << ")" << endl )
     }
 
     /// Returns void because the base class Critical_Section_Base() cannot be a
@@ -1847,7 +1838,7 @@ public:
 
 private:
     // Inspired by the thread code
-    Element _link;
+    Critical_Section_Base* _next;
 };
 ~/np~{DIV}
 {DIV}^
@@ -2295,17 +2286,101 @@ Para integrar a nova interface de ''Critical_Section'' no algoritmo do Guarda, f
 ^::__Listagem 46:__ Trecho de código de ''/include/utility/guard.h''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
-template<typename ... Tn>
-void submit( void(*entry)( Tn ... ), Tn ... an )
+class Guard
 {
-    // Creates a closure with the critical section parameters
-    Critical_Section<Tn ...>* cs = new (SYSTEM) Critical_Section<Tn ...>(entry, an ...);
+    int _size;
+    Thread* _sequencer;
 
-    Element * cur = vouch(&(cs->_link));
-    if (cur != reinterpret_cast<Element *>(NULL)) do {
-        cur->object()->start();
-        cur = clear();
-    } while (cur != reinterpret_cast<Element *>(NULL));
+    Critical_Section_Base * _head;
+    Critical_Section_Base * _tail;
+
+    static const int NULL = 0;
+    static const int DONE = 1;
+
+public:
+    Guard();
+    ~Guard();
+
+    template<typename ... Tn>
+    void submit( void(*entry)( Tn ... ), Tn ... an )
+    {
+        // Creates a closure with the critical section parameters
+        Critical_Section<Tn ...>* cs = new Critical_Section<Tn ...>(entry, an ...);
+
+        Critical_Section_Base * cur = vouch(cs);
+        if (cur != reinterpret_cast<Critical_Section_Base *>(NULL)) do {
+            _sequencer = Thread::self();
+            cur->start();
+            cur = clear();
+        } while (cur != reinterpret_cast<Critical_Section_Base *>(NULL));
+    }
+
+    Critical_Section_Base * vouch(Critical_Section_Base * item);
+    Critical_Section_Base * clear();
+};
+
+Guard::Guard(): _size(0), _sequencer(0), _head(0), _tail(0) {
+    DB( Synchronizer, TRC, "Guard(head=" << _head << ", tail=" << _tail
+            << ") => " << this << endl )
+}
+
+Guard::~Guard() {
+    DB( Synchronizer, TRC, "~Guard(this=" << this << ")" << endl )
+}
+
+Critical_Section_Base* Guard::vouch(Critical_Section_Base * item)
+{
+    DB( Synchronizer, TRC, "Guard::vouch(this=" << this
+            << " head=" << _head
+            << " tail=" << _tail
+            << " thread=" << Thread::self()
+            << " sequencer=" << _sequencer
+            << " size=" << _size + 1
+            << " item=" << item )
+    CPU::finc(_size);
+
+    item->_next = reinterpret_cast<Critical_Section_Base *>(NULL);
+    Critical_Section_Base * last = CPU::fas(_tail, item);
+    DB( Synchronizer, TRC, " last=" << last << ")" << endl )
+
+    if( last ) {
+        if( CPU::cas( last->_next, reinterpret_cast<Critical_Section_Base *>(NULL), item )
+                    == reinterpret_cast<Critical_Section_Base *>(NULL) )
+
+            return reinterpret_cast<Critical_Section_Base *>(NULL);
+        delete last;
+    }
+    _head = item;
+    return item;
+}
+
+Critical_Section_Base* Guard::clear()
+{
+    DB( Synchronizer, TRC, "Guard::clear(this=" << this
+            << " head=" << _head
+            << " tail=" << _tail
+            << " thread=" << Thread::self()
+            << " sequencer=" << _sequencer
+            << " size=" << _size - 1 )
+    CPU::fdec(_size);
+
+    Critical_Section_Base * item = _head;
+    Critical_Section_Base * next = CPU::fas( item->_next,
+            reinterpret_cast<Critical_Section_Base *>(DONE) );
+
+    DB( Synchronizer, TRC, " next=" << next << ")" << endl )
+    bool mine = true;
+
+    if( !next ) {
+        mine = CPU::cas( _tail, item, reinterpret_cast<
+                Critical_Section_Base *> (NULL) ) == item;
+    }
+
+    CPU::cas( _head, item, next );
+    if( mine ) {
+        delete item;
+    }
+    return next;
 }
 ~/np~{DIV}
 {DIV}^
