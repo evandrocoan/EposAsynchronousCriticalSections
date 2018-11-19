@@ -16,9 +16,8 @@
     std::recursive_mutex _debug_syncronized_semaphore_lock;
 
     #define DB(...) do { \
-        _debug_syncronized_semaphore_lock.lock(); \
-            std::cout << __VA_ARGS__ << std::flush; \
-        _debug_syncronized_semaphore_lock.unlock(); } while(0);
+            std::unique_lock<std::recursive_mutex> lock(_debug_syncronized_semaphore_lock); \
+            std::cout << __VA_ARGS__ << std::flush; } while(0);
 
     #define LOG(...) DB(__VA_ARGS__)
 
@@ -184,11 +183,23 @@ public:
                 << " _is_resolved=" << _is_resolved
                 << " _condition=" << _size
                 <<  ")" << std::endl )
+        // Optimization once _is_resolved is set true, we do not need lock anymore
+        if( _is_resolved ) {
+            return _value;
+        }
 
+        // If _is_resolved is not set to true, lock and double check _is_resolved
+        std::unique_lock<std::mutex> lock(_lock);
         if(!_is_resolved) {
             ++_size;
 
-            std::unique_lock<std::mutex> lock(_mutex);
+            // We cannot call _lock.unlock(); before _condition.wait(lock); because
+            // 1. It would allow this thread to be preempted
+            // 2. Then, some other thread could call resolve()
+            // Once this other thread completes the resolve() call, and this
+            // thread is rescheduled, we would finally call _condition.wait(lock);
+            // but doing so, would cause this thread to be locked indefinitely
+            // because we will never call resolve() anymore
             _condition.wait(lock);
         }
         return _value;
@@ -199,12 +210,14 @@ public:
                 << " _is_resolved=" << _is_resolved
                 << " _condition=" << _size
                 <<  ")" << std::endl )
+        _lock.lock();
         assert(!_is_resolved);
         // If the instruction pointer got until here, and the thread is unscheduled,
         // and another thread call `resolve()`, then, the `assert` will not work,
         // if the whole resolve() call is not atomic.
         _value = value;
         _is_resolved = true;
+        _lock.unlock();
         _condition.notify_all();
     }
 
@@ -213,7 +226,7 @@ private:
     std::atomic<int> _size;
     volatile std::atomic<bool> _is_resolved;
 
-    std::mutex _mutex;
+    std::mutex _lock;
     std::condition_variable _condition;
 };
 

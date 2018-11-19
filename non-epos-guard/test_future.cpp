@@ -38,10 +38,9 @@ public:
         }
 
         // If _is_resolved is not set to true, lock and double check _is_resolved
-        _lock.lock();
+        std::unique_lock<std::mutex> lock(_lock);
         if(!_is_resolved) {
             ++_size;
-            std::unique_lock<std::mutex> lock(_mutex);
 
             // We cannot call _lock.unlock(); before _condition.wait(lock); because
             // 1. It would allow this thread to be preempted
@@ -50,10 +49,7 @@ public:
             // thread is rescheduled, we would finally call _condition.wait(lock);
             // but doing so, would cause this thread to be locked indefinitely
             // because we will never call resolve() anymore
-            _condition.wait(lock); // How to call _lock.unlock(); after locking?
-        }
-        else {
-            _lock.unlock();
+            _condition.wait(lock);
         }
         return _value;
     }
@@ -79,8 +75,7 @@ private:
     std::atomic<int> _size;
     volatile std::atomic<bool> _is_resolved;
 
-    std::mutex _mutex;
-    std::recursive_mutex _lock;
+    std::mutex _lock;
     std::condition_variable _condition;
 };
 
