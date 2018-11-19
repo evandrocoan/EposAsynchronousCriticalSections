@@ -9,7 +9,7 @@ template<typename T1, typename ... Tn>
 struct SIZEOF<T1, Tn ...>
 { static const unsigned int Result = sizeof(T1) + SIZEOF<Tn ...>::Result ; };
 
-// https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer/7858971#7858971
+// https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer
 template<int ...>
 struct MetaSequenceOfIntegers { };
 

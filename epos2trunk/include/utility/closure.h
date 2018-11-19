@@ -7,7 +7,7 @@
 
 __BEGIN_UTIL
 
-// https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer/7858971
+// https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer
 template<int ...>
 struct MetaSequenceOfIntegers { };
 

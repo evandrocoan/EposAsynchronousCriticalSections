@@ -44,7 +44,8 @@ static T cas(T volatile & value, T compare, T replacement)
 {
     ASM("lock cmpxchgl %2, %3\n"
             : "=a"(compare)
-            : "a"(compare), "r"(replacement), "m"(value) : "memory");
+            : "a"(compare), "r"(replacement), "m"(value)
+            : "memory");
     return compare;
 }
 

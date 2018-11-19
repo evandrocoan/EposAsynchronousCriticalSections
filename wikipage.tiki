@@ -2473,7 +2473,7 @@ main: exiting()
 {DIV}^
 
 !!!Guarda para Linux  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
-A seguir, encontra-se uma reimplementação de todos os algoritmos já apresentados, mas com a diferença que tratam-se de uma versão dos mesmos componentes para uma máquina nativa Linux. Tal reimplementação foi feita por que uma das aplicações de teste não conseguia funcionar no EPOS devido algum problema desconhecido. Veja a seção veja a seção [#guard_scheduler_cpu_affinity_test.cc_|guard_scheduler_cpu_affinity_test.cc].
+A seguir, encontra-se uma reimplementação de todos os algoritmos já apresentados, mas com a diferença que tratam-se de uma versão dos mesmos componentes para uma máquina nativa Linux. Tal reimplementação foi feita por que uma das aplicações de teste não conseguia funcionar no EPOS devido algum problema desconhecido. Para mais informações, veja a seção [#guard_scheduler_cpu_affinity_test.cc_|guard_scheduler_cpu_affinity_test.cc].
 
 Para compilar um programa que que incluí essa implementação, você utilizar um linha de comando parecida com a seguinte: ''g++ -ggdb -O0 -o test application.cpp -m32 --std=c++11 -lpthread && ./test''
 ^::__Listagem 50:__ Arquivo ''/non-epos-guard/count_sync_guard/guard.h''::
@@ -2525,7 +2525,8 @@ static T cas(T volatile & value, T compare, T replacement)
 {
     ASM("lock cmpxchgl %2, %3\n"
             : "=a"(compare)
-            : "a"(compare), "r"(replacement), "m"(value) : "memory");
+            : "a"(compare), "r"(replacement), "m"(value)
+            : "memory");
     return compare;
 }
 
@@ -5075,10 +5076,10 @@ The end!
 {DIV}^
 
 !!!guard_synchronizer_test.cc  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
-Até o presente momento não foi conseguido completar a lógica de execução correta para a aplicação ''guard_synchronizer_test.cc''. Igualmente as aplicações anteriores, faz-se uso da mesma estratégia para realizar a sincronização entre as diferentes threads.
+Trata-se do mesmo programa original do EPOS chamado ''synchronizer_test.cc'', também conhecido como ''Producer Consumer''. Até o presente momento não foi conseguido completar a lógica de execução correta para a aplicação ''guard_synchronizer_test.cc''. Igualmente as aplicações anteriores, faz-se uso da mesma estratégia para realizar a sincronização entre as diferentes threads.
 
 Agora tem-se duas listas encadeada de variáveis ''Future'', representando quantas requisições de consumo e produção estão aguardando a disponibilidade do buffer. Os anteriores semáforos agora são somente dois números inteiros que servem como contadores, para representar quantas vagas estão disponíveis nos respectivos produtor e consumidor.
-^::__Listagem 67:__ Exemplo de execução de ''/app/guard_synchronizer_test.cc''::
+^::__Listagem 67:__ Arquivo ''/app/guard_synchronizer_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 // EPOS Synchronizer Component Test Program
@@ -5232,7 +5233,7 @@ int main() {
 }
 ~/np~{DIV}
 {DIV}^
-Ao executar essa aplicação em modo ''CONSOLE_MODE'' com 10 iterações, percebe-se que logo após completar-se essas 10 interações, não há nenhum consumo por parte do consumidor. Portanto, ainda precisa-se verificar as interações entre os algoritmos do Guarda e Future no momento em que a thread do consumidor começa a executar, mas não faz nenhum progresso:
+Ao executar essa aplicação em modo ''CONSOLE_MODE'' com 10 iterações, percebe-se que logo após completar-se essas 10 interações, não há nenhum consumo por parte do consumidor. Portanto, ainda precisa-se verificar as interações entre os algoritmos do Guarda e Future no momento em que a thread do consumidor começa a executar, mas não faz nenhum progresso.
 ^::__Listagem 68:__ Exemplo de execução de ''/app/guard_synchronizer_test.cc''::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
