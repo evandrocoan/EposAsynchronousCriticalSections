@@ -169,7 +169,7 @@ template<typename FutureType>
 class Future
 {
 public:
-    Future(): _is_resolved(false), _size(0) {
+    Future(): _size(0), _is_resolved(false) {
         DB( "Future(_is_resolved=" << _is_resolved
                 << ", _condition=" << _size
                 << ") => " << this << std::endl )
@@ -200,18 +200,18 @@ public:
                 << " _condition=" << _size
                 <<  ")" << std::endl )
         assert(!_is_resolved);
-        // If `resolve()` was called and the instruction pointer got until here,
-        // and the thread is unscheduled, and another thread call `resolve()`,
-        // then, the `assert` will not work, if the resolve() call is not atomic.
+        // If the instruction pointer got until here, and the thread is unscheduled,
+        // and another thread call `resolve()`, then, the `assert` will not work,
+        // if the whole resolve() call is not atomic.
         _value = value;
         _is_resolved = true;
         _condition.notify_all();
     }
 
 private:
-    bool _is_resolved;
     FutureType _value;
     std::atomic<int> _size;
+    volatile std::atomic<bool> _is_resolved;
 
     std::mutex _mutex;
     std::condition_variable _condition;
