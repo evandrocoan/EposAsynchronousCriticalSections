@@ -15,8 +15,8 @@ class Future
 public:
     Future(): _condition(), _is_resolved() {
         DB( Synchronizer, TRC, "Future(_is_resolved=" << _is_resolved
-                  << ", _condition=" << _condition.size()
-                  << ") => " << this << endl )
+                << ", _condition=" << _condition.size()
+                << ") => " << this << endl )
     }
 
     ~Future() {
@@ -25,9 +25,9 @@ public:
 
     FutureType get_value() {
         DB( Synchronizer, TRC, "Future::get_value(this=" << this
-                              << " _is_resolved=" << _is_resolved
-                              << " _condition=" << _condition.size()
-                              <<  ")" << endl )
+                << " _is_resolved=" << _is_resolved
+                << " _condition=" << _condition.size()
+                <<  ")" << endl )
 
         if(!_is_resolved) {
             _condition.wait();
@@ -37,9 +37,9 @@ public:
 
     void resolve(FutureType value) {
         DB( Synchronizer, TRC, "Future::resolve(this=" << this
-                              << " _is_resolved=" << _is_resolved
-                              << " _condition=" << _condition.size()
-                              <<  ")" << endl )
+                << " _is_resolved=" << _is_resolved
+                << " _condition=" << _condition.size()
+                <<  ")" << endl )
         assert(!_is_resolved);
         // If `resolve()` was called and the instruction pointer got until here,
         // and the thread is unscheduled, and another thread call `resolve()`,
@@ -50,7 +50,7 @@ public:
     }
 
 private:
-    bool _is_resolved;
+    volatile bool _is_resolved;
 
     Condition _condition;
     FutureType _value;
