@@ -5073,6 +5073,194 @@ Philosopher 4 ate 10 times
 The end!
 ~/np~{DIV}
 {DIV}^
+
+!!!guard_synchronizer_test.cc  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
+Até o presente momento não foi conseguido completar a lógica de execução correta para a aplicação ''guard_synchronizer_test.cc''. Igualmente as aplicações anteriores, faz-se uso da mesma estratégia para realizar a sincronização entre as diferentes threads.
+
+Agora tem-se duas listas encadeada de variáveis ''Future'', representando quantas requisições de consumo e produção estão aguardando a disponibilidade do buffer. Os anteriores semáforos agora são somente dois números inteiros que servem como contadores, para representar quantas vagas estão disponíveis nos respectivos produtor e consumidor.
+^::__Listagem 67:__ Exemplo de execução de ''/app/guard_synchronizer_test.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+// EPOS Synchronizer Component Test Program
+
+#include <utility/ostream.h>
+#include <utility/guard.h>
+#include <utility/future.h>
+#include <utility/debug_sync.h>
+#include <utility/list.h>
+#include <thread.h>
+#include <alarm.h>
+
+#if !defined(nullptr)
+    #define nullptr 0
+#endif
+
+using namespace EPOS;
+
+#define CONSOLE_MODE
+const int iterations = 10;
+
+Guard table;
+OStream cout;
+
+const int BUF_SIZE = 16;
+char buffer[BUF_SIZE];
+
+int full = 0;
+int empty = BUF_SIZE;
+
+Simple_List<Future<bool>*> pending_consume_futures;
+Simple_List<Future<bool>*> pending_produce_futures;
+
+#ifdef CONSOLE_MODE
+    #define EXTRA(arg)
+#else
+    #define EXTRA
+#endif
+
+void consume() {
+    EXTRA( LOG( "consume(empty=" << empty ) )
+
+    Simple_List<Future<bool>*>::Element* element
+            = pending_consume_futures.remove_tail();
+
+    EXTRA( LOG( " element=" << element ) )
+    EXTRA( LOG( ")" << endl ) )
+
+    if( element )
+    {
+        Future<bool>* future = *element->object();
+        future->resolve(true);
+    }
+
+    ++empty;
+}
+
+void can_consume(Future<bool>* can_consume) {
+    EXTRA( LOG( "can_consume(full=" << full << ")" << endl ) )
+
+    if(full > 0) {
+        --full;
+        can_consume->resolve(true);
+    }
+    else {
+        Simple_List<Future<bool>*>::Element* element =
+                new Simple_List<Future<bool>*>::Element(&can_consume);
+        pending_consume_futures.insert(element);
+    }
+}
+
+int consumer() {
+    EXTRA( LOG( "consumer(this=" << Thread::self() << ")" << endl ) )
+
+    int out = 0;
+    for(int i = 0; i < iterations; i++)
+    {
+        // full.p();
+        Future<bool>* future = new Future<bool>();
+        table.submit(can_consume, future);
+        future->get_value();
+
+        cout << "C<-" << buffer[out] << "\t";
+        out = (out + 1) % BUF_SIZE;
+        Alarm::delay(5000);
+
+        // empty.v();
+        table.submit(consume);
+    }
+
+    return 0;
+}
+
+void can_produce(Future<bool>* can_consume) {
+    EXTRA( LOG( "can_produce(empty=" << empty << ")" << endl ) )
+
+    if(empty > 0) {
+        --empty;
+        can_consume->resolve(true);
+    }
+    else {
+        Simple_List<Future<bool>*>::Element* element =
+                new Simple_List<Future<bool>*>::Element(&can_consume);
+        pending_produce_futures.insert(element);
+    }
+}
+
+void produce() {
+    EXTRA( LOG( "produce(full=" << full ) )
+
+    Simple_List<Future<bool>*>::Element* element
+            = pending_produce_futures.remove_tail();
+
+    EXTRA( LOG( " element=" << element ) )
+    EXTRA( LOG( ")" << endl ) )
+
+    if( element )
+    {
+        Future<bool>* future = *element->object();
+        future->resolve(true);
+    }
+
+    ++full;
+}
+
+int main() {
+    Thread * cons = new Thread(&consumer);
+
+    // producer
+    int in = 0;
+    for(int i = 0; i < iterations; i++) {
+        // empty.p();
+        Future<bool>* future = new Future<bool>();
+        table.submit(can_produce, future);
+        future->get_value();
+
+        Alarm::delay(5000);
+        buffer[in] = 'a' + in;
+        cout << "P->" << buffer[in] << "\t";
+        in = (in + 1) % BUF_SIZE;
+
+        // full.v();
+        table.submit(produce);
+    }
+
+    cons->join();
+    cout << "The end!" << endl;
+
+    delete cons;
+    return 0;
+}
+~/np~{DIV}
+{DIV}^
+Ao executar essa aplicação em modo ''CONSOLE_MODE'' com 10 iterações, percebe-se que logo após completar-se essas 10 interações, não há nenhum consumo por parte do consumidor. Portanto, ainda precisa-se verificar as interações entre os algoritmos do Guarda e Future no momento em que a thread do consumidor começa a executar, mas não faz nenhum progresso:
+^::__Listagem 68:__ Exemplo de execução de ''/app/guard_synchronizer_test.cc''::
+{DIV(type="span")}
+{DIV(type="pre" bg="#CCFFFF")}~np~
+can_produce(empty=16)
+consumer(this=0x00097f44)
+can_consume(full=0)
+P->a    produce(full=0 element=0x00000000)
+can_produce(empty=15)
+P->b    produce(full=1 element=0x00000000)
+can_produce(empty=14)
+P->c    produce(full=2 element=0x00000000)
+can_produce(empty=13)
+P->d    produce(full=3 element=0x00000000)
+can_produce(empty=12)
+P->e    produce(full=4 element=0x00000000)
+can_produce(empty=11)
+P->f    produce(full=5 element=0x00000000)
+can_produce(empty=10)
+P->g    produce(full=6 element=0x00000000)
+can_produce(empty=9)
+P->h    produce(full=7 element=0x00000000)
+can_produce(empty=8)
+P->i    produce(full=8 element=0x00000000)
+can_produce(empty=7)
+P->j    produce(full=9 element=0x00000000)
+~/np~{DIV}
+{DIV}^
+
 !!!O que aprendemos com os testes  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 # Executar aplicações com mais de 1 CPU ativa variavelmente gera exceções (GPF). Isso acontece mesmo com a aplicação do jantar dos filósofos, se os delays forem removidos.
 # Quando requisições são enviadas ao sequencer em uma taxa maior do que ele consegue executar, a memória enche e exceções (PF) ocorrem.
