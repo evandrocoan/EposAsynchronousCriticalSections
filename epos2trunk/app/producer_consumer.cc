@@ -3,8 +3,9 @@
 #include <utility/ostream.h>
 #include <thread.h>
 #include <alarm.h>
-#include <guard.h>
-#include <future.h>
+#include <utility/guard.h>
+#include <utility/future.h>
+#include <condition.h>
 
 using namespace EPOS;
 
@@ -13,113 +14,76 @@ const int iterations = 100;
 OStream cout;
 
 Guard buffer_guard;
+Condition full;
+Condition empty;
 const int BUF_SIZE = 16;
 char buffer[BUF_SIZE];
 int buffer_count = 0;
 int out = 0;
 int in = 0;
 
-void consume()
+
+void load(Future<char> * item)
 {
+    int old_out = out;
+    item->resolve(buffer[out]);
     cout << "C<-" << buffer[out] << "\t";
     out = (out + 1) % BUF_SIZE;
     buffer_count--;
+    if((in == old_out) && (buffer_count+1)) // checking whether the buffer WAS full
+        full.signal(); // wakeup waiting producer
 }
 
-void produce()
+void store(char item)
 {
-    buffer[in] = 'a' + in;
-    buffer_count++;
-    cout << "P->" << buffer[in] << "\t";
+    buffer[in] = item;
+    cout << "P->" << item << "\t";
     in = (in + 1) % BUF_SIZE;
+    buffer_count++;
+    if (buffer_count-1) // checking whether the buffer WAS empty
+        empty.signal(); // wakeup waiting consumer
 }
 
 int consumer()
 {
-    for(int index = 0; index < iterations; index++) {
-        buffer_guard.submit(&consume);
-        Alarm::delay(5000);
+    for(int i = 0; i < iterations; i++) {
+        Future<char> * item = new Future<char>();
+        if(!buffer_count) // checking whether the buffer IS empty
+            empty.wait(); // wait somehow
+        buffer_guard.submit(&load, item); // load item from buffer
+        item->get_value();  // consume - part1
+        delete(item);       // consume - part2
+        Alarm::delay(5000); // consume - part3
     }
     return 0;
 }
 
 int producer()
 {
-    for(int index = 0; index < iterations; index++) {
-        Alarm::delay(5000);
-        buffer_guard.submit(&produce);
+    for(int i = 0; i < iterations; i++) {
+        Alarm::delay(5000);    // produce - part1
+        char item = 'a' + in;  // produce - part2
+        if((in == out) && (buffer_count)) // checking whether the buffer IS full
+            full.wait();// wait somehow
+        buffer_guard.submit(&store, item); // store item on buffer
     }
     return 0;
 }
 
 int main()
 {
-    Thread * consumer = new Thread(&consumer);
-    Thread * producer = new Thread(&producer);
+    cout << "Main started!" << endl;
 
-    consumer->join();
-    producer->join();
+    //Thread * cons = new Thread(&consumer);
+    Thread * prod = new Thread(&producer);
+
+    //cons->join();
+    prod->join();
 
     cout << "The end!" << endl;
 
-    delete consumer;
-    delete producer;
+    //delete cons;
+    delete prod;
 
     return 0;
 }
-
-// // EPOS Synchronizer Component Test Program
-
-// #include <utility/ostream.h>
-// #include <thread.h>
-// #include <semaphore.h>
-// #include <alarm.h>
-
-// using namespace EPOS;
-
-// const int iterations = 100;
-
-// OStream cout;
-
-// const int BUF_SIZE = 16;
-// char buffer[BUF_SIZE];
-// Semaphore empty(BUF_SIZE);
-// Semaphore full(0);
-
-// int consumer()
-// {
-//     int out = 0;
-//     for(int i = 0; i < iterations; i++) {
-//         full.p();
-//         cout << "C<-" << buffer[out] << "\t";
-//         out = (out + 1) % BUF_SIZE;
-//         Alarm::delay(5000);
-//         empty.v();
-//     }
-
-//     return 0;
-// }
-
-// int main()
-// {
-//     Thread * cons = new Thread(&consumer);
-
-//     // producer
-//     int in = 0;
-//     for(int i = 0; i < iterations; i++) {
-//         empty.p();
-//         Alarm::delay(5000);
-//         buffer[in] = 'a' + in;
-//         cout << "P->" << buffer[in] << "\t";
-//         in = (in + 1) % BUF_SIZE;
-//         full.v();
-//     }
-
-//     cons->join();
-
-//     cout << "The end!" << endl;
-
-//     delete cons;
-
-//     return 0;
-// }
