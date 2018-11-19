@@ -82,8 +82,8 @@ class SREC;
 class Vectors;
 class Guard;
 
-template<typename Tn>
-class Closure;
+template<typename Tn> class Future;
+template<typename Tn> class Closure;
 __END_UTIL
 
 __BEGIN_SYS

@@ -26,6 +26,8 @@ class Thread
     friend class Task;
     friend class Agent;
 
+    template<typename> friend class _UTIL::Future;
+
 protected:
     static const bool smp = Traits<Thread>::smp;
     static const bool preemptive = Traits<Thread>::Criterion::preemptive;

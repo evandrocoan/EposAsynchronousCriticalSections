@@ -1602,7 +1602,7 @@ template<typename FutureType>
 class Future
 {
 public:
-    Future(): _lock(1), _condition(), _is_resolved(false) {
+    Future(): _is_resolved(false), _condition()  {
         DB( Synchronizer, TRC, "Future(_is_resolved=" << _is_resolved
                 << ", _condition=" << _condition.size()
                 << ") => " << this << endl )
@@ -1617,11 +1617,18 @@ public:
                 << " _is_resolved=" << _is_resolved
                 << " _condition=" << _condition.size()
                 <<  ")" << endl )
-        // It can only enter on the if block, if the _is_resolved value is false!
-        // if _is_resolved is true, then CPU::cas() will keep it true and return true
-        // if _is_resolved is false, then CPU::cas() will keep it false and return false
-        if( !CPU::cas( _is_resolved, false, _is_resolved ) ) {
-            _condition.wait();
+        // Optimization once _is_resolved is set true, we do not need lock anymore
+        if( _is_resolved ) {
+            return _value;
+        }
+
+        // If _is_resolved is not set to true, lock and double check _is_resolved
+        Thread::lock();
+        if( !_is_resolved ) {
+            _condition.wait(); // implicit Thread::unlock()
+        }
+        else {
+            Thread::unlock();
         }
         return _value;
     }
@@ -1631,22 +1638,17 @@ public:
                 << " _is_resolved=" << _is_resolved
                 << " _condition=" << _condition.size()
                 <<  ")" << endl )
-        _lock.lock();
+        Thread::lock();
         assert( !_is_resolved );
         // If the instruction pointer got until here, and the thread is unscheduled,
         // and another thread call `resolve()`, then, the `assert` will not work,
         // if the whole resolve() call is not atomic.
         _value = value;
-
-        // atomically resolve the future
-        CPU::fas( _is_resolved, true );
-
-        _lock.unlock();
-        _condition.broadcast();
+        _is_resolved = true;
+        _condition.broadcast(); // implicit Thread::unlock()
     }
 
 private:
-    Semaphore _lock;
     volatile bool _is_resolved;
 
     Condition _condition;
@@ -5442,6 +5444,38 @@ P->j    produce(full=9 element=0x00000000)
 # https://stackoverflow.com/questions/43759609/stdcondition-variablenotify-all-i-need-an-example
 # https://stackoverflow.com/questions/4184468/sleep-for-milliseconds
 # https://en.cppreference.com/w/cpp/thread/sleep_for
+# https://stackoverflow.com/questions/3292795/how-to-declare-a-templated-struct-class-as-a-friend
+# https://stackoverflow.com/questions/8967521/class-template-with-template-class-friend-whats-really-going-on-here
+# https://stackoverflow.com/questions/25878765/stdpromise-and-stdfuture-in-c
+# https://en.cppreference.com/w/cpp/thread/shared_future
+# https://www.codeproject.com/Tips/712107/Simple-introduction-to-std-future-and-std-async
+# https://en.cppreference.com/w/cpp/thread/future
+# https://www.justsoftwaresolutions.co.uk/threading/locks-mutexes-semaphores.html
+# https://stackoverflow.com/questions/18878377/implementing-a-semaphore-with-stdmutex
+# https://stackoverflow.com/questions/6804044/use-a-mutex-as-a-semaphore
+# https://stackoverflow.com/questions/36248616/how-mutex-semaphore-works
+# https://en.cppreference.com/w/cpp/thread/lock
+# https://stackoverflow.com/questions/38340378/difference-between-stdmutex-lock-function-and-stdlock-guardstdmutex
+# https://stackoverflow.com/questions/7007834/what-is-the-use-case-for-the-atomic-exchange-read-write-operation
+# https://www.quora.com/What-is-the-difference-between-a-mutex-and-a-semaphore
+# https://en.cppreference.com/w/cpp/thread/mutex/lock
+# https://en.cppreference.com/w/cpp/thread/mutex
+# https://stackoverflow.com/questions/46767423/how-can-i-lock-twice-with-the-same-mutex-on-the-same-thread
+# https://stackoverflow.com/questions/13483767/locking-multiple-mutexes
+# https://stackoverflow.com/questions/34915926/is-assignment-equivalent-to-load-store-for-stdatomicbool
+# https://stackoverflow.com/questions/30761225/how-to-use-stdatomic
+# https://stackoverflow.com/questions/45859414/atomic-read-then-write-with-stdatomic
+# https://en.cppreference.com/w/cpp/atomic/atomic/exchange
+# http://www.cplusplus.com/reference/atomic/memory_order/
+# http://www.cplusplus.com/reference/atomic/atomic/operator=/
+# https://en.cppreference.com/w/cpp/language/memory_model
+# https://stackoverflow.com/questions/22424209/tsl-instruction-reference
+# https://en.wikipedia.org/wiki/Double-checked_locking
+# https://en.wikipedia.org/wiki/Test_and_test-and-set
+# https://en.wikipedia.org/wiki/Spinlock
+# https://stackoverflow.com/questions/14498892/stdmutex-vs-stdrecursive-mutex-as-class-member
+# https://stackoverflow.com/questions/36619715/a-shared-recursive-mutex-in-standard-c
+# https://stackoverflow.com/questions/23893835/what-special-purpose-does-unique-lock-have-over-using-a-mutex
 
 !!Referências  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 #Stefan Reif and Wolfgang Schröder-Preikschat, "Predictable Synchronisation Algorithms for Asynchronous Critical Sections,” Friedrich-Alexander-Universität Erlangen-Nürnberg, Dept. of Computer Science, Technical Reports, CS-2018-03, February 2018.
