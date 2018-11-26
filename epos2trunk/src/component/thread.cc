@@ -4,6 +4,7 @@
 #include <system.h>
 #include <thread.h>
 #include <alarm.h> // for FCFS
+#include <utility/guard.h>
 
 // This_Thread class attributes
 __BEGIN_UTIL
@@ -321,6 +322,7 @@ void Thread::wakeup_all(Queue * q)
 
 void Thread::reschedule()
 {
+    Guard::show_size();
     db<Scheduler<Thread> >(TRC) << "Thread::reschedule()" << endl;
     db<Scheduler<Thread> >(TRC) << "Thread::reschedule(locked=" << locked() << ")" << endl;
 

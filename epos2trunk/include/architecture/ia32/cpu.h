@@ -382,8 +382,8 @@ public:
     }
 
     template<typename T>
-    static T fas(volatile T & value, volatile T replacement) {
-        ASM("lock xchg %0, %2" : "=a"(replacement) : "a"(replacement), "m"(value) : "memory");
+    static T fas(volatile T & value, T replacement) {
+        ASM("lock xchgl %1, %2" : "=a"(replacement) : "a"(replacement), "m"(value) : "memory");
         return replacement;
     }
 

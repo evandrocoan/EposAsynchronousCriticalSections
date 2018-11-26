@@ -11,7 +11,7 @@
 #define ARCH ia32
 #define MACH pc
 #define MMOD legacy_pc
-#define APPL count_sync_guard
+#define APPL count_sync_guard_old
 #define __mode_library__
 #define __arch_ia32__
 #define __mach_pc__

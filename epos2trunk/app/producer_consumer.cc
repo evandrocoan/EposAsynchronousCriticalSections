@@ -48,6 +48,7 @@ int consumer()
 {
     for(int i = 0; i < iterations; i++) {
         Future<char> * item = new Future<char>();
+        // this must be fixed, requires mutual exclusion
         if(!buffer_count) // checking whether the buffer IS empty
             empty.wait(); // wait somehow
         buffer_guard.submit(&load, item); // load item from buffer

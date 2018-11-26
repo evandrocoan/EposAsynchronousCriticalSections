@@ -1,6 +1,7 @@
 // EPOS PC Interrupt Dispatcher
 
 #include <machine/pc/ic.h>
+#include <utility/guard.h>
 
 extern "C" { void _exit(int s); }
 extern "C" { void __exit(); }
@@ -842,6 +843,9 @@ void IC::exc_not(Reg32 eip, Reg32 cs, Reg32 eflags, Reg32 error)
  */
 void IC::exc_pf(Reg32 eip, Reg32 cs, Reg32 eflags, Reg32 error)
 {
+
+    Guard::pf_cs();
+
     register Reg32 fr = CPU::fr();
 
     if(CPU::cr2() == reinterpret_cast<CPU::Reg32>(&__exit)) {
@@ -867,6 +871,7 @@ void IC::exc_pf(Reg32 eip, Reg32 cs, Reg32 eflags, Reg32 error)
 // https://wiki.osdev.org/Exceptions
 void IC::exc_gpf(Reg32 eip, Reg32 cs, Reg32 eflags, Reg32 error)
 {
+    Guard::pf_cs();
     db<IC,Machine>(WRN) << "IC::exc_gpf(cs=" << hex << cs << ",ip=" << reinterpret_cast<void *>(eip) << ",fl=" << eflags << ")" << endl;
     db<IC,Machine>(WRN) << endl << endl << endl << "The running thread will now be terminated!" << endl;
     _exit(-1);

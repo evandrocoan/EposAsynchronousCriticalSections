@@ -21,7 +21,7 @@ void show(char arg, const char * type) {
 
 void increment_counter() {
     counter = counter + 1;
-    if((counter % (iterations/100)) == 0)
+    if ((counter % 10000) == 0)
         LOG( "increment_counter (counter=" << counter << ")" << endl )
 }
 
@@ -30,7 +30,6 @@ int mythread(char arg) {
 
     for (int i = iterations; i > 0 ; i--) {
         counter_guard.submit(&increment_counter);
-        // Delay label(1000);
     }
 
     display_guard.submit(&show, arg, "end");
@@ -44,23 +43,23 @@ int main()
 
     pool[0] = new Thread(&mythread, 'A');
     pool[1] = new Thread(&mythread, 'B');
-//    pool[2] = new Thread(&mythread, 'C');
-//    pool[3] = new Thread(&mythread, 'D');
-//    pool[4] = new Thread(&mythread, 'E');
+    pool[2] = new Thread(&mythread, 'C');
+    pool[3] = new Thread(&mythread, 'D');
+    pool[4] = new Thread(&mythread, 'E');
 
-    LOG( "main: start joining the threads (counter=" << counter << ")" << endl )
+    LOG( "main: joining threads (counter=" << counter << ")" << endl )
     pool[0]->join();
     pool[1]->join();
-//    pool[2]->join();
-//    pool[3]->join();
-//    pool[4]->join();
+    pool[2]->join();
+    pool[3]->join();
+    pool[4]->join();
 
-    LOG( "main: done with both (counter=" << counter << ")" << endl )
+    LOG( "main: done with threads (counter=" << counter << ")" << endl )
     delete pool[0];
     delete pool[1];
-//    delete pool[2];
-//    delete pool[3];
-//    delete pool[4];
+    delete pool[2];
+    delete pool[3];
+    delete pool[4];
 
     LOG( "main: exiting (counter=" << counter << ")" << endl )
     return 0;

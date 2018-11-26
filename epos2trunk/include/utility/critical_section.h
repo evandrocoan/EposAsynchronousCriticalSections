@@ -37,8 +37,7 @@ public:
     virtual void start() = 0;
 
 private:
-    // Inspired by the thread code
-    Critical_Section_Base* _next;
+    Critical_Section_Base * volatile _next;
 };
 
 template<typename... Tn>
@@ -57,6 +56,23 @@ public:
     inline void start() {
         run();
     }
+};
+
+class Void_Critical_Section: public Critical_Section_Base
+{
+
+public:
+    typedef void (Function)();
+
+public:
+    Void_Critical_Section(Function * h): _handler(h) {}
+    
+    inline void start() {
+        _handler();
+    }
+
+private:
+    Function * _handler;
 };
 
 __END_UTIL
