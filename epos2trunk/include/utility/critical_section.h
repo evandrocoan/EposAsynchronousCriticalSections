@@ -59,6 +59,23 @@ public:
     }
 };
 
+class Void_Critical_Section: public Critical_Section_Base
+{
+
+public:
+    typedef void (Function)();
+
+public:
+    Void_Critical_Section(Function * h): _handler(h) {}
+    
+    inline void start() {
+        _handler();
+    }
+
+private:
+    Function * _handler;
+};
+
 __END_UTIL
 
 #endif

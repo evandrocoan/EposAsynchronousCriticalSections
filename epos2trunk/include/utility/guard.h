@@ -11,9 +11,15 @@ __BEGIN_UTIL
 
 class Guard
 {
+
+public:
+    typedef void (Function)();
+
+public:   
     int _size;
     Thread* _sequencer;
 
+private:
     Critical_Section_Base * _head;
     Critical_Section_Base * _tail;
 
@@ -37,6 +43,19 @@ public:
             cur = clear();
         } while (cur != reinterpret_cast<Critical_Section_Base *>(NULL));
     }
+
+    void submit(Function handler)
+    {
+        Void_Critical_Section * cs = new Void_Critical_Section(handler);
+
+        Critical_Section_Base * volatile cur = vouch(cs);
+        if (cur != reinterpret_cast<Critical_Section_Base *>(NULL)) do {
+            _sequencer = Thread::self();
+            cur->start();
+            cur = clear();
+        } while (cur != reinterpret_cast<Critical_Section_Base *>(NULL));
+    }
+
 
     Critical_Section_Base * vouch(Critical_Section_Base * item);
     Critical_Section_Base * clear();
