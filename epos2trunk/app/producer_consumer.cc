@@ -39,14 +39,14 @@ void load(Future<char> * item)
     item->resolve(buffer[out]);
     cout << "C<-" << buffer[out] << "\t";
     total_count++;
-    /*if (total_count > 10){
+    if (total_count > 10){
         cout << "\n";
         total_count = 0;
-    }*/
+    }
     out = (out + 1) % BUF_SIZE;
     buffer_count--;
     if (buffer_count == BUF_SIZE-1){
-        cout << "Some Producer Wakeup"  << "\n";
+        //cout << "Some Producer Wakeup"  << "\n";
         full.signal(); // wakeup waiting producer
     }
 }
@@ -63,14 +63,14 @@ void store(char item)
     buffer[in] = item;
     cout << "P->" << item << "\t";
     total_count++;
-    /*if (total_count > 10){
+    if (total_count > 10){
         cout << "\n";
         total_count = 0;
-    }*/
+    }
     in = (in + 1) % BUF_SIZE;
     buffer_count++;
     if (buffer_count == 1){
-        cout << "Some Consumer Wakeup"  << "\n";
+        //cout << "Some Consumer Wakeup"  << "\n";
         empty.signal(); // wakeup waiting consumer
     }
 }
@@ -105,9 +105,9 @@ int producer()
         Future<bool> * wait = new Future<bool>();
         buffer_guard.submit(check_store, wait); // checking whether wait is necessary
         if(wait->get_value()){
-            cout << "Producer Waiting"  << "\n";
+            //cout << "Producer Waiting"  << "\n";
             full.wait();
-            cout << "Producer Awaking"  << "\n";
+            //cout << "Producer Awaking"  << "\n";
         }
         buffer_guard.submit(store, item); // store item on buffer
         delete wait;
