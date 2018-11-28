@@ -31,7 +31,7 @@
 template<typename T>
 static T fas(T volatile & value, T replacement)
 {
-    ASM("lock xchg %2, %1"
+    ASM("lock xchgl %1, %2"
             : "=r"(replacement)
             : "r"(replacement), "m"(value)
             : "memory");
@@ -41,7 +41,7 @@ static T fas(T volatile & value, T replacement)
 template<typename T>
 static T cas(T volatile & value, T compare, T replacement)
 {
-    ASM("lock cmpxchg %2, %3\n"
+    ASM("lock cmpxchgl %2, %3\n"
             : "=a"(compare)
             : "a"(compare), "r"(replacement), "m"(value)
             : "memory");

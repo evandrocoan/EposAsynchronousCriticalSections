@@ -383,13 +383,13 @@ public:
 
     template<typename T>
     static T fas(volatile T & value, volatile T replacement) {
-        ASM("lock xchg %1, %2" : "=a"(replacement) : "a"(replacement), "m"(value) : "memory");
+        ASM("lock xchgl %1, %2" : "=a"(replacement) : "a"(replacement), "m"(value) : "memory");
         return replacement;
     }
 
     template<typename T>
     static T cas(volatile T & value, T compare, T replacement) {
-        ASM("lock cmpxchg %2, %3\n" : "=a"(compare) : "a"(compare), "r"(replacement), "m"(value) : "memory");
+        ASM("lock cmpxchgl %2, %3\n" : "=a"(compare) : "a"(compare), "r"(replacement), "m"(value) : "memory");
         return compare;
     }
 
