@@ -78,19 +78,17 @@ void store(char item)
 int consumer()
 {
     for(int i = 0; i < iterations; i++) {
-        Future<char> * item = new Future<char>();
-        Future<bool> * wait = new Future<bool>();
-        buffer_guard.submit(check_load, wait); // checking whether wait is necessary
-        if (wait->get_value()){
+        Future<char> item{};
+        Future<bool> wait{};
+        buffer_guard.submit(check_load, &wait); // checking whether wait is necessary
+        if (wait.get_value()){
             empty.wait(); // wait somehow
         }
-        buffer_guard.submit(load, item); // load item from buffer
-        item->get_value();  // consume - part1
-        //unsigned long int delay_rand = Random::random();
-        //unsigned long int true_rand = (delay_rand > 9999) ? delay_rand / 10000 : delay_rand;
-        //Alarm::delay(true_rand/5); // consume - part3
-        delete item;       // consume - part2
-        delete wait;
+        buffer_guard.submit(load, &item); // load item from buffer
+        item.get_value();  // consume - part1
+        unsigned long int delay_rand = Random::random();
+        unsigned long int true_rand = (delay_rand > 9999) ? delay_rand / 10000 : delay_rand;
+        Alarm::delay(true_rand/5); // consume - part3
     }
     return 0;
 }
@@ -98,19 +96,18 @@ int consumer()
 int producer()
 {
     for(int i = 0; i < iterations; i++) {
-        //unsigned long int delay_rand = Random::random();
-        //unsigned long int true_rand = (delay_rand > 9999) ? delay_rand / 1000 : delay_rand;
-        //Alarm::delay(true_rand/20); // consume - part3
+        unsigned long int delay_rand = Random::random();
+        unsigned long int true_rand = (delay_rand > 9999) ? delay_rand / 1000 : delay_rand;
+        Alarm::delay(true_rand/20); // consume - part3
         char item = 'a' + in;  // produce - part2
-        Future<bool> * wait = new Future<bool>();
-        buffer_guard.submit(check_store, wait); // checking whether wait is necessary
-        if(wait->get_value()){
+        Future<bool> wait{};
+        buffer_guard.submit(check_store, &wait); // checking whether wait is necessary
+        if(wait.get_value()){
             //cout << "Producer Waiting"  << "\n";
             full.wait();
             //cout << "Producer Awaking"  << "\n";
         }
         buffer_guard.submit(store, item); // store item on buffer
-        delete wait;
     }
     return 0;
 }
