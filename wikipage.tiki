@@ -1,5 +1,5 @@
 !::Predictable Synchronization Algorithms %%% for Asynchronous Critical Sections::
-::Evandro Sperfeld Coan <evandrocoan@hotmail.com>::
+::Evandro Coan <[https://github.com/evandrocoan|https://github.com/evandrocoan]>::
 ::Eduardo Demeneck Onghero <do.demeneck@gmail.com>::
 
 {maketoc}
@@ -78,7 +78,7 @@ __Entregável: D5__
 # O código dos novos testes realizados, junto com o resultado dos testes
 
 !!Tarefas Opcionais  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
-Ver a seção [#Lista_de_futuros_projetos_para_o_semestre_que_vem_|←].
+Ver a seção [#Lista_de_futuros_projetos_para_o_semestre_que_vem_|Lista de futuros projetos para o semestre que vem].
 
 !Fundamentação Teórica  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Antigamente quando não existia poder computacional, não existia o conceito atual de threads por que não havia memória suficiente. Assim toda a programação de múltiplas tarefas deveria ser feita pelo programador manualmente, para poder-se extrair o máximo da máquina. Agora, hoje em dia com processadores com milhares de núcleos, volta a ter que se programar a máquina mais diretamente para poder garantir 100% (cem por cento) de throughput de todos os núcleos dos processadores.
@@ -262,15 +262,23 @@ Depois de criada a ''future'', a ''Thread A'' chama o método ''guard_vouch()'' 
 Claramente esta implementação mostrada é simples, e trata-se de uma leve modificação da versão original {DIV(type="span")}[{DIV}[#Refer_ncias_|14]]. Seu defeito é sempre realizar a criação de uma nova thread para cada variável ''Future'', pois assim tem-se a criação de muitas threads no sistema, já que sempre cria-se uma thread nova depois que adiciona-se o primeiro bloco com dependência de dados. A implementação inicial {DIV(type="span")}[{DIV}[#Refer_ncias_|14]] dispõe de um serviço de execução que trata de criar novas threads na medida que o sistema necessita. Por exemplo, um sistema embarcado pode não possuir memória suficiente para que muitas thread sejam criadas, então esse serviço de threads limitaria o número máximo de threads que podem ser criadas ao mesmo tempo, e caso esse limite seja ultrapassado, novas requisições aguardam em uma fila, i.e., bloqueiam até que recursos estejam disponíveis para a execução das seções de código dependentes da seção crítica
 
 Um serviço/implementação mais avançado pode automaticamente informar a ''Thread A'' que, existe um bloco de código dependente da seção crítica ainda não executado, e assim, antes que a ''Thread A'' termine sua execução, ela verifica se tal condição é verdadeira, e caso, sim, ela aguarda por este bloco está disponível para execução antes de chamar método ''exit()'' da ''Thread A''. Uma desvantagem é que a ''Thread A'' pode ainda não ter terminado de executar o ''bloco 3'' quando o bloco dependente da seção crítica estiver terminado. Assim, teria-se o atraso da execução do ''bloco 4''. Outra  desvantagem desta alternativa é que o bloco de código dependente pode demorar muito tempo antes que ele possa ser executado, e assim, o sistema desperdiçaria a memória ocupada pela ''Thread A'' que ficou esperando. Assim, a alternativa original de manter um serviço especializado de threads em executar os blocos de código dependentes trás uma melhor vantagem de economia de memória, entretanto ele conta com o overhead de sua manutenção, que conta com criações de novas thread quando a demanda for alta e destruição de threads quando a demanda por blocos dependentes de código for baixa. Mas talvez em uma implementação mais esperta pode-se utilizar a idle thread {DIV(type="span")}[{DIV}[#Refer_ncias_|21]] do sistema para realizar a manutenção de tal serviço, assim reaproveitando recursos do sistema inutilizados.
-%%%
+
 !!!Futures versus Promises  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 A linguagem JavaScript recentemente em 2015, incorporou nativamente a classe ''Promise'' {[https://www.ecma-international.org/ecma-262/6.0/#sec-promise-objects|6]}. Conceitualmente elas são muito similares a ''futures'' {DIV(type="span")}[{DIV}[#Refer_ncias_|14]], mas a implementação de JavaScript é bastante peculiar ao modelo de processamento de JavaScript, que é baseado na existência de uma única thread no sistema {DIV(type="span")}[{DIV}[#Refer_ncias_|16], [#Refer_ncias_|18]]. A seguir vê-se uma breve ilustração da única thread que existe no mundo JavaScript. Essa thread chama-se ''Event loop'', e tudo o que é feito, passa por ela. No caso da implementação das ''promises'', quando uma ''promise'' é resolvida e obtém o seu valor, elas furam {DIV(type="span")}[{DIV}[#Refer_ncias_|16]] a fila de ''callbacks'', para assim serem executadas o mais brevemente possível, preferencialmente mais cedo, ao contrário do modelo usual utilizado para timers, de executar algum tempo depois que o timer expirou, preferencialmente mais tarde pois são adicionados no final da fila.
 ^::{img fileId="945"}::
-::__Figura 8:__ Ilustração do funcionamento programa JavaScript::
+::__Figura 8:__ Ilustração do funcionamento programa ~np~JavaScript~/np~::
 ::__Fonte:__ Referência {DIV(type="span")}[{DIV}[#Refer_ncias_|16]]::^
+^::__Listagem 6:__ Nota Sobre Multithreading em ~np~JavaScript~/np~::
+{DIV(type="span")}
+{DIV(bg="#CCFFFF")}
+O ambiente de execução (runtime) JavaScript é do tipo single thread, ou seja, apenas um script é executado de cada vez. Se, por exemplo, o usuário clicar em um botão de uma página e esta ação ("onclick") implicar na execução de um script então nenhum outro script poderá ser executado enquanto aquele estiver sendo executado. Os scripts ficam em uma fila aguardando a vez de serem executados, um de cada vez.
 
+A especificação HTML 5 introduziu o conceito de web worker que permite que um script seja executado em uma thread própria, distinta daquela thread que executa os scripts associados aos eventos produzidos pelo usuário enquanto está interagindo com a página HTML.
+{DIV}
+::__Fonte:__ Referência {DIV(type="span")}[{DIV}[#Refer_ncias_|22]]::
+{DIV}^
 Assim, ''promises'' em JavaScript funcionam não para fazer computações pesadas, mas sim esperar por eventos assíncronos e que podem demorar muito tempo para acontecer, como por exemplo, esperar pela resposta de uma requisição de rede. A seguir vê-se um exemplo do uso de uma ''promise'' que executa assincronamente. Em JavaScript como somente existe uma thread, então tudo o que se executa é sequencialmente {[https://benjaminhorn.io/code/part-2-cpu-intensive-javascript-computations-without-blocking-the-single-thread/|7]}. Na execução de ''promises'' em JavaScript, refere-se assincronamente para dizer que ao se executar este trecho de código, ele não irá bloquear, e somente algum momento mais tarde (assíncrono, fora de sincronia), a soma será realizada, e novamente sem bloquear a execução da única thread que existe, o ''Event loop''.
-^::__Listagem 6:__ Implementação de uma Promise ja<x>vascript::
+^::__Listagem 6:__ Implementação de uma Promise ~np~JavaScript~/np~::
 {DIV(type="span")}
 {DIV(type="pre" bg="#CCFFFF")}~np~
 function sum(xPromise, yPromise) {
@@ -287,7 +295,6 @@ sum(fetchX(), fetchY())
 ~/np~{DIV}
 ::__Fonte:__ Referência {DIV(type="span")}[{DIV}[#Refer_ncias_|16]]::
 {DIV}^
-
 Assuma de os método ''fetchX()'' e ''fetchY()'' returnam alguma ''promise'' depois de fazerem alguma computação. A função ''sum()'' mostrada anteriormente, recebe duas ''promises'' como parâmetro, e chama o método estático ''Primise.all()'', que recebe um array de ''promises'' e retorna uma nova ''promise'' que irá chamar o seu correspondente ''callback'' indicado por ''then()'', assim que todas as suas "''sub-promises''” forem resolvidas, i.e., efetivamente conterem um valor ao invés de somente serem uma promessa de conter algum valor.
 
 Diferente de JavaScript, em C++ e outras linguagens como Java, existem as implementações dos tipos ''Futures'' e ''Promises''. A biblioteca ''std'' do C++ defines as classes template ''std{DIV(type="span")}:{DIV}:promise'' {[https://en.cppreference.com/w/cpp/thread/promise|8]} e ''std{DIV(type="span")}:{DIV}:future'' {[https://en.cppreference.com/w/cpp/thread/future|9]}. A funcionalidade empregada a esses tipos são a transmissão de resultados da computação de uma thread para outra thread que aguarda os resultados. De maneira tradicional, para receber um valor de uma thread precisa-se compartilhar uma variável de condição e um ponteiro comuns a ambas as threads. Uma vez que a outra thread obtém o valor e coloca o mesmo no ponteiro compartilhado, pede-se para a variável de condição liberar a passagem. Então a outra thread que aguardava o resultado desbloqueia e pode seguir com a execução. A desvantagem dessa abordagem é a necessidade de manter e operar diretamente a variável de condição e o ponteiro, e caso queira-se compartilhar mais resultados entre as diferentes threads, a programação fica ainda mais complicada pois precisa-se manter sincronia com mais variáveis de condição. Já com ''std{DIV(type="span")}:{DIV}:promise'' e ''std{DIV(type="span")}:{DIV}:promise'', pode-se abstrair essas operações repetitivas e simplificar a programação. A seguir vê-se um exemplo de utilização destas classes para compartilhamento de dados entre duas threads:
@@ -321,7 +328,7 @@ int main()
 ~/np~{DIV}
 ::__Fonte:__ Referência {DIV(type="span")}[{DIV}[#Refer_ncias_|17]]::
 {DIV}^
-%%%
+
 !!!Futures versus Observables  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Não há muito o que dizer sobre a diferença entre ''futures'' {DIV(type="span")}[{DIV}[#Refer_ncias_|14]] e ''observables'' {DIV(type="span")}[{DIV}[#Refer_ncias_|20]]. Cada um deles servem a propósitos bem específicos, entretanto o domínio de soluções de problemas entre ''futures'' e ''observables'' possuí uma intersecção válida quando não utiliza-se ''futures'' que realizam o bloqueio da thread, mas sim ''futures'' que registram uma lista de blocos de execução dependentes para serem chamados assim que o resultado da future estiver completo. Neste contexto, a versão equivalente para ''observables'' seria registrar a lista de blocos dependentes do resultado como observadores.
 
@@ -1579,6 +1586,7 @@ index 9495641..27dd942 100644
  }
 ~/np~{DIV}
 {DIV}^
+
 !!Futures  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Das 2 implementações distintas de futures apresentadas, realiza-se a implementação do modelo de future bloqueante, apresentado no artigo referência {DIV(type="span")}[{DIV}[#Refer_ncias_|2]]. Como a implementação atual do algoritmo do guarda não suporta passagens de parâmetros variádicos, fez-se a implementação dos métodos para que aceitem vários parâmetros com meta programação. Ver a seção [#Closure_Metaprogramada_|Closure Metaprogramada].
 
@@ -1874,7 +1882,7 @@ public:
 };
 ~/np~{DIV}
 {DIV}^
-%%%
+
 !!!Argumentos Variádicos  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Para poder-se criar Closures com um número variado do parâmetros, fez-se uso de um meta programa que calcula, recursivamente as posições dos parâmetros da closures.
 ^::__Listagem 40:__ Cálculo do index dos parâmetros da seção crítica dentro da closure::
@@ -2047,7 +2055,7 @@ O tipo ''funcReturnType'' é inferido a partir do tipo de retorno de function. O
 Em tempo de execução, o construtor da classe Closure irá:
 # Alocar memória para o atributo ''_parameters'', que é do tipo array de char, de acordo com o tamanho dos tipos dos argumentos  ''(char, ... , 1)''
 # Utilizar a função ''pack_helper()'' para colocar ''('a', ... , 1)'' no array ''_parameters'', tratando o fato de possuírem de tipos diferentes.
-%%%
+
 !!!Exemplo de Uso  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Veja um exemplo completo de teste/uso das closures meta programadas:
 ^::__Listagem 44:__ Arquivo ''/app/closure_test.cc''::
@@ -2200,7 +2208,6 @@ Closure::~Closure(this=0x0009fe84,
 main: exiting()
 ~/np~{DIV}
 {DIV}^
-
 Dada a função ''test_function2'' do exemplo anterior como tendo a seguinte assinatura, ''char test_function2(const char *, const char *, char)'', tem-se o seguinte código meta programado, gerado durante a compilação, para criar a ''Closure'' da ''test_function2'':
 ^::__Listagem 46:__ Trecho de código gerado pelo meta programa, obtido com compilador ''LLVM Clang''::
 {DIV(type="span")}
@@ -2289,7 +2296,7 @@ public:
 }
 ~/np~{DIV}
 {DIV}^
-%%%
+
 !!!Integração com Guarda  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 Para integrar a nova interface de ''Critical_Section'' no algoritmo do Guarda, foi necessário somente modificar o método ''Guard::submit'', que agora passa a ser um método meta programado:
 ^::__Listagem 47:__ Trecho de código de ''/include/utility/guard.h''::
@@ -5662,6 +5669,9 @@ P->d    C<-d    The end!
 # https://stackoverflow.com/questions/14498892/stdmutex-vs-stdrecursive-mutex-as-class-member
 # https://stackoverflow.com/questions/36619715/a-shared-recursive-mutex-in-standard-c
 # https://stackoverflow.com/questions/23893835/what-special-purpose-does-unique-lock-have-over-using-a-mutex
+# https://tiki.org/WikiSyntax
+# https://doc.tiki.org/PluginDiv#Controlling_Wrapping_
+# https://doc.tiki.org/Wiki-Syntax-Text
 
 !Referências  [#Predictable_Synchronization_Algorithms_for_Asynchronous_Critical_Sections|←]
 #Stefan Reif and Wolfgang Schröder-Preikschat, "Predictable Synchronisation Algorithms for Asynchronous Critical Sections,” Friedrich-Alexander-Universität Erlangen-Nürnberg, Dept. of Computer Science, Technical Reports, CS-2018-03, February 2018.
@@ -5685,3 +5695,4 @@ P->d    C<-d    The end!
 #Promise vs Observable https://stackoverflow.com/questions/37364973/promise-vs-observable
 #Promises vs Observables https://medium.com/@mpodlasin/promises-vs-observables-4c123c51fe13
 #When does a thread become idle? https://stackoverflow.com/questions/19784293/when-does-a-thread-become-idle
+#Aplicações para Web Progressivas (PWA), Service Workers https://ine5646.gitbook.io/livro/parte-ii-modelagem-de-aplicacoes-para-web/finalidade/orientadas-a-pagina/progressiva-pwa
