@@ -131,15 +131,17 @@ protected:
 
     static void lock() {
         CPU::int_disable();
-        if( Traits<Timer>::FREQUENCY < 20 )
+        if( Traits<Timer>::FREQUENCY < 20 ) {
             db<Thread>(TRC) << "Thread::lock(this=" << Thread::self() << ", level=" << _lock.level() << ", owner="  << _lock.owner() << ")" << endl;
+        }
         if(smp)
             _lock.acquire();
     }
 
     static void unlock() {
-        if( Traits<Timer>::FREQUENCY < 20 )
+        if( Traits<Timer>::FREQUENCY < 20 ) {
             db<Thread>(TRC) << "Thread::unlock(this=" << Thread::self() << ", level=" << _lock.level() << ", owner="  << _lock.owner() << ")" << endl;
+        }
         if(smp)
             _lock.release();
         CPU::int_enable();

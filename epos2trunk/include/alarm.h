@@ -57,13 +57,17 @@ private:
     }
 
     static void lock() {
-        if( Traits<Timer>::FREQUENCY < 20 )
+        if( Traits<Timer>::FREQUENCY < 20 ) {
             db<Synchronizer>(TRC) << "Alarm::lock(size=" << _request.size() << ")" << endl;
-        Thread::lock(); }
+        }
+        Thread::lock();
+    }
     static void unlock() {
-        if( Traits<Timer>::FREQUENCY < 20 )
+        if( Traits<Timer>::FREQUENCY < 20 ) {
             db<Synchronizer>(TRC) << "Alarm::unlock(size=" << _request.size() << ")" << endl;
-        Thread::unlock(); }
+        }
+        Thread::unlock();
+    }
 
     static void handler(const IC::Interrupt_Id & i);
 
