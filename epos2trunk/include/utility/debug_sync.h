@@ -15,7 +15,10 @@ __BEGIN_UTIL
     Semaphore _debug_syncronized_semaphore_lock;
 __END_UTIL
 
-    // A debug function cannot call this recursively, otherwise a deadlock happens
+    // A debug function cannot call this recursively, otherwise a deadlock happens.
+    // Unless you replace the `_debug_syncronized_semaphore_lock` by a recursive
+    // semaphore or mutex. See:
+    // https://stackoverflow.com/questions/36619715/a-shared-recursive-mutex-in-standard-c
     #define DB(name,level,...) do { \
         _debug_syncronized_semaphore_lock.lock(); \
             db<name>(level) << __VA_ARGS__; \
