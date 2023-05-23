@@ -15,6 +15,6 @@ setup(
         'Flask==0.10.1',
         'pyserial==2.7',
         'tornado==4.2.1',
-        'requests==2.8.0',
+        'requests==2.31.0',
     ],
 )
