@@ -14,7 +14,7 @@ setup(
     install_requires=[
         'Flask==0.10.1',
         'pyserial==2.7',
-        'tornado==4.2.1',
+        'tornado==6.3.2',
         'requests==2.8.0',
     ],
 )
